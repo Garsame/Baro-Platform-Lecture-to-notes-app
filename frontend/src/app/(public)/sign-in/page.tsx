@@ -62,80 +62,61 @@ export default function SignInPage() {
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "4rem auto", padding: "0 1rem" }}>
-      <div className="card">
-        <h2 style={{ marginBottom: "1.5rem", textAlign: "center" }}>Sign In</h2>
+    <section className="auth-shell">
+      <div className="form-card auth-card">
+        <h1>Sign In</h1>
+        <p>Enter your email and password to sign in.</p>
         {success && <div className="alert alert-success">{success}</div>}
         {error && <div className="alert alert-error">{error}</div>}
 
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-        >
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "0.5rem",
-                fontWeight: "bold",
-              }}
-            >
-              Email Address
-            </label>
+        <div className="auth-divider">
+          <span>Continue with email</span>
+        </div>
+
+        <form onSubmit={handleSubmit} className="public-form">
+          <div className="form-field">
+            <label>Email Address</label>
             <input
               type="email"
+              placeholder="Your email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-              }}
             />
           </div>
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "0.5rem",
-                fontWeight: "bold",
-              }}
-            >
-              Password
-            </label>
+          <div className="form-field">
+            <label>Password</label>
             <input
               type="password"
+              placeholder="Enter your password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-              }}
             />
+          </div>
+
+          <div className="form-row">
+            <label className="check-row">
+              <input type="checkbox" />
+              <span>Keep me logged in</span>
+            </label>
+            <Link href="/contact">Forgot password?</Link>
           </div>
 
           <button
             type="submit"
-            className="btn"
+            className="public-btn public-btn-primary"
             disabled={isLoading}
-            style={{ marginTop: "1rem" }}
           >
             {isLoading ? "Signing in..." : "Sign In"}
           </button>
         </form>
 
-        <p style={{ marginTop: "1.5rem", textAlign: "center", fontSize: "0.9rem" }}>
+        <p className="auth-switch">
           Don&apos;t have an account?{" "}
-          <Link href="/sign-up" style={{ color: "var(--primary-color)" }}>
-            Sign up here
-          </Link>
+          <Link href="/sign-up">Create one</Link>
         </p>
       </div>
-    </div>
+    </section>
   );
 }

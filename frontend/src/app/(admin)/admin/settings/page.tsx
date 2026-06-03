@@ -8,7 +8,7 @@ export default function AdminSettingsPage() {
         tools.
       </p>
 
-      <section className="card" style={{ marginTop: "2rem" }}>
+      <section className="admin-card" style={{ padding: "1.5rem", marginTop: "2rem" }}>
         <h2 style={{ marginBottom: "1rem" }}>Recommended next settings</h2>
         <p style={{ opacity: 0.8 }}>
           API base URL, worker concurrency, allowed upload formats, and model

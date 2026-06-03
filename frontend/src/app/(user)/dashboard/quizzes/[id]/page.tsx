@@ -1,6 +1,6 @@
 "use client";
 
-import React, { use, useEffect, useState } from "react";
+import React, { use, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { apiUrl, authHeaders, getErrorMessage } from "@/lib/api";
 import {
@@ -12,6 +12,7 @@ import {
   MdArrowBack,
   MdFeedback,
 } from "react-icons/md";
+import "./quiz-detail.css";
 
 interface QuizQuestion {
   id: string;
@@ -52,7 +53,6 @@ export default function QuizDetail({
 
   // States
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
-  const [quizId, setQuizId] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadingMessage, setLoadingMessage] = useState("Soo dejinaya kediska...");
   const [error, setError] = useState<string | null>(null);
@@ -69,7 +69,7 @@ export default function QuizDetail({
   // Mode from URL query (mode=review or mode=take)
   const mode = searchParams.get("mode");
 
-  const loadQuizData = async () => {
+  const loadQuizData = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -95,14 +95,12 @@ export default function QuizDetail({
 
         const quizData = await genRes.json();
         setQuestions(quizData.questions);
-        setQuizId(quizData.id);
       } else if (!getRes.ok) {
         const errMsg = await getErrorMessage(getRes, "Cilad ayaa dhacday intii lagu guda jiray soo dejinta kediska.");
         throw new Error(errMsg);
       } else {
         const quizData = await getRes.json();
         setQuestions(quizData.questions);
-        setQuizId(quizData.id);
       }
 
       // 2. Check if we should load the latest attempt results
@@ -132,11 +130,11 @@ export default function QuizDetail({
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [lectureId, mode]);
 
   useEffect(() => {
     loadQuizData();
-  }, [lectureId, mode]);
+  }, [loadQuizData]);
 
   const handleOptionSelect = (questionId: string, optionText: string) => {
     setAnswers((prev) => ({
@@ -382,7 +380,7 @@ export default function QuizDetail({
         </div>
 
         <h2 style={{ fontSize: "1.4rem", fontWeight: 700, marginBottom: "1.5rem" }}>
-          Saxista Su'aalaha (Detailed Correction)
+          Saxista Su&apos;aalaha (Detailed Correction)
         </h2>
 
         {questions.map((q, index) => {
@@ -472,7 +470,7 @@ export default function QuizDetail({
 
         .quiz-progress-bar-fill {
           height: 100%;
-          background: linear-gradient(90deg, var(--primary-color), #818cf8);
+          background: var(--primary-color);
           border-radius: 999px;
           transition: width 0.3s ease;
         }
@@ -597,7 +595,7 @@ export default function QuizDetail({
       {currentQuestion && (
         <div className="quiz-question-card">
           <span className="question-number-pill">
-            Su'aasha {currentQuestionIndex + 1} ee {questions.length}
+            Su&apos;aasha {currentQuestionIndex + 1} ee {questions.length}
           </span>
           <h2 className="question-title-text">{currentQuestion.question_text}</h2>
 

@@ -1,7 +1,16 @@
 "use client";
 
 import React, { use, useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { FaArrowUp, FaPause, FaPlay } from "react-icons/fa";
+import {
+  MdArrowBack,
+  MdAssessment,
+  MdAudioFile,
+  MdAutoAwesome,
+  MdSchedule,
+  MdSource,
+} from "react-icons/md";
 import {
   CONNECTION_QUALITY_META,
   type ConnectionQualitySnapshot,
@@ -9,6 +18,7 @@ import {
 } from "@/hooks/useConnectionQuality";
 import { apiUrl, authHeaders, getErrorMessage } from "@/lib/api";
 import { getSessionToken } from "@/lib/session";
+import "./lecture-detail.css";
 
 type LectureDetail = {
   id: number;
@@ -1109,7 +1119,7 @@ export default function LectureDetailPage({
         );
         setChatError(null);
         setChatLoaded(true);
-      } catch (err: any) {
+      } catch (err: unknown) {
         if (!isActive) {
           return;
         }
@@ -1598,7 +1608,7 @@ export default function LectureDetailPage({
         ]),
       );
       setChatLoaded(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setChatError(
         err instanceof Error ? err.message : String(err)
       );
@@ -1822,12 +1832,7 @@ export default function LectureDetailPage({
           position: absolute;
           inset: 0;
           width: 45%;
-          background: linear-gradient(
-            90deg,
-            transparent,
-            rgba(255, 255, 255, 0.58),
-            transparent
-          );
+          background: rgba(255, 255, 255, 0.48);
           animation: lecture-progress-sweep 1.25s ease-in-out infinite;
         }
 
@@ -1961,7 +1966,7 @@ export default function LectureDetailPage({
 
         .lecture-chat-bubble-user {
           color: #fff;
-          background: linear-gradient(135deg, var(--primary-color), #7c3aed);
+          background: var(--primary-color);
           border-bottom-right-radius: 6px;
           box-shadow: 0 12px 28px rgba(99, 102, 241, 0.24);
         }
@@ -2081,7 +2086,7 @@ export default function LectureDetailPage({
           align-items: center;
           justify-content: center;
           color: #fff;
-          background: linear-gradient(135deg, var(--primary-color), #7c3aed);
+          background: var(--primary-color);
           cursor: pointer;
           transition:
             transform 0.18s ease,
@@ -2172,6 +2177,17 @@ export default function LectureDetailPage({
           }
         }
 
+        .back-btn-hover {
+          transition: all 0.25s ease;
+        }
+
+        .back-btn-hover:hover {
+          background-color: var(--primary-color) !important;
+          color: white !important;
+          border-color: var(--primary-color) !important;
+          transform: translateX(-4px);
+        }
+
         @media (max-width: 720px) {
           .chatbot-container {
             height: calc(100vh - 280px);
@@ -2183,112 +2199,74 @@ export default function LectureDetailPage({
           }
         }
       `}</style>
-      <div style={{ marginBottom: "2rem" }}>
-        <h1>{lecture.title}</h1>
-        <div
-          style={{
-            display: "flex",
-            gap: "1rem",
-            marginTop: "0.5rem",
-            opacity: 0.8,
-            flexWrap: "wrap",
-          }}
-        >
-          <span>
-            Status:{" "}
-            <strong style={{ color: getAccentColor(lecture.status) }}>
-              {lecture.status}
-            </strong>
-          </span>
-          <span>|</span>
-          <span>Lecture ID: {lecture.id}</span>
-          <span>|</span>
-          <span>Submitted: {formatDate(lecture.created_at)}</span>
-        </div>
-        {isProcessingLecture && (
-          <div style={{ marginTop: "0.65rem" }}>
-            <ConnectionQualityIndicator quality={connectionQuality} />
+      <div className="lecture-detail-page">
+        <header className="lecture-detail-hero">
+          <Link
+            href="/dashboard/my-lectures"
+            className="lecture-detail-back"
+            aria-label="Back to Lectures"
+          >
+            <MdArrowBack size={20} />
+          </Link>
+          <div className="lecture-detail-heading">
+            <span className="lecture-detail-eyebrow">Lecture Workspace</span>
+            <h1>{lecture.title}</h1>
+            <div className="lecture-detail-meta">
+              <span>
+                Status: {" "}
+                <strong style={{ color: getAccentColor(lecture.status) }}>
+                  {lecture.status}
+                </strong>
+              </span>
+              <span>Lecture ID: {lecture.id}</span>
+              <span>Submitted: {formatDate(lecture.created_at)}</span>
+            </div>
+            {isProcessingLecture && (
+              <div className="lecture-detail-connection">
+                <ConnectionQualityIndicator quality={connectionQuality} />
+              </div>
+            )}
           </div>
-        )}
+          <div className="lecture-detail-actions">
+            {isCancelable ? (
+              <button
+                type="button"
+                className="lecture-detail-danger"
+                onClick={handleCancel}
+                disabled={canceling || retrying}
+              >
+                {canceling ? "Canceling..." : "Cancel Processing"}
+              </button>
+            ) : canRetry ? (
+              <button
+                type="button"
+                className="lecture-detail-secondary"
+                onClick={handleRetry}
+                disabled={retrying || canceling}
+              >
+                {retrying ? "Reprocessing..." : "Reprocess Lecture"}
+              </button>
+            ) : null}
+          </div>
+        </header>
 
-        {isCancelable ? (
-          <div style={{ marginTop: "1.5rem" }}>
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={canceling || retrying}
-              style={{
-                backgroundColor: "var(--danger-color)",
-                color: "#fff",
-                border: "none",
-                borderRadius: "8px",
-                padding: "0.75rem 1.2rem",
-                fontWeight: 700,
-                cursor: canceling || retrying ? "not-allowed" : "pointer",
-                opacity: canceling || retrying ? 0.7 : 1,
-              }}
-            >
-              {canceling ? "Canceling..." : "Cancel Processing"}
-            </button>
-          </div>
-        ) : canRetry ? (
-          <div style={{ marginTop: "1.5rem" }}>
-            <button
-              type="button"
-              className="btn-outline"
-              onClick={handleRetry}
-              disabled={retrying || canceling}
-            >
-              {retrying ? "Reprocessing..." : "Reprocess Lecture"}
-            </button>
-          </div>
-        ) : null}
-
-        {actionError && (
-          <div className="alert alert-error" style={{ marginTop: "1rem" }}>
-            {actionError}
-          </div>
-        )}
+        {actionError && <div className="alert alert-error">{actionError}</div>}
 
         {isCanceled && !actionError && (
-          <div className="alert alert-info" style={{ marginTop: "1rem" }}>
+          <div className="alert alert-info">
             Processing was canceled. You can reprocess this lecture whenever you
             want.
           </div>
         )}
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          gap: "0.5rem",
-          padding: "0.5rem",
-          backgroundColor: "var(--bg-color)",
-          border: "1px solid var(--border-color)",
-          borderRadius: "12px",
-          marginBottom: "2.5rem",
-          flexWrap: "wrap",
-          boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
-        }}
-      >
+      <div className="lecture-detail-tabs">
         {tabs.map((tab) => (
           <button
             key={tab}
+            type="button"
             onClick={() => setActiveTab(tab)}
-            style={{
-              flex: "1 1 0px",
-              minWidth: "120px",
-              background: activeTab === tab ? "var(--primary-color)" : "transparent",
-              border: "none",
-              padding: "0.85rem 1.5rem",
-              borderRadius: "8px",
-              cursor: "pointer",
-              color: activeTab === tab ? "white" : "inherit",
-              fontWeight: activeTab === tab ? "bold" : "600",
-              textTransform: "capitalize",
-              transition: "all 0.2s cubic-bezier(0.4, 0, 0.2, 1)",
-              textAlign: "center",
-            }}
+            className={activeTab === tab ? "is-active" : ""}
           >
             {tab.replace("-", " ")}
           </button>
@@ -2316,62 +2294,69 @@ export default function LectureDetailPage({
         }
       >
         {activeTab === "overview" && (
-          <div>
-            <h2 style={{ fontSize: "1.8rem", marginBottom: "0.5rem" }}>Lecture Overview</h2>
-            <p style={{ marginTop: "0.5rem", color: "var(--text-muted)" }}>
-              Detailed metrics and AI metadata extracted during processing.
-            </p>
+          <div className="lecture-overview">
+            <div className="lecture-section-heading">
+              <h2>Lecture Overview</h2>
+              <p>Detailed metrics and AI metadata extracted during processing.</p>
+            </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "1.5rem", marginTop: "2rem" }}>
-               <div style={{ background: "var(--bg-color)", padding: "1.5rem", borderRadius: "12px", border: "1px solid var(--border-color)", borderLeft: "4px solid #38bdf8" }}>
-                  <div style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "0.5rem", textTransform: "uppercase", fontWeight: "bold", letterSpacing: "1px" }}>Source Details</div>
-                  <div style={{ fontSize: "1.2rem", fontWeight: "bold", textTransform: "capitalize" }}>{lecture.source_type}</div>
-                  <div style={{ color: "var(--primary-color)", marginTop: "0.5rem", wordBreak: "break-all", fontSize: "0.95rem" }}>
-                     {lecture.source_url ? <a href={lecture.source_url} target="_blank" rel="noreferrer" style={{ textDecoration: "underline" }}>View Original Source</a> : "Uploaded File Asset"}
-                  </div>
-               </div>
+            <div className="lecture-overview-grid">
+              <div className="lecture-overview-card">
+                <span className="lecture-overview-icon"><MdSource size={21} /></span>
+                <div className="lecture-overview-label">Source Details</div>
+                <div className="lecture-overview-value">{lecture.source_type}</div>
+                <div className="lecture-overview-note">
+                  {lecture.source_url ? (
+                    <a href={lecture.source_url} target="_blank" rel="noreferrer">
+                      View Original Source
+                    </a>
+                  ) : (
+                    "Uploaded file asset"
+                  )}
+                </div>
+              </div>
 
-               <div style={{ background: "var(--bg-color)", padding: "1.5rem", borderRadius: "12px", border: "1px solid var(--border-color)", borderLeft: "4px solid #8b5cf6" }}>
-                  <div style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "0.5rem", textTransform: "uppercase", fontWeight: "bold", letterSpacing: "1px" }}>Detected Genre</div>
-                  <div style={{ fontSize: "1.3rem", fontWeight: "bold", color: "#8b5cf6" }}>{genreLabel}</div>
-                  <div style={{ color: "var(--text-muted)", marginTop: "0.65rem", fontSize: "0.92rem", lineHeight: 1.65 }}>
-                    {genreExplanation}
-                  </div>
-               </div>
+              <div className="lecture-overview-card">
+                <span className="lecture-overview-icon"><MdAutoAwesome size={21} /></span>
+                <div className="lecture-overview-label">Detected Genre</div>
+                <div className="lecture-overview-value">{genreLabel}</div>
+                <div className="lecture-overview-note">{genreExplanation}</div>
+              </div>
 
-               <div style={{ background: "var(--bg-color)", padding: "1.5rem", borderRadius: "12px", border: "1px solid var(--border-color)", borderLeft: "4px solid var(--success-color)" }}>
-                  <div style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "0.5rem", textTransform: "uppercase", fontWeight: "bold", letterSpacing: "1px" }}>AI Valuation & Accuracy</div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: "bold", color: getConfidenceColor(confidenceScore ?? undefined) }}>
-                     {confidenceScore !== null ? `${confidenceScore}% ${confidenceLabel}` : "Calculating..."}
-                  </div>
-                  <div style={{ color: "var(--text-muted)", marginTop: "0.65rem", fontSize: "0.92rem", lineHeight: 1.65 }}>
-                    {valuationSummary}
-                  </div>
-               </div>
+              <div className="lecture-overview-card">
+                <span className="lecture-overview-icon"><MdAssessment size={21} /></span>
+                <div
+                  className="lecture-overview-value"
+                  style={{ color: getConfidenceColor(confidenceScore ?? undefined) }}
+                >
+                  {confidenceScore !== null ? `${confidenceScore}% ${confidenceLabel}` : "Calculating..."}
+                </div>
+                <div className="lecture-overview-label">AI Valuation & Accuracy</div>
+                <div className="lecture-overview-note">{valuationSummary}</div>
+              </div>
 
-               <div style={{ background: "var(--bg-color)", padding: "1.5rem", borderRadius: "12px", border: "1px solid var(--border-color)", borderLeft: "4px solid #f59e0b" }}>
-                  <div style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "0.5rem", textTransform: "uppercase", fontWeight: "bold", letterSpacing: "1px" }}>Duration & Length</div>
-                  <div style={{ fontSize: "1.5rem", fontWeight: "bold" }}>{formatDuration(lecture.media_asset?.duration_seconds)}</div>
-                  <div style={{ color: "var(--text-muted)", marginTop: "0.5rem", fontSize: "0.9rem" }}>Identified media playtime</div>
-               </div>
+              <div className="lecture-overview-card">
+                <span className="lecture-overview-icon"><MdAudioFile size={21} /></span>
+                <div className="lecture-overview-label">Duration & Length</div>
+                <div className="lecture-overview-value">{formatDuration(lecture.media_asset?.duration_seconds)}</div>
+                <div className="lecture-overview-note">Identified media playtime</div>
+              </div>
 
-               <div style={{ background: "var(--bg-color)", padding: "1.5rem", borderRadius: "12px", border: "1px solid var(--border-color)", borderLeft: `4px solid ${getAccentColor(lecture.status)}` }}>
-                  <div style={{ color: "var(--text-muted)", fontSize: "0.9rem", marginBottom: "0.5rem", textTransform: "uppercase", fontWeight: "bold", letterSpacing: "1px" }}>Processing Status</div>
-                  <div style={{ fontSize: "1.3rem", fontWeight: "bold", color: getAccentColor(lecture.status), textTransform: "capitalize" }}>{displayStage}</div>
-                  <div style={{ color: "var(--text-muted)", marginTop: "0.5rem", fontSize: "0.9rem" }}>{pipelineProgressPercent}% Pipeline Progress</div>
-               </div>
+              <div className="lecture-overview-card">
+                <span className="lecture-overview-icon"><MdSchedule size={21} /></span>
+                <div className="lecture-overview-label">Processing Status</div>
+                <div
+                  className="lecture-overview-value"
+                  style={{ color: getAccentColor(lecture.status) }}
+                >
+                  {displayStage}
+                </div>
+                <div className="lecture-overview-note">{pipelineProgressPercent}% pipeline progress</div>
+              </div>
             </div>
 
             {lecture.job && (
-              <div
-                style={{
-                  marginTop: "2.5rem",
-                  background: "var(--border-color)",
-                  height: "14px",
-                  borderRadius: "999px",
-                  overflow: "hidden",
-                }}
-              >
+              <div className="lecture-detail-progress">
                 <div
                   className={`lecture-progress-fill${isPipelineMoving ? " is-moving" : ""}`}
                   style={{

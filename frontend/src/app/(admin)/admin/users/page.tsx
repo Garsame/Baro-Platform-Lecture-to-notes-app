@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { apiUrl, authHeaders, getErrorMessage } from "@/lib/api";
 import { MdAdd, MdDelete, MdEdit, MdToggleOff, MdToggleOn } from "react-icons/md";
 
@@ -50,6 +50,28 @@ const defaultEditForm: EditFormState = {
 
 function getErrorText(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
+}
+
+function initialsFor(user: UserRecord): string {
+  const name = user.full_name || user.email;
+  return name
+    .split(/\s+|@/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("") || "U";
+}
+
+function roleTone(role: UserRole): { background: string; color: string } {
+  return role === "admin"
+    ? { background: "var(--primary-translucent)", color: "var(--primary-color)" }
+    : { background: "var(--primary-hover-translucent)", color: "var(--primary-hover)" };
+}
+
+function statusTone(isActive: boolean): { background: string; color: string } {
+  return isActive
+    ? { background: "var(--primary-translucent)", color: "var(--primary-color)" }
+    : { background: "var(--admin-surface-soft)", color: "var(--text-muted)" };
 }
 
 export default function UsersPage() {
@@ -250,43 +272,57 @@ export default function UsersPage() {
     }
   };
 
+  const userSummary = useMemo(() => {
+    const admins = users.filter((user) => user.role === "admin").length;
+    const active = users.filter((user) => user.is_active).length;
+    return {
+      total: users.length,
+      active,
+      admins,
+      suspended: users.length - active,
+    };
+  }, [users]);
+
   return (
     <div style={{ position: "relative" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "2rem",
-          gap: "1rem",
-          flexWrap: "wrap",
-        }}
-      >
-        <h1 style={{ margin: 0, fontSize: "2rem" }}>Manage Users</h1>
+      <div className="admin-page-header">
+        <div>
+          <span className="admin-page-kicker">User access</span>
+          <h1 className="admin-page-title">Manage Users</h1>
+          <p className="admin-page-lede">
+            Review accounts, roles, and activation status from one compact view.
+          </p>
+        </div>
         <button
           type="button"
           onClick={() => {
             setFeedback(null);
             setIsCreateModalOpen(true);
           }}
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            background: "#38bdf8",
-            color: "white",
-            border: "none",
-            borderRadius: "10px",
-            padding: "0.85rem 1.2rem",
-            cursor: "pointer",
-            fontWeight: 700,
-            fontSize: "0.95rem",
-            boxShadow: "0 10px 20px rgba(56, 189, 248, 0.2)",
-          }}
+          className="admin-action-btn"
         >
           <MdAdd size={20} />
           Add New User
         </button>
+      </div>
+
+      <div className="admin-user-summary" aria-label="User account summary">
+        <div className="admin-user-summary-item">
+          <strong>{userSummary.total}</strong>
+          <span>Total users</span>
+        </div>
+        <div className="admin-user-summary-item">
+          <strong>{userSummary.active}</strong>
+          <span>Active</span>
+        </div>
+        <div className="admin-user-summary-item">
+          <strong>{userSummary.admins}</strong>
+          <span>Admins</span>
+        </div>
+        <div className="admin-user-summary-item">
+          <strong>{userSummary.suspended}</strong>
+          <span>Suspended</span>
+        </div>
       </div>
 
       {feedback && (
@@ -297,13 +333,13 @@ export default function UsersPage() {
             borderRadius: "10px",
             border:
               feedback.type === "success"
-                ? "1px solid rgba(16, 185, 129, 0.25)"
-                : "1px solid rgba(239, 68, 68, 0.25)",
+                ? "1px solid color-mix(in srgb, var(--primary-color) 22%, var(--border))"
+                : "1px solid color-mix(in srgb, var(--primary-hover) 28%, var(--border))",
             background:
               feedback.type === "success"
-                ? "rgba(16, 185, 129, 0.1)"
-                : "rgba(239, 68, 68, 0.1)",
-            color: feedback.type === "success" ? "#10b981" : "#ef4444",
+                ? "var(--primary-translucent)"
+                : "var(--primary-hover-translucent)",
+            color: feedback.type === "success" ? "var(--primary-color)" : "var(--primary-hover)",
             fontWeight: 600,
           }}
         >
@@ -311,88 +347,65 @@ export default function UsersPage() {
         </div>
       )}
 
-      <div className="admin-card" style={{ padding: "1.5rem" }}>
+      <div className="admin-card admin-table-shell">
         {loading ? (
-          <p>Loading users...</p>
+          <p style={{ padding: "1.5rem", color: "var(--text-muted)" }}>Loading users...</p>
         ) : (
-          <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
+          <div className="admin-table-scroll">
+          <table className="admin-table">
             <thead>
-              <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                <th style={{ padding: "1rem", color: "var(--text-muted)" }}>ID</th>
-                <th style={{ padding: "1rem", color: "var(--text-muted)" }}>Full Name</th>
-                <th style={{ padding: "1rem", color: "var(--text-muted)" }}>Email</th>
-                <th style={{ padding: "1rem", color: "var(--text-muted)" }}>Role</th>
-                <th style={{ padding: "1rem", color: "var(--text-muted)" }}>Actions</th>
+              <tr>
+                <th>User</th>
+                <th>Account ID</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>
+                  <td colSpan={6} style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>
                     No users found in the system yet.
                   </td>
                 </tr>
               )}
 
-              {users.map((user) => (
-                <tr
-                  key={user.id}
-                  style={{
-                    borderBottom: "1px solid var(--border)",
-                    opacity: user.is_active ? 1 : 0.5,
-                  }}
-                >
-                  <td style={{ padding: "1rem" }}>#{user.id}</td>
-                  <td style={{ padding: "1rem", fontWeight: "bold" }}>
-                    {user.full_name || "N/A"}
-                    {!user.is_active && (
-                      <span
-                        style={{
-                          marginLeft: "10px",
-                          fontSize: "0.7rem",
-                          color: "#ef4444",
-                          background: "rgba(239,68,68,0.1)",
-                          padding: "2px 6px",
-                          borderRadius: "8px",
-                        }}
-                      >
-                        Suspended
-                      </span>
-                    )}
+              {users.map((user) => {
+                const role = roleTone(user.role);
+                const status = statusTone(user.is_active);
+                return (
+                <tr key={user.id} style={{ opacity: user.is_active ? 1 : 0.58 }}>
+                  <td style={{ minWidth: "260px" }}>
+                    <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", alignItems: "center", gap: "0.75rem" }}>
+                      <span className="admin-user-avatar">{initialsFor(user)}</span>
+                      <div>
+                        <div style={{ color: "var(--text)", fontWeight: 900 }}>{user.full_name || "No name set"}</div>
+                        <div style={{ color: "var(--text-muted)", fontSize: "0.82rem", overflowWrap: "anywhere" }}>{user.email}</div>
+                      </div>
+                    </div>
                   </td>
-                  <td style={{ padding: "1rem" }}>{user.email}</td>
-                  <td style={{ padding: "1rem" }}>
-                    <span
-                      style={{
-                        background:
-                          user.role === "admin"
-                            ? "rgba(239,68,68,0.2)"
-                            : "rgba(56,189,248,0.2)",
-                        color: user.role === "admin" ? "#ef4444" : "#38bdf8",
-                        padding: "4px 8px",
-                        borderRadius: "12px",
-                        fontSize: "0.8rem",
-                        fontWeight: "bold",
-                        textTransform: "uppercase",
-                      }}
-                    >
+                  <td style={{ color: "var(--text-muted)", fontWeight: 800 }}>#{user.id}</td>
+                  <td>
+                    <span className="admin-badge" style={{ background: role.background, color: role.color }}>
                       {user.role}
                     </span>
                   </td>
-                  <td style={{ padding: "1rem", display: "flex", gap: "10px" }}>
+                  <td>
+                    <span className="admin-badge" style={{ background: status.background, color: status.color }}>
+                      {user.is_active ? "Active" : "Suspended"}
+                    </span>
+                  </td>
+                  <td style={{ color: "var(--text-muted)", whiteSpace: "nowrap" }}>
+                    {new Date(user.created_at).toLocaleDateString()}
+                  </td>
+                  <td>
+                    <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                     <button
                       type="button"
                       onClick={() => openEdit(user)}
-                      style={{
-                        background: "transparent",
-                        color: "var(--text)",
-                        border: "1px solid var(--border)",
-                        padding: "8px",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                      }}
+                      className="admin-icon-action"
                       title="Edit User"
                     >
                       <MdEdit size={18} />
@@ -401,15 +414,9 @@ export default function UsersPage() {
                       type="button"
                       onClick={() => void handleToggleActive(user)}
                       style={{
-                        background: "transparent",
-                        color: user.is_active ? "#10b981" : "#ef4444",
-                        border: "1px solid var(--border)",
-                        padding: "8px",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
+                        color: user.is_active ? "var(--primary-color)" : "var(--primary-hover)",
                       }}
+                      className="admin-icon-action"
                       title={user.is_active ? "Suspend User" : "Activate User"}
                     >
                       {user.is_active ? <MdToggleOn size={18} /> : <MdToggleOff size={18} />}
@@ -418,24 +425,22 @@ export default function UsersPage() {
                       type="button"
                       onClick={() => void handleDelete(user.id)}
                       style={{
-                        background: "rgba(239,68,68,0.1)",
-                        color: "#ef4444",
-                        border: "1px solid rgba(239,68,68,0.2)",
-                        padding: "8px",
-                        borderRadius: "8px",
-                        cursor: "pointer",
-                        display: "flex",
-                        alignItems: "center",
+                        background: "transparent",
+                        color: "var(--primary-color)",
+                        border: "1px solid var(--border)",
                       }}
+                      className="admin-icon-action"
                       title="Delete User"
                     >
                       <MdDelete size={18} />
                     </button>
+                    </div>
                   </td>
                 </tr>
-              ))}
+              )})}
             </tbody>
           </table>
+          </div>
         )}
       </div>
 
@@ -564,7 +569,7 @@ export default function UsersPage() {
                   style={{
                     padding: "0.8rem 1.5rem",
                     borderRadius: "8px",
-                    background: "#38bdf8",
+                    background: "var(--primary-color)",
                     border: "none",
                     color: "white",
                     cursor: isCreatingUser ? "not-allowed" : "pointer",
@@ -720,7 +725,7 @@ export default function UsersPage() {
                 style={{
                   padding: "0.8rem 1.5rem",
                   borderRadius: "8px",
-                  background: "#38bdf8",
+                  background: "var(--primary-color)",
                   border: "none",
                   color: "white",
                   cursor: isSavingEdit ? "not-allowed" : "pointer",

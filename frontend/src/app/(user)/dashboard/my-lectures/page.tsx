@@ -4,11 +4,20 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  MdAdd,
+  MdArrowForward,
+  MdFilterList,
+  MdOutlineInsertDriveFile,
+  MdOutlineOndemandVideo,
+  MdSearch,
+} from "react-icons/md";
+import {
   CONNECTION_QUALITY_META,
   type ConnectionQualitySnapshot,
   useConnectionQuality,
 } from "@/hooks/useConnectionQuality";
 import { apiUrl, authHeaders } from "@/lib/api";
+import "./my-lectures.css";
 
 type LectureItem = {
   id: number;
@@ -156,6 +165,23 @@ function SlowConnectionToast({ onClose }: { onClose: () => void }) {
   );
 }
 
+function getStatusColor(status: string) {
+  switch (status?.toLowerCase()) {
+    case "completed":
+      return "var(--success-color)";
+    case "processing":
+      return "var(--warning-color)";
+    case "failed":
+      return "var(--danger-color)";
+    case "canceled":
+      return "#6b7280";
+    case "submitted":
+      return "#009ffd";
+    default:
+      return "var(--text-muted)";
+  }
+}
+
 export default function MyLecturesPage() {
   const router = useRouter();
   const [lectures, setLectures] = useState<LectureItem[]>([]);
@@ -188,16 +214,35 @@ export default function MyLecturesPage() {
       const matchesSearch = lecture.title
         .toLowerCase()
         .includes(searchQuery.toLowerCase());
-      
-      const isProcessing = lecture.status.toLowerCase() === "processing" || lecture.status.toLowerCase() === "submitted";
+
+      const status = lecture.status.toLowerCase();
+      const isProcessing = status === "processing" || status === "submitted";
       const matchesStatus =
         statusFilter === "all" ||
         (statusFilter === "processing" && isProcessing) ||
-        (statusFilter !== "processing" && lecture.status.toLowerCase() === statusFilter.toLowerCase());
-      
+        (statusFilter !== "processing" && status === statusFilter);
+
       return matchesSearch && matchesStatus;
     });
   }, [lectures, searchQuery, statusFilter]);
+
+  const statusCounts = useMemo(() => {
+    const processing = lectures.filter((lecture) => {
+      const status = lecture.status.toLowerCase();
+      return status === "processing" || status === "submitted";
+    }).length;
+
+    return {
+      all: lectures.length,
+      processing,
+      completed: lectures.filter(
+        (lecture) => lecture.status.toLowerCase() === "completed",
+      ).length,
+      failed: lectures.filter(
+        (lecture) => lecture.status.toLowerCase() === "failed",
+      ).length,
+    };
+  }, [lectures]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -296,294 +341,144 @@ export default function MyLecturesPage() {
     return () => window.clearTimeout(timeoutId);
   }, [slowConnectionToast]);
 
-  const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "completed":
-        return "var(--success-color)";
-      case "processing":
-        return "var(--warning-color)";
-      case "failed":
-        return "var(--danger-color)";
-      case "canceled":
-        return "#6b7280";
-      case "submitted":
-        return "#3b82f6";
-      default:
-        return "gray";
-    }
-  };
-
   return (
-    <div>
-      <style>{`
-        .my-lectures-controls {
-          display: flex;
-          gap: 1rem;
-          margin-bottom: 2rem;
-          flex-wrap: wrap;
-          align-items: center;
-          justify-content: space-between;
-          width: 100%;
-        }
-
-        .search-input-wrapper {
-          position: relative;
-          flex: 1;
-          min-width: 250px;
-        }
-
-        .search-input {
-          width: 100%;
-          padding: 0.75rem 1rem;
-          border-radius: 10px;
-          border: 1px solid var(--border-color);
-          background: var(--bg-color);
-          color: var(--text-color);
-          font-size: 0.95rem;
-          transition: border-color 0.2s, box-shadow 0.2s;
-        }
-
-        .search-input:focus {
-          border-color: var(--primary-color);
-          box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
-          outline: none;
-        }
-
-        .filter-tabs {
-          display: flex;
-          background: var(--secondary-bg);
-          padding: 0.25rem;
-          border-radius: 12px;
-          border: 1px solid var(--border-color);
-          gap: 0.25rem;
-        }
-
-        .filter-tab {
-          padding: 0.6rem 1.2rem;
-          border: none;
-          background: transparent;
-          color: var(--text-color);
-          font-weight: 600;
-          font-size: 0.9rem;
-          border-radius: 9px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-          text-transform: capitalize;
-        }
-
-        .filter-tab:hover {
-          background: rgba(99, 102, 241, 0.05);
-        }
-
-        .filter-tab.active {
-          background: var(--bg-color);
-          color: var(--primary-color);
-          box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-        }
-
-        .lecture-card-custom {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1.5rem;
-          border-radius: 16px;
-          background: var(--secondary-bg);
-          border: 1px solid var(--border-color);
-          box-shadow: var(--card-shadow);
-          gap: 1.5rem;
-          transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .lecture-card-custom:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 8px 16px rgba(0,0,0,0.05);
-        }
-
-        .lecture-card-details {
-          min-width: 0;
-          flex: 1;
-        }
-
-        .lecture-card-details h3 {
-          margin: 0 0 0.5rem 0;
-          font-weight: 700;
-          font-size: 1.15rem;
-          white-space: nowrap;
-          overflow: hidden;
-          text-overflow: ellipsis;
-        }
-
-        .lecture-card-meta {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-end;
-          gap: 0.5rem;
-        }
-
-        /* Responsive Mobile Layout */
-        @media (max-width: 768px) {
-          .my-lectures-controls {
-            flex-direction: column;
-            align-items: stretch;
-          }
-
-          .search-input-wrapper {
-            width: 100%;
-          }
-
-          .filter-tabs {
-            width: 100%;
-            overflow-x: auto;
-          }
-
-          .filter-tab {
-            flex: 1;
-            text-align: center;
-            padding: 0.5rem 0.8rem;
-            font-size: 0.85rem;
-          }
-
-          .lecture-card-custom {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 1.25rem;
-            padding: 1.25rem 1rem;
-          }
-
-          .lecture-card-details h3 {
-            white-space: normal;
-            overflow: visible;
-            text-overflow: clip;
-            font-size: 1.05rem;
-          }
-
-          .lecture-card-meta {
-            align-items: stretch;
-            flex-direction: row;
-            justify-content: space-between;
-            border-top: 1px solid var(--border-color);
-            padding-top: 1rem;
-            gap: 0.5rem;
-          }
-
-          .lecture-card-meta .btn-outline {
-            flex: 1;
-            text-align: center;
-            padding: 0.5rem 1rem;
-          }
-        }
-      `}</style>
-
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "2rem",
-          gap: "1rem",
-          flexWrap: "wrap",
-        }}
-      >
-        <h1 style={{ margin: 0 }}>My Lectures</h1>
-        <Link href="/dashboard/new-lecture" className="btn" style={{ textDecoration: "none" }}>
-          Add New
+    <div className="lectures-page">
+      <header className="lectures-hero">
+        <div>
+          <span className="lectures-eyebrow">Learning Library</span>
+          <h1>My Lectures</h1>
+          <p>
+            Track every uploaded lecture, review AI progress, and open the full
+            study workspace from one clean list.
+          </p>
+        </div>
+        <Link href="/dashboard/new-lecture" className="lectures-primary-action">
+          <MdAdd size={20} />
+          Add Lecture
         </Link>
-      </div>
+      </header>
 
-      <div className="my-lectures-controls">
-        <div className="search-input-wrapper">
+      <section className="lectures-toolbar">
+        <label className="lectures-search">
+          <MdSearch size={21} />
           <input
             type="text"
-            className="search-input"
             placeholder="Search lectures by title..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
-        </div>
-        <div className="filter-tabs">
+        </label>
+        <div className="lectures-filters" aria-label="Filter lectures">
+          <span className="lectures-filter-label">
+            <MdFilterList size={18} />
+            Filter
+          </span>
           {["all", "processing", "completed", "failed"].map((tab) => (
             <button
               key={tab}
+              type="button"
               onClick={() => setStatusFilter(tab)}
-              className={`filter-tab ${statusFilter === tab ? "active" : ""}`}
+              className={`lectures-filter-tab ${statusFilter === tab ? "is-active" : ""}`}
             >
-              {tab}
+              <span>{tab}</span>
+              <strong>{statusCounts[tab as keyof typeof statusCounts]}</strong>
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+      <section className="lectures-list">
         {success && <div className="alert alert-success">{success}</div>}
         {loading && lectures.length === 0 ? (
-          <p>Loading your lectures...</p>
+          <div className="lectures-empty-card">Loading your lectures...</div>
         ) : lectures.length === 0 ? (
-          <div className="card" style={{ textAlign: "center", padding: "3rem", borderRadius: "16px" }}>
-            <p>You haven&apos;t submitted any lectures yet.</p>
-            <Link
-              href="/dashboard/new-lecture"
-              className="btn mt-4"
-              style={{ display: "inline-block", marginTop: "1rem", textDecoration: "none" }}
-            >
+          <div className="lectures-empty-card">
+            <h2>No lectures yet</h2>
+            <p>
+              Start with a YouTube link or an audio file and BaroBadi will
+              build notes, transcripts, and quizzes for you.
+            </p>
+            <Link href="/dashboard/new-lecture" className="lectures-primary-action">
+              <MdAdd size={20} />
               Start Processing
             </Link>
           </div>
         ) : filteredLectures.length === 0 ? (
-          <div className="card" style={{ textAlign: "center", padding: "3rem", borderRadius: "16px" }}>
-            <p style={{ opacity: 0.7, margin: 0 }}>No lectures match your filters.</p>
+          <div className="lectures-empty-card">
+            <h2>No matches found</h2>
+            <p>No lectures match your current search and filters.</p>
           </div>
         ) : (
-          filteredLectures.map((lecture) => (
-            <div key={lecture.id} className="lecture-card-custom">
-              <div className="lecture-card-details">
-                <h3>{lecture.title}</h3>
-                <p style={{ opacity: 0.7, fontSize: "0.9rem", margin: "0 0 4px 0" }}>
-                  Source: {lecture.source_type}
-                </p>
-                {lecture.job && (
-                  <p style={{ opacity: 0.7, fontSize: "0.88rem", margin: 0, color: "var(--text-muted)" }}>
-                    Stage: {lecture.job.stage} • Progress: {lecture.job.progress_percent}%
-                  </p>
-                )}
-              </div>
-              <div className="lecture-card-meta">
+          filteredLectures.map((lecture) => {
+            const sourceType = lecture.source_type.toLowerCase();
+            const progress =
+              lecture.job?.progress_percent ??
+              (lecture.status.toLowerCase() === "completed" ? 100 : 0);
+
+            return (
+              <article key={lecture.id} className="lecture-row-card">
                 <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    alignItems: "flex-end",
-                    gap: "0.4rem",
-                  }}
+                  className={`lecture-source-mark ${sourceType === "youtube" ? "is-video" : ""}`}
                 >
-                  <span
-                    style={{
-                      padding: "0.25rem 0.75rem",
-                      borderRadius: "999px",
-                      backgroundColor: `${getStatusColor(lecture.status)}20`,
-                      color: getStatusColor(lecture.status),
-                      fontWeight: "bold",
-                      textTransform: "capitalize",
-                      fontSize: "0.875rem",
-                    }}
+                  {sourceType === "youtube" ? (
+                    <MdOutlineOndemandVideo size={24} />
+                  ) : (
+                    <MdOutlineInsertDriveFile size={24} />
+                  )}
+                </div>
+
+                <div className="lecture-row-body">
+                  <div className="lecture-row-title">
+                    <h2>{lecture.title}</h2>
+                    <span
+                      className="lecture-status-badge"
+                      style={{
+                        backgroundColor: `${getStatusColor(lecture.status)}1f`,
+                        color: getStatusColor(lecture.status),
+                      }}
+                    >
+                      {lecture.status}
+                    </span>
+                  </div>
+                  <div className="lecture-row-meta">
+                    <span>Source: {lecture.source_type}</span>
+                    {lecture.job && <span>Stage: {lecture.job.stage}</span>}
+                  </div>
+                  <div
+                    className="lecture-progress-track"
+                    aria-label={`Progress ${progress}%`}
                   >
-                    {lecture.status}
-                  </span>
+                    <span
+                      style={{
+                        width: `${Math.min(Math.max(progress, 0), 100)}%`,
+                        backgroundColor: getStatusColor(lecture.status),
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <div className="lecture-row-actions">
+                  {lecture.job && (
+                    <span className="lecture-progress-text">
+                      {lecture.job.progress_percent}% complete
+                    </span>
+                  )}
                   {isProcessingStatus(lecture.status) && (
                     <ConnectionQualityIndicator quality={connectionQuality} />
                   )}
+                  <Link
+                    href={`/dashboard/lecture/${lecture.id}`}
+                    className="lecture-view-link"
+                  >
+                    View Details
+                    <MdArrowForward size={18} />
+                  </Link>
                 </div>
-                <Link 
-                  href={`/dashboard/lecture/${lecture.id}`} 
-                  className="btn-outline"
-                  style={{ textDecoration: "none" }}
-                >
-                  View Details
-                </Link>
-              </div>
-            </div>
-          ))
+              </article>
+            );
+          })
         )}
-      </div>
+      </section>
       {slowConnectionToast && (
         <SlowConnectionToast onClose={() => setSlowConnectionToast(null)} />
       )}

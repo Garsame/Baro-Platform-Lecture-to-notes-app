@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { apiUrl, authHeaders } from '@/lib/api';
+import { MdArticle, MdAutoAwesome, MdEventNote, MdLogin, MdPersonAddAlt1 } from 'react-icons/md';
 
 interface SystemLog {
   id: string;
@@ -34,12 +35,20 @@ function eventLabel(eventType: string): string {
 
 function eventColor(eventType: string): { background: string; color: string } {
   if (eventType === "LECTURE_GENERATED") {
-    return { background: "rgba(56,189,248,0.16)", color: "#0284c7" };
+    return { background: "var(--primary-translucent)", color: "var(--primary-color)" };
   }
   if (eventType.includes("SIGNUP")) {
-    return { background: "rgba(16,185,129,0.16)", color: "#059669" };
+    return { background: "var(--primary-hover-translucent)", color: "var(--primary-hover)" };
   }
-  return { background: "rgba(168,85,247,0.16)", color: "#7c3aed" };
+  return { background: "var(--primary-translucent)", color: "var(--primary-color)" };
+}
+
+function eventIcon(eventType: string): React.ReactNode {
+  if (eventType === "LECTURE_GENERATED") return <MdAutoAwesome size={21} />;
+  if (eventType.includes("SIGNUP")) return <MdPersonAddAlt1 size={21} />;
+  if (eventType.includes("LOGIN")) return <MdLogin size={21} />;
+  if (eventType.includes("LECTURE")) return <MdArticle size={21} />;
+  return <MdEventNote size={21} />;
 }
 
 export default function LogsPage() {
@@ -60,51 +69,56 @@ export default function LogsPage() {
 
   return (
       <div>
-        <h1 style={{ marginBottom: "2rem", fontSize: "2rem" }}>System Logs</h1>
-        <div className="admin-card" style={{ padding: "1.5rem" }}>
-          {loading ? <p>Loading logs...</p> : (
-            <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-              <thead>
-                <tr style={{ borderBottom: "1px solid var(--border)" }}>
-                  <th style={{ padding: "1rem", color: "var(--text-muted)" }}>Time</th>
-                  <th style={{ padding: "1rem", color: "var(--text-muted)" }}>Event</th>
-                  <th style={{ padding: "1rem", color: "var(--text-muted)" }}>User / Admin</th>
-                  <th style={{ padding: "1rem", color: "var(--text-muted)" }}>Details</th>
-                </tr>
-              </thead>
-              <tbody>
-                {logs.length === 0 && (
-                   <tr><td colSpan={4} style={{ padding: "1rem", textAlign: "center", color: "var(--text-muted)" }}>No recent system entries yet.</td></tr>
-                )}
-                {logs.map((log) => {
-                  const colors = eventColor(log.event_type);
-                  return (
-                  <tr key={log.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                     <td style={{ padding: "1rem", whiteSpace: "nowrap", color: "var(--text)" }}>{new Date(log.created_at).toLocaleString()}</td>
-                     <td style={{ padding: "1rem" }}>
-                        <span style={{
-                            background: colors.background,
-                            color: colors.color,
-                            padding: "4px 10px",
-                            borderRadius: "12px",
-                            fontSize: "0.8rem",
-                            fontWeight: "bold",
-                            whiteSpace: "nowrap",
-                        }}>{eventLabel(log.event_type)}</span>
-                     </td>
-                     <td style={{ padding: "1rem" }}>
-                        <div style={{ color: "var(--text)", fontWeight: 700 }}>{log.actor_name || "Unknown"}</div>
-                        <div style={{ color: "var(--text-muted)", fontSize: "0.85rem" }}>{log.actor_email || "Unknown"}</div>
-                     </td>
-                     <td style={{ padding: "1rem", color: "var(--text)" }}>
-                        {log.event_type === "LECTURE_GENERATED"
-                          ? `Generated "${log.lecture_title || "Untitled lecture"}"`
-                          : log.message}
-                     </td>
-                  </tr>
-                )})}
-              </tbody>
-            </table>
+        <div className="admin-page-header">
+          <div>
+            <span className="admin-page-kicker">Audit trail</span>
+            <h1 className="admin-page-title">System Logs</h1>
+            <p className="admin-page-lede">
+              Recent sign-ins, account activity, lecture generation, and system entries.
+            </p>
+          </div>
+          <span className="admin-chart-pill">{logs.length} entries</span>
+        </div>
+        <div className="admin-card admin-table-shell">
+          {loading ? <p style={{ padding: "1.5rem", color: "var(--text-muted)" }}>Loading logs...</p> : (
+            <div className="admin-log-timeline">
+              {logs.length === 0 && (
+                <div style={{ padding: "2rem", textAlign: "center", color: "var(--text-muted)" }}>No recent system entries yet.</div>
+              )}
+              {logs.map((log) => {
+                const colors = eventColor(log.event_type);
+                const message = log.event_type === "LECTURE_GENERATED"
+                  ? `Generated "${log.lecture_title || "Untitled lecture"}"`
+                  : log.message;
+
+                return (
+                  <article
+                    className="admin-log-entry"
+                    key={log.id}
+                    style={{ "--log-color": colors.color } as React.CSSProperties}
+                  >
+                    <span className="admin-log-icon">{eventIcon(log.event_type)}</span>
+                    <div className="admin-log-content">
+                      <div className="admin-log-topline">
+                        <div className="admin-log-title">
+                          <strong>{eventLabel(log.event_type)}</strong>
+                          <span className="admin-badge" style={{ background: colors.background, color: colors.color }}>
+                            {log.level || "Info"}
+                          </span>
+                        </div>
+                        <time className="admin-log-time">{new Date(log.created_at).toLocaleString()}</time>
+                      </div>
+                      <div className="admin-log-message">{message}</div>
+                      <div className="admin-log-meta">
+                        <span>{log.actor_name || "Unknown actor"}</span>
+                        <span>{log.actor_email || "No email"}</span>
+                        {log.actor_role && <span>{log.actor_role}</span>}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>

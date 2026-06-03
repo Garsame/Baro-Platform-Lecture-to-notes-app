@@ -43,105 +43,63 @@ export default function SignUpPage() {
   };
 
   return (
-    <div style={{ maxWidth: "400px", margin: "4rem auto", padding: "0 1rem" }}>
-      <div className="card">
-        <h2 style={{ marginBottom: "1.5rem", textAlign: "center" }}>
-          Create an Account
-        </h2>
+    <section className="auth-shell">
+      <div className="form-card auth-card">
+        <h1>Create an Account</h1>
+        <p>Enter your details to open your BaroBadi learning workspace.</p>
         {success && <div className="alert alert-success">{success}</div>}
         {error && <div className="alert alert-error">{error}</div>}
 
-        <form
-          onSubmit={handleSubmit}
-          style={{ display: "flex", flexDirection: "column", gap: "1rem" }}
-        >
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "0.5rem",
-                fontWeight: "bold",
-              }}
-            >
-              Full Name
-            </label>
+        <div className="auth-divider">
+          <span>Start with email</span>
+        </div>
+
+        <form onSubmit={handleSubmit} className="public-form">
+          <div className="form-field">
+            <label>Full Name</label>
             <input
               type="text"
+              placeholder="Your full name"
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-              }}
             />
           </div>
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "0.5rem",
-                fontWeight: "bold",
-              }}
-            >
-              Email
-            </label>
+          <div className="form-field">
+            <label>Email</label>
             <input
               type="email"
+              placeholder="Your email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-              }}
             />
           </div>
-          <div>
-            <label
-              style={{
-                display: "block",
-                marginBottom: "0.5rem",
-                fontWeight: "bold",
-              }}
-            >
-              Password
-            </label>
+          <div className="form-field">
+            <label>Password</label>
             <input
               type="password"
+              placeholder="Create a password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              style={{
-                width: "100%",
-                padding: "0.75rem",
-                borderRadius: "8px",
-                border: "1px solid #ccc",
-              }}
             />
           </div>
 
           <button
             type="submit"
-            className="btn"
+            className="public-btn public-btn-primary"
             disabled={isLoading}
-            style={{ marginTop: "1rem" }}
           >
             {isLoading ? "Creating account..." : "Sign Up"}
           </button>
         </form>
 
-        <p style={{ marginTop: "1.5rem", textAlign: "center", fontSize: "0.9rem" }}>
+        <p className="auth-switch">
           Already have an account?{" "}
-          <Link href="/sign-in" style={{ color: "var(--primary-color)" }}>
-            Sign in here
-          </Link>
+          <Link href="/sign-in">Sign in</Link>
         </p>
       </div>
-    </div>
+    </section>
   );
 }

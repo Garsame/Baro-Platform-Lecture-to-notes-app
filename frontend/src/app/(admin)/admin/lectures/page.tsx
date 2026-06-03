@@ -35,8 +35,8 @@ interface AdminLecture {
 const headerCellStyle: React.CSSProperties = {
   padding: "0.8rem 0.95rem",
   color: "var(--text-muted)",
-  fontSize: "0.76rem",
-  fontWeight: 900,
+  fontSize: "0.72rem",
+  fontWeight: 700,
   letterSpacing: "0.03em",
   textTransform: "uppercase",
   whiteSpace: "nowrap",
@@ -45,6 +45,7 @@ const headerCellStyle: React.CSSProperties = {
 const bodyCellStyle: React.CSSProperties = {
   padding: "0.82rem 0.95rem",
   color: "var(--text)",
+  fontSize: "0.82rem",
   verticalAlign: "middle",
   borderTop: "1px solid var(--border)",
 };
@@ -90,15 +91,15 @@ function sourceTone(sourceType?: string | null): {
   if (sourceType === "youtube") {
     return {
       icon: <FaYoutube size={15} />,
-      background: "rgba(239, 68, 68, 0.14)",
-      color: "#dc2626",
+      background: "var(--primary-hover-translucent)",
+      color: "var(--primary-hover)",
     };
   }
 
   return {
     icon: <FaFileAudio size={14} />,
-    background: "rgba(14, 165, 233, 0.14)",
-    color: "#0284c7",
+    background: "var(--primary-translucent)",
+    color: "var(--primary-color)",
   };
 }
 
@@ -106,37 +107,37 @@ function statusTone(status: string): { background: string; color: string; border
   const normalized = status.toLowerCase();
   if (normalized === "completed") {
     return {
-      background: "rgba(16, 185, 129, 0.14)",
-      color: "#059669",
-      border: "rgba(16, 185, 129, 0.35)",
+      background: "var(--primary-translucent)",
+      color: "var(--primary-color)",
+      border: "color-mix(in srgb, var(--primary-color) 24%, var(--border))",
     };
   }
   if (normalized.includes("fail") || normalized.includes("error")) {
     return {
-      background: "rgba(239, 68, 68, 0.14)",
-      color: "#dc2626",
-      border: "rgba(239, 68, 68, 0.35)",
+      background: "var(--primary-hover-translucent)",
+      color: "var(--primary-hover)",
+      border: "color-mix(in srgb, var(--primary-hover) 24%, var(--border))",
     };
   }
   if (normalized.includes("cancel")) {
     return {
-      background: "rgba(100, 116, 139, 0.14)",
-      color: "#64748b",
-      border: "rgba(100, 116, 139, 0.35)",
+      background: "var(--admin-surface-soft)",
+      color: "var(--text-muted)",
+      border: "var(--border)",
     };
   }
   return {
-    background: "rgba(245, 158, 11, 0.16)",
-    color: "#b45309",
-    border: "rgba(245, 158, 11, 0.35)",
+    background: "var(--primary-hover-translucent)",
+    color: "var(--primary-hover)",
+    border: "color-mix(in srgb, var(--primary-hover) 24%, var(--border))",
   };
 }
 
 function scoreTone(score?: number | null): string {
-  if (typeof score !== "number") return "#94a3b8";
-  if (score >= 85) return "#10b981";
-  if (score >= 65) return "#f59e0b";
-  return "#ef4444";
+  if (typeof score !== "number") return "var(--text-muted)";
+  if (score >= 85) return "var(--primary-color)";
+  if (score >= 65) return "var(--primary-hover)";
+  return "var(--text-muted)";
 }
 
 function buildSourceHref(lecture: AdminLecture): string | null {
@@ -204,7 +205,7 @@ export default function LecturesPage() {
         }}
       >
         <div>
-          <h1 style={{ margin: 0, fontSize: "1.8rem" }}>Lecture Oversight</h1>
+          <h1 style={{ margin: 0, fontSize: "1.5rem" }}>Lecture Oversight</h1>
           <p style={{ margin: "0.35rem 0 0", color: "var(--text-muted)" }}>
             Compact lecture rows with source, owner, genre, status, correctness, link, and date.
           </p>
@@ -219,21 +220,21 @@ export default function LecturesPage() {
           marginBottom: "1rem",
         }}
       >
-        <div className="admin-card" style={{ padding: "0.9rem", borderRadius: "8px" }}>
-          <div style={{ color: "var(--text-muted)", fontSize: "0.72rem", fontWeight: 900, textTransform: "uppercase" }}>Total</div>
-          <div style={{ marginTop: "0.35rem", fontSize: "1.55rem", fontWeight: 900, color: "#38bdf8" }}>{lectures.length}</div>
+        <div className="admin-card card-lift" style={{ padding: "0.8rem 1rem", borderRadius: "8px" }}>
+          <div style={{ color: "var(--text-muted)", fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase" }}>Total</div>
+          <div style={{ marginTop: "0.25rem", fontSize: "1.3rem", fontWeight: 700, color: "var(--primary-color)" }}>{lectures.length}</div>
         </div>
-        <div className="admin-card" style={{ padding: "0.9rem", borderRadius: "8px" }}>
-          <div style={{ color: "var(--text-muted)", fontSize: "0.72rem", fontWeight: 900, textTransform: "uppercase" }}>Completed</div>
-          <div style={{ marginTop: "0.35rem", fontSize: "1.55rem", fontWeight: 900, color: "#10b981" }}>{summary.completed}</div>
+        <div className="admin-card card-lift" style={{ padding: "0.8rem 1rem", borderRadius: "8px" }}>
+          <div style={{ color: "var(--text-muted)", fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase" }}>Completed</div>
+          <div style={{ marginTop: "0.25rem", fontSize: "1.3rem", fontWeight: 700, color: "var(--primary-color)" }}>{summary.completed}</div>
         </div>
-        <div className="admin-card" style={{ padding: "0.9rem", borderRadius: "8px" }}>
-          <div style={{ color: "var(--text-muted)", fontSize: "0.72rem", fontWeight: 900, textTransform: "uppercase" }}>YouTube</div>
-          <div style={{ marginTop: "0.35rem", fontSize: "1.55rem", fontWeight: 900, color: "#ef4444" }}>{summary.youtube}</div>
+        <div className="admin-card card-lift" style={{ padding: "0.8rem 1rem", borderRadius: "8px" }}>
+          <div style={{ color: "var(--text-muted)", fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase" }}>YouTube</div>
+          <div style={{ marginTop: "0.25rem", fontSize: "1.3rem", fontWeight: 700, color: "var(--primary-hover)" }}>{summary.youtube}</div>
         </div>
-        <div className="admin-card" style={{ padding: "0.9rem", borderRadius: "8px" }}>
-          <div style={{ color: "var(--text-muted)", fontSize: "0.72rem", fontWeight: 900, textTransform: "uppercase" }}>Avg Correctness</div>
-          <div style={{ marginTop: "0.35rem", fontSize: "1.55rem", fontWeight: 900, color: scoreTone(summary.averageScore) }}>{formatScore(summary.averageScore)}</div>
+        <div className="admin-card card-lift" style={{ padding: "0.8rem 1rem", borderRadius: "8px" }}>
+          <div style={{ color: "var(--text-muted)", fontSize: "0.7rem", fontWeight: 700, textTransform: "uppercase" }}>Avg Correctness</div>
+          <div style={{ marginTop: "0.25rem", fontSize: "1.3rem", fontWeight: 700, color: scoreTone(summary.averageScore) }}>{formatScore(summary.averageScore)}</div>
         </div>
       </div>
 
@@ -340,13 +341,13 @@ export default function LecturesPage() {
                             {sourceLabel(lecture.source_type)}
                           </span>
                         </td>
-                        <td style={{ ...bodyCellStyle, fontWeight: 850 }}>
+                        <td style={{ ...bodyCellStyle, fontWeight: 600 }}>
                           <div title={lecture.title || "Untitled lecture"} style={truncateStyle}>
                             {lecture.title || "Untitled lecture"}
                           </div>
                         </td>
                         <td style={bodyCellStyle}>
-                          <div title={lecture.owner_name || "Unknown"} style={{ ...truncateStyle, fontWeight: 800 }}>
+                          <div title={lecture.owner_name || "Unknown"} style={{ ...truncateStyle, fontWeight: 500 }}>
                             {lecture.owner_name || "Unknown"}
                           </div>
                         </td>
@@ -365,7 +366,7 @@ export default function LecturesPage() {
                               background: status.background,
                               color: status.color,
                               fontSize: "0.74rem",
-                              fontWeight: 900,
+                              fontWeight: 700,
                               textTransform: "uppercase",
                               whiteSpace: "nowrap",
                             }}
@@ -373,7 +374,7 @@ export default function LecturesPage() {
                             {formatStatus(lecture.status)}
                           </span>
                         </td>
-                        <td style={{ ...bodyCellStyle, color: scoreTone(lecture.valuation_score), fontWeight: 900 }}>
+                        <td style={{ ...bodyCellStyle, color: scoreTone(lecture.valuation_score), fontWeight: 700 }}>
                           {formatScore(lecture.valuation_score)}
                         </td>
                       </tr>
@@ -405,7 +406,7 @@ export default function LecturesPage() {
                                       href={sourceHref}
                                       target="_blank"
                                       rel="noreferrer"
-                                      style={{ color: "#38bdf8", fontWeight: 900 }}
+                                      style={{ color: "var(--primary-color)", fontWeight: 900 }}
                                     >
                                       Link <FaExternalLinkAlt size={11} />
                                     </a>

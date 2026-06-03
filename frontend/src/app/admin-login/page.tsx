@@ -1,10 +1,19 @@
 "use client";
+// Force recompile to refresh CSS variables
 
-import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import {
+  MdDarkMode,
+  MdLightMode,
+  MdLock,
+  MdVisibility,
+  MdVisibilityOff,
+} from "react-icons/md";
 import { apiUrl, fetchCurrentUser, getErrorMessage } from "@/lib/api";
 import { clearSession, persistSession } from "@/lib/session";
+import "../admin-auth.css";
 
 export default function AdminSignInPage() {
   const router = useRouter();
@@ -13,17 +22,19 @@ export default function AdminSignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [theme, setTheme] = useState("dark");
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("admin-theme") || "dark";
-    setTheme(savedTheme);
+    const savedTheme = localStorage.getItem("admin-theme");
+    if (savedTheme === "light" || savedTheme === "dark") {
+      setTheme(savedTheme);
+    }
   }, []);
 
   const toggleTheme = () => {
-    const newTheme = theme === "dark" ? "light" : "dark";
-    setTheme(newTheme);
-    localStorage.setItem("admin-theme", newTheme);
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    localStorage.setItem("admin-theme", nextTheme);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -65,63 +76,83 @@ export default function AdminSignInPage() {
     }
   };
 
-  const isLight = theme === "light";
-  const bg = isLight ? "#f8fafc" : "#0f172a";
-  const cardBg = isLight ? "#ffffff" : "#1e293b";
-  const border = isLight ? "#e2e8f0" : "#334155";
-  const text = isLight ? "#1e293b" : "#f8fafc";
-  const textMuted = isLight ? "#64748b" : "#94a3b8";
-  const inputBg = isLight ? "#f1f5f9" : "#0f172a";
-
   return (
-    <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh", backgroundColor: bg, transition: "background 0.3s" }}>
-      <button onClick={toggleTheme} style={{ position: "absolute", top: "2rem", right: "2rem", background: cardBg, color: text, border: `1px solid ${border}`, padding: "10px", borderRadius: "50%", cursor: "pointer", fontSize: "1.2rem", boxShadow: "0 4px 6px rgba(0,0,0,0.1)" }}>
-          {isLight ? "🌙" : "☀️"}
+    <main className="admin-auth-shell" data-theme={theme}>
+      <button
+        type="button"
+        className="admin-auth-theme"
+        onClick={toggleTheme}
+        aria-label="Toggle admin auth theme"
+      >
+        {theme === "dark" ? <MdLightMode size={20} /> : <MdDarkMode size={20} />}
       </button>
 
-      <div style={{ width: "100%", maxWidth: "450px", backgroundColor: cardBg, padding: "3rem", borderRadius: "12px", border: `1px solid ${border}`, boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}>
-        <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-           <div style={{ width: "50px", height: "50px", background: "#ef4444", color: "white", borderRadius: "12px", display: "inline-flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem", fontWeight: "bold", marginBottom: "1rem" }}>A</div>
-           <h2 style={{ fontSize: "1.8rem", color: text, margin: 0 }}>Admin Portal Login</h2>
-           <p style={{ color: textMuted, marginTop: "0.5rem" }}>Sign in to manage the platform</p>
+      <section className="admin-auth-card">
+        <div className="admin-auth-brand" style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
+          <img src={theme === "dark" ? "/barobadi-logo-dark.png" : "/barobadi-logo.png"} alt="BaroBadi Logo" style={{ width: '160px', height: 'auto', objectFit: 'contain' }} />
         </div>
 
-        {error && <div style={{ background: "rgba(239, 68, 68, 0.1)", color: "#ef4444", padding: "1rem", borderRadius: "8px", marginBottom: "1.5rem", border: "1px solid rgba(239, 68, 68, 0.3)" }}>{error}</div>}
+        <div className="admin-auth-heading">
+          <h1>Welcome Back</h1>
+          <p>Sign in to manage users, lectures, jobs, and platform settings.</p>
+        </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
-          <div>
-            <label style={{ display: "block", marginBottom: "0.5rem", color: text }}>Admin Email</label>
+        {error && <div className="admin-auth-alert">{error}</div>}
+
+        <form onSubmit={handleSubmit} className="admin-auth-form">
+          <label>
+            <span>Email Address</span>
             <input
               type="email"
+              placeholder="admin@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              style={{ width: "100%", padding: "0.8rem", borderRadius: "8px", border: `1px solid ${border}`, background: inputBg, color: text }}
             />
+          </label>
+
+          <label>
+            <span>Password</span>
+            <div className="admin-auth-password">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="Enter admin password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((value) => !value)}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+              >
+                {showPassword ? (
+                  <MdVisibilityOff size={20} />
+                ) : (
+                  <MdVisibility size={20} />
+                )}
+              </button>
+            </div>
+          </label>
+
+          <div className="admin-auth-row">
+            <label className="admin-auth-check">
+              <input type="checkbox" />
+              <span>Remember me</span>
+            </label>
+            <Link href="/contact">Need help?</Link>
           </div>
-          <div style={{ position: "relative" }}>
-            <label style={{ display: "block", marginBottom: "0.5rem", color: text }}>Master Password</label>
-            <input
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-              style={{ width: "100%", padding: "0.8rem", borderRadius: "8px", border: `1px solid ${border}`, background: inputBg, color: text }}
-            />
-            <button type="button" onClick={() => setShowPassword(!showPassword)} style={{ position: "absolute", right: "10px", top: "35px", background: "transparent", border: "none", color: textMuted, cursor: "pointer", fontSize: "1.2rem" }}>
-               {showPassword ? "👁️" : "👁️‍🗨️"}
-            </button>
-          </div>
-          <button type="submit" disabled={loading} style={{ width: "100%", padding: "1rem", background: "#ef4444", color: "white", fontWeight: "bold", border: "none", borderRadius: "8px", cursor: loading ? "not-allowed" : "pointer", fontSize: "1rem", marginTop: "0.5rem" }}>
-            {loading ? "Authenticating..." : "Enter Admin Portal"}
+
+          <button type="submit" className="admin-auth-submit" disabled={loading}>
+            {loading ? "Authenticating..." : "Sign In"}
           </button>
         </form>
 
-        <div style={{ textAlign: "center", marginTop: "1.5rem", fontSize: "0.9rem" }}>
-           <span style={{ color: textMuted }}>Need to register an admin? </span>
-           <Link href="/admin-signup" style={{ color: "#38bdf8", textDecoration: "none" }}>Sign Up Here</Link>
-        </div>
-      </div>
-    </div>
+        <p className="admin-auth-switch">
+          Don&apos;t have admin access?{" "}
+          <Link href="/admin-signup">Register here</Link>
+        </p>
+      </section>
+    </main>
   );
 }

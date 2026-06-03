@@ -1,0 +1,124 @@
+.results-header-card,
+.correction-item,
+.quiz-question-card {
+  background: var(--user-surface) !important;
+  border: 1px solid var(--user-border) !important;
+  border-radius: 8px !important;
+  box-shadow: var(--user-shadow) !important;
+}
+
+.results-header-card {
+  padding: 1.4rem !important;
+}
+
+.results-score-circle {
+  background: var(--user-primary) !important;
+  border-radius: 8px !important;
+  height: 128px !important;
+  width: 128px !important;
+}
+
+.results-feedback-box h2,
+.question-title-text,
+.correction-status-header h3 {
+  color: var(--user-text) !important;
+}
+
+.results-feedback-box p,
+.explanation-box,
+.option-correction-row,
+.grade-percentage-text {
+  color: var(--user-muted) !important;
+}
+
+.quiz-progress-bar-container {
+  background: var(--user-soft) !important;
+  height: 10px !important;
+}
+
+.quiz-progress-bar-fill {
+  background: var(--user-accent) !important;
+}
+
+.quiz-question-card {
+  padding: clamp(1.2rem, 3vw, 2rem) !important;
+}
+
+.question-number-pill {
+  background: rgba(0, 159, 253, 0.12) !important;
+  border: 1px solid rgba(0, 159, 253, 0.16) !important;
+  border-radius: 8px !important;
+  color: var(--user-accent) !important;
+}
+
+.option-button-card,
+.option-correction-row {
+  background: var(--user-soft) !important;
+  border: 1px solid var(--user-border) !important;
+  border-radius: 8px !important;
+  color: var(--user-text) !important;
+  transition:
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease !important;
+}
+
+.option-button-card:hover {
+  border-color: rgba(0, 159, 253, 0.38) !important;
+  transform: translateY(-2px);
+}
+
+.option-button-card.selected {
+  background: rgba(0, 159, 253, 0.12) !important;
+  border-color: var(--user-accent) !important;
+  color: var(--user-text) !important;
+}
+
+.option-correction-row.correct-select {
+  background: rgba(16, 185, 129, 0.1) !important;
+  border-color: var(--success-color) !important;
+}
+
+.option-correction-row.student-select {
+  background: rgba(239, 68, 68, 0.1) !important;
+  border-color: var(--danger-color) !important;
+}
+
+.explanation-box {
+  background: var(--user-soft) !important;
+  border-left: 0 !important;
+  border: 1px solid var(--user-border) !important;
+  border-radius: 8px !important;
+}
+
+.correction-status-badge {
+  border-radius: 8px !important;
+}
+
+.btn,
+.btn-secondary-custom {
+  border-radius: 8px !important;
+  font-weight: 900 !important;
+}
+
+.btn {
+  background: var(--user-primary) !important;
+}
+
+.btn-secondary-custom {
+  background: rgba(0, 159, 253, 0.1) !important;
+  border: 1px solid rgba(0, 159, 253, 0.18) !important;
+  color: var(--user-accent) !important;
+}
+
+@media (max-width: 640px) {
+  .results-header-card {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+  }
+
+  .results-score-circle {
+    height: 110px !important;
+    width: 110px !important;
+  }
+}

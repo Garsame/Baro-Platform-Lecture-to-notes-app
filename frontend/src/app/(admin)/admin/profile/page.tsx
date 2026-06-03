@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { apiUrl, authHeaders } from "@/lib/api";
+import { MdVisibility, MdVisibilityOff, MdEdit } from 'react-icons/md';
 
 interface ProfileResponse {
   full_name?: string | null;
@@ -34,6 +35,7 @@ export default function AdminProfilePage() {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' } | null>(null);
   const [showPass, setShowPass] = useState(false);
+  const [isEditingForm, setIsEditingForm] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -46,7 +48,8 @@ export default function AdminProfilePage() {
           setName(data.full_name || "");
           setEmail(data.email || "");
           if (data.profile_picture_url) {
-             setProfilePic(apiUrl(data.profile_picture_url));
+             const isNext = data.profile_picture_url.includes("next.svg");
+             setProfilePic(isNext ? null : apiUrl(data.profile_picture_url));
           }
         }
       } catch {}
@@ -80,12 +83,14 @@ export default function AdminProfilePage() {
 
       setMessage({ text: "Profile settings updated successfully!", type: "success" });
       setPassword(""); // Clear password field after updating
+      setIsEditingForm(false); // Reset editing mode
     } catch (err: unknown) {
       const message = errorMessage(err, "Failed to update profile.");
       if (message.includes("NetworkError") || message.includes("Failed to fetch")) {
           // Uvicorn drops the connection when reloading due to sql_app.db modifications in local dev
           setMessage({ text: "Profile updated successfully! (Note: Dev server auto-reloaded)", type: "success" });
           setPassword(""); 
+          setIsEditingForm(false); // Reset editing mode
       } else {
           setMessage({ text: message, type: "error" });
       }
@@ -121,7 +126,8 @@ export default function AdminProfilePage() {
               }
               const data = (await res.json()) as ProfileResponse;
               if(data.profile_picture_url) {
-                  setProfilePic(apiUrl(data.profile_picture_url));
+                  const isNext = data.profile_picture_url.includes("next.svg");
+                  setProfilePic(isNext ? null : apiUrl(data.profile_picture_url));
                   setMessage({ text: "Image successfully uploaded and routed to local disk storage!", type: "success" });
               }
           } catch (err: unknown) {
@@ -130,92 +136,203 @@ export default function AdminProfilePage() {
       }
   };
 
-  const handleRemoveImage = async () => {
-      try {
-          setMessage({ text: "Removing image...", type: "success" });
-          const res = await fetch(apiUrl("/api/v1/auth/me/avatar"), {
-              method: "DELETE",
-              headers: authHeaders()
-          });
-          
-          if (!res.ok) throw new Error("Failed to remove image backend sync");
-          
-          setProfilePic(null);
-          setMessage({ text: "Profile Image permanently deleted from local disk mapping.", type: "success" });
-      } catch (err: unknown) {
-          const message = errorMessage(err, "Failed to remove image");
-          if (message.includes("NetworkError") || message.includes("Failed to fetch")) {
-             setProfilePic(null);
-             setMessage({ text: "Profile Image permanently deleted. (Note: Dev server auto-reloaded)", type: "success" });
-          } else {
-             setMessage({ text: message, type: "error" });
-          }
-      }
-  };
-
   return (
-    <div style={{ maxWidth: "600px" }}>
-      <h1 style={{ marginBottom: "2rem", fontSize: "2rem" }}>Edit Administrator Profile</h1>
+    <div style={{ maxWidth: "750px" }}>
+      <style>{`
+         .avatar-container {
+            position: relative;
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            cursor: pointer;
+            overflow: hidden;
+            border: 3px solid var(--border);
+            transition: all 0.25s ease;
+         }
+         .avatar-container:hover {
+            border-color: var(--primary-color);
+            transform: scale(1.02);
+         }
+         .avatar-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            opacity: 0;
+            transition: opacity 0.25s ease;
+         }
+         .avatar-container:hover .avatar-overlay {
+            opacity: 1;
+         }
+      `}</style>
+
+      <h1 style={{ marginBottom: "1.5rem", fontSize: "1.5rem" }}>Edit Administrator Profile</h1>
 
       <div className="admin-card" style={{ padding: "2rem" }}>
          
-         <div style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginBottom: "2rem", paddingBottom: "2rem", borderBottom: "1px solid var(--border)" }}>
-             <div style={{ width: "80px", height: "80px", borderRadius: "50%", background: "#38bdf8", color: "white", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "2rem", fontWeight: "bold", overflow: "hidden" }}>
-                 {profilePic ? (
-                     <img src={profilePic} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                 ) : (
-                     name.charAt(0) || "A"
-                 )}
-             </div>
-             <div>
-                <h3 style={{ margin: "0 0 0.5rem 0", fontSize: "1.2rem" }}>Profile Image</h3>
-                <p style={{ margin: "0 0 1rem 0", color: "var(--text-muted)", fontSize: "0.9rem" }}>Upload a new avatar. Recommended size is 256x256px.</p>
-                <div style={{ display: "flex", gap: "1rem" }}>
-                   <input type="file" ref={fileInputRef} style={{ display: "none" }} accept="image/*" onChange={handleFileChange} />
-                   <button type="button" onClick={handleImageClick} style={{ background: "transparent", color: "var(--text)", border: "1px solid var(--border)", padding: "0.5rem 1rem", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}>Upload Image</button>
-                   <button type="button" onClick={handleRemoveImage} style={{ background: "transparent", color: "#ef4444", border: "1px solid transparent", cursor: "pointer", fontWeight: "bold" }}>Remove</button>
-                </div>
-             </div>
-         </div>
-
-         {message && (
-             <div style={{ 
-               padding: "1rem", borderRadius: "8px", marginBottom: "1.5rem", 
-               background: message.type === 'success' ? "rgba(16, 185, 129, 0.1)" : "rgba(239, 68, 68, 0.1)", 
-               color: message.type === 'success' ? "#10b981" : "#ef4444",
-               border: `1px solid ${message.type === 'success' ? "rgba(16, 185, 129, 0.3)" : "rgba(239, 68, 68, 0.3)"}` 
-             }}>
-                 {message.text}
-             </div>
-         )}
-
-         <form onSubmit={handleUpdate} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+         <div style={{ display: "flex", gap: "3rem", flexWrap: "wrap", alignItems: "flex-start" }}>
             
-            <div>
-              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold", color: "var(--text)" }}>Admin Full Name</label>
-              <input type="text" value={name} onChange={(e) => setName(e.target.value)} required style={{ width: "100%", padding: "0.8rem", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", color: "var(--text)" }} />
+            {/* Left Column: Avatar upload with overlay edit trigger */}
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
+                <div onClick={handleImageClick} className="avatar-container" title="Click to upload profile image">
+                     <div style={{ width: "100%", height: "100%", borderRadius: "50%", background: "var(--primary-color)", color: "white", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "2.8rem", fontWeight: "bold", overflow: "hidden" }}>
+                         {profilePic ? (
+                             <img src={profilePic} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                         ) : (
+                             name.charAt(0) || "A"
+                         )}
+                     </div>
+                     <div className="avatar-overlay">
+                         <MdEdit size={24} />
+                         <span style={{ fontSize: "0.7rem", fontWeight: "bold" }}>Change</span>
+                     </div>
+                </div>
+                <input type="file" ref={fileInputRef} style={{ display: "none" }} accept="image/*" onChange={handleFileChange} />
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", textAlign: "center", marginTop: "0.25rem" }}>Click image to edit</span>
             </div>
 
-            <div>
-              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold", color: "var(--text)" }}>Admin Email Address</label>
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required style={{ width: "100%", padding: "0.8rem", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", color: "var(--text)" }} />
+            {/* Right Column: Update settings form */}
+            <div style={{ flex: 1, minWidth: "300px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", borderBottom: "1px solid var(--border)", paddingBottom: "0.75rem" }}>
+                    <h3 style={{ margin: 0, fontSize: "1.05rem", color: "var(--text)" }}>Personal Credentials</h3>
+                    
+                    <button 
+                       type="button" 
+                       onClick={() => setIsEditingForm(!isEditingForm)}
+                       style={{
+                         background: isEditingForm ? "var(--primary-translucent)" : "transparent",
+                         border: "1px solid var(--border)",
+                         borderRadius: "8px",
+                         padding: "6px 12px",
+                         display: "flex",
+                         alignItems: "center",
+                         gap: "6px",
+                         cursor: "pointer",
+                         color: isEditingForm ? "var(--primary-color)" : "var(--text-muted)",
+                         fontWeight: "bold",
+                         fontSize: "0.85rem",
+                         transition: "all 0.2s ease"
+                       }}
+                    >
+                       <MdEdit size={16} />
+                       {isEditingForm ? "Cancel Edit" : "Edit Fields"}
+                    </button>
+                </div>
+
+                {message && (
+                     <div style={{ 
+                       padding: "1rem", borderRadius: "8px", marginBottom: "1.5rem", 
+                       background: message.type === 'success' ? "var(--primary-translucent)" : "var(--primary-hover-translucent)", 
+                       color: message.type === 'success' ? "var(--primary-color)" : "var(--primary-hover)",
+                       border: `1px solid ${message.type === 'success' ? "color-mix(in srgb, var(--primary-color) 26%, var(--border))" : "color-mix(in srgb, var(--primary-hover) 26%, var(--border))"}` 
+                     }}>
+                         {message.text}
+                     </div>
+                )}
+
+                <form onSubmit={handleUpdate} style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+                   
+                   <div>
+                     <label style={{ display: "block", marginBottom: "0.4rem", fontWeight: "bold", color: "var(--text)", fontSize: "0.82rem" }}>Admin Full Name</label>
+                     <input 
+                       type="text" 
+                       value={name} 
+                       onChange={(e) => setName(e.target.value)} 
+                       required 
+                       readOnly={!isEditingForm}
+                       style={{ 
+                         width: "100%", 
+                         padding: "0.7rem 0.8rem", 
+                         borderRadius: "8px", 
+                         border: "1px solid var(--border)", 
+                         background: isEditingForm ? "transparent" : "rgba(148, 163, 184, 0.05)", 
+                         color: "var(--text)",
+                         fontSize: "0.85rem",
+                         opacity: isEditingForm ? 1 : 0.8,
+                         transition: "all 0.2s ease"
+                       }} 
+                     />
+                   </div>
+
+                   <div>
+                     <label style={{ display: "block", marginBottom: "0.4rem", fontWeight: "bold", color: "var(--text)", fontSize: "0.82rem" }}>Admin Email Address</label>
+                     <input 
+                       type="email" 
+                       value={email} 
+                       onChange={(e) => setEmail(e.target.value)} 
+                       required 
+                       readOnly={!isEditingForm}
+                       style={{ 
+                         width: "100%", 
+                         padding: "0.7rem 0.8rem", 
+                         borderRadius: "8px", 
+                         border: "1px solid var(--border)", 
+                         background: isEditingForm ? "transparent" : "rgba(148, 163, 184, 0.05)", 
+                         color: "var(--text)",
+                         fontSize: "0.85rem",
+                         opacity: isEditingForm ? 1 : 0.8,
+                         transition: "all 0.2s ease"
+                       }} 
+                     />
+                   </div>
+
+                   <div style={{ position: "relative" }}>
+                     <label style={{ display: "block", marginBottom: "0.4rem", fontWeight: "bold", color: "var(--text)", fontSize: "0.82rem" }}>Reset Master Password <span style={{ fontWeight: "normal", color: "var(--text-muted)", fontSize: "0.78rem" }}>(Leave blank to keep current)</span></label>
+                     <input 
+                       type={showPass ? "text" : "password"} 
+                       value={password} 
+                       onChange={(e) => setPassword(e.target.value)} 
+                       readOnly={!isEditingForm}
+                       placeholder={isEditingForm ? "Enter new password..." : "••••••••"}
+                       style={{ 
+                         width: "100%", 
+                         padding: "0.7rem 0.8rem", 
+                         borderRadius: "8px", 
+                         border: "1px solid var(--border)", 
+                         background: isEditingForm ? "transparent" : "rgba(148, 163, 184, 0.05)", 
+                         color: "var(--text)",
+                         fontSize: "0.85rem",
+                         opacity: isEditingForm ? 1 : 0.8,
+                         transition: "all 0.2s ease"
+                       }} 
+                     />
+                     <button type="button" onClick={() => setShowPass(!showPass)} style={{ position: "absolute", right: "10px", top: "33px", background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                        {showPass ? <MdVisibility size={20} /> : <MdVisibilityOff size={20} />}
+                     </button>
+                   </div>
+
+                   <div style={{ marginTop: "1rem", paddingTop: "1.5rem", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end" }}>
+                      <button 
+                         type="submit" 
+                         disabled={loading || !isEditingForm} 
+                         style={{ 
+                           background: isEditingForm ? "var(--primary-color)" : "rgba(148, 163, 184, 0.12)", 
+                           color: isEditingForm ? "white" : "var(--text-muted)", 
+                           padding: "0.8rem 1.5rem", 
+                           border: "none", 
+                           borderRadius: "8px", 
+                           fontWeight: "bold", 
+                           cursor: (loading || !isEditingForm) ? "not-allowed" : "pointer", 
+                           boxShadow: isEditingForm ? "0 4px 12px var(--primary-translucent)" : "none", 
+                           transition: "all 0.2s ease" 
+                         }}
+                      >
+                         {loading ? "Verifying & Saving..." : "Verify & Save Changes"}
+                      </button>
+                   </div>
+
+                </form>
             </div>
 
-            <div style={{ position: "relative" }}>
-              <label style={{ display: "block", marginBottom: "0.5rem", fontWeight: "bold", color: "var(--text)" }}>Reset Master Password <span style={{ fontWeight: "normal", color: "var(--text-muted)" }}>(Leave blank to keep current)</span></label>
-              <input type={showPass ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} style={{ width: "100%", padding: "0.8rem", borderRadius: "8px", border: "1px solid var(--border)", background: "transparent", color: "var(--text)" }} />
-              <button type="button" onClick={() => setShowPass(!showPass)} style={{ position: "absolute", right: "10px", top: "40px", background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer", fontSize: "1.2rem" }}>
-                 {showPass ? "👁️" : "👁️‍🗨️"}
-              </button>
-            </div>
-
-            <div style={{ marginTop: "1rem", paddingTop: "1.5rem", borderTop: "1px solid var(--border)", display: "flex", justifyContent: "flex-end" }}>
-               <button type="submit" disabled={loading} style={{ background: "#38bdf8", color: "#0f172a", padding: "0.8rem 1.5rem", border: "none", borderRadius: "8px", fontWeight: "bold", cursor: loading ? "not-allowed" : "pointer" }}>
-                  {loading ? "Verifying & Saving..." : "Verify & Save Changes"}
-               </button>
-            </div>
-
-         </form>
+         </div>
 
       </div>
     </div>

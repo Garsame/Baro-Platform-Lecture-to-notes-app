@@ -30,7 +30,7 @@ export default function AdminJobsPage() {
   return (
     <div>
       <h1>Processing Jobs Monitoring</h1>
-      <div className="card" style={{ marginTop: "2rem", overflowX: "auto" }}>
+      <div className="admin-card" style={{ padding: "1.5rem", marginTop: "2rem", overflowX: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
           <thead>
             <tr style={{ borderBottom: "2px solid var(--border-color)" }}>

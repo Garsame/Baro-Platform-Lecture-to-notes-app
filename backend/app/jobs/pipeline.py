@@ -356,6 +356,19 @@ def execute_pipeline(db: Session, job: ProcessingJob, lecture_id: int):
         media_duration = media_svc.get_media_duration(video_path)
         media_file_size = media_svc.get_file_size_bytes(video_path)
 
+    # Move downloaded YouTube audio to uploads so it is persistent and playable
+    if lecture.source_type == "youtube" and downloaded_video_path:
+        import shutil
+        uploads_filename = f"lecture_{lecture.id}_audio{Path(downloaded_video_path).suffix}"
+        persistent_path = os.path.join("uploads", uploads_filename)
+        try:
+            shutil.move(downloaded_video_path, persistent_path)
+            downloaded_video_path = None
+            video_path = persistent_path
+            logger.info("Moved YouTube audio to uploads: %s", persistent_path)
+        except Exception as e:
+            logger.error("Failed to move downloaded YouTube audio to uploads: %s", e)
+
     media_asset = db.query(MediaAsset).filter(MediaAsset.lecture_id == lecture.id).first()
     if not media_asset:
         media_asset = MediaAsset(lecture_id=lecture.id)
@@ -363,12 +376,12 @@ def execute_pipeline(db: Session, job: ProcessingJob, lecture_id: int):
 
     media_asset.file_path = (
         (downloaded_video_path or lecture.source_url)
-        if lecture.source_type == "youtube"
+        if lecture.source_type == "youtube" and not video_path
         else video_path
     )
     media_asset.media_type = (
         "youtube"
-        if lecture.source_type == "youtube" and not downloaded_video_path
+        if lecture.source_type == "youtube" and not downloaded_video_path and not video_path
         else "video"
     )
     media_asset.file_size_bytes = media_file_size
