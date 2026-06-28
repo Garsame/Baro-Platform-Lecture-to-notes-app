@@ -112,7 +112,27 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     if (saved === "true") {
       setIsSidebarCollapsed(true);
     }
+  }, []);  useEffect(() => {
+    const docTheme = document.documentElement.getAttribute("data-theme") || "light";
+    setTheme(docTheme);
+
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === "data-theme") {
+          const updatedTheme = document.documentElement.getAttribute("data-theme") || "light";
+          setTheme(updatedTheme);
+        }
+      });
+    });
+
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-theme"],
+    });
+
+    return () => observer.disconnect();
   }, []);
+
 
   const handleToggleCollapse = () => {
     setIsSidebarCollapsed((prev) => {
@@ -196,11 +216,12 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   }, []);
 
   useEffect(() => {
-    const savedTheme = localStorage.getItem("user-theme");
+    const savedTheme = localStorage.getItem("public-theme") || localStorage.getItem("user-theme");
     if (savedTheme) {
       setTheme(savedTheme);
+      document.documentElement.setAttribute("data-theme", savedTheme);
     } else {
-      localStorage.setItem("user-theme", "light");
+      localStorage.setItem("public-theme", "light");
     }
 
     const redirectToSignIn = () => {
@@ -304,7 +325,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     <div className="inapp-dashboard-shell-container" data-theme={theme} style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <PublicHeader />
       
-      <div className={`inapp-dashboard-shell ${isSidebarCollapsed ? "is-collapsed" : ""}`} style={{ flex: 1 }}>
+      <div className={`inapp-dashboard-shell ${isSidebarCollapsed ? "is-collapsed" : ""}`} data-theme={theme} style={{ flex: 1 }}>
         {isSidebarOpen && (
           <button
             className="inapp-sidebar-backdrop"
