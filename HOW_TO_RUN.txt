@@ -33,8 +33,9 @@ STEP 3: RUN THE BACKEND API SERVER
 2. Move into the backend folder:
    cd backend
 3. Run the FastAPI development server:
-   python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+   python -m uvicorn app.main:app --host 127.0.0.1 --port 8000
 
+   * Note: We avoid using '--reload' and '--host 0.0.0.0' by default on Windows to prevent 'PermissionError: [WinError 5] Access is denied' errors.
    * The API server will be active at: http://localhost:8000 *
 
 --------------------------------------------------

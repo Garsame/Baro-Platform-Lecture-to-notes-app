@@ -2,7 +2,7 @@ import logging
 import time
 
 from fastapi import FastAPI, Request
-from app.api.routers import auth, lectures, admin
+from app.api.routers import auth, lectures, admin, contact
 from app.core.config import settings
 from app.core.database import engine, Base
 from fastapi.middleware.cors import CORSMiddleware
@@ -75,6 +75,7 @@ async def log_requests(request: Request, call_next):
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(lectures.router, prefix=f"{settings.API_V1_STR}/lectures", tags=["lectures"])
 app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin", tags=["admin"])
+app.include_router(contact.router, prefix=f"{settings.API_V1_STR}/contact", tags=["contact"])
 
 import os
 from fastapi.staticfiles import StaticFiles

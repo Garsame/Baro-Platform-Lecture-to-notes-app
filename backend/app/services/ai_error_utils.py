@@ -78,6 +78,22 @@ def _extract_provider_error(raw_message: str) -> dict[str, str | int] | None:
 def format_exception_for_user(exc: Exception, stage: Any = None) -> str:
     raw_message = str(exc).strip()
     operation = _stage_label(stage)
+    
+    # Pre-clean or format specific known transcription exceptions
+    lowered_msg = raw_message.lower()
+    if "recitation" in lowered_msg:
+        return (
+            f"Audio transcription failed because the AI model flagged the content as potentially containing "
+            f"copyrighted material (FinishReason.RECITATION). Please ensure the source audio does not "
+            f"contain copyrighted music or spoken transcripts, then try again."
+        )
+    if "empty transcription response" in lowered_msg or "returned no usable text" in lowered_msg:
+        return (
+            f"Audio transcription failed because the AI model returned an empty transcription. This typically "
+            f"occurs if the audio consists entirely of silence, music, or background noise. Please "
+            f"ensure the audio has clear, recognizable speech and try again."
+        )
+
     provider_error = _extract_provider_error(raw_message)
 
     if provider_error:
@@ -111,6 +127,9 @@ def format_exception_for_user(exc: Exception, stage: Any = None) -> str:
         )
 
     if raw_message:
+        # Clean up developer/internal details from raw_message
+        if "usage_metadata=" in raw_message:
+            raw_message = raw_message.split("usage_metadata=")[0].strip().rstrip(",;.")
         return _truncate(raw_message)
 
     return f"{operation} failed because an unexpected error occurred."
@@ -140,3 +159,16 @@ def is_transient_ai_provider_error(exc: Exception) -> bool:
             "remoteprotocolerror",
         )
     )
+
+
+def is_rate_limit_error(exc: Exception) -> bool:
+    raw_message = str(exc).strip()
+    provider_error = _extract_provider_error(raw_message)
+    if provider_error:
+        code = provider_error["code"]
+        status = str(provider_error["status"])
+        return code == 429 or status == "RESOURCE_EXHAUSTED"
+
+    lowered_message = raw_message.lower()
+    return "quota" in lowered_message or "rate limit" in lowered_message or "resource_exhausted" in lowered_message
+

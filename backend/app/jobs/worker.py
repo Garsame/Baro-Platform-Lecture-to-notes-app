@@ -41,6 +41,13 @@ def process_lecture_pipeline(self, lecture_id: int):
         db.close()
         return
 
+    # Skip duplicate tasks for already successfully processed lectures
+    if str(job.status).endswith("success") or str(job.stage).endswith("completed") or (
+        lecture and str(lecture.status).endswith("completed")
+    ):
+        db.close()
+        return
+
     job.task_id = self.request.id
     job.status = JobStatus.running
     job.started_at = datetime.utcnow()
@@ -156,6 +163,13 @@ def process_lecture_pipeline_sync(lecture_id: int):
 
     if str(job.status).endswith("canceled") or str(job.stage).endswith("canceled") or (
         lecture and str(lecture.status).endswith("canceled")
+    ):
+        db.close()
+        return
+
+    # Skip duplicate tasks for already successfully processed lectures
+    if str(job.status).endswith("success") or str(job.stage).endswith("completed") or (
+        lecture and str(lecture.status).endswith("completed")
     ):
         db.close()
         return

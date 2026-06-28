@@ -48,8 +48,6 @@ export default function PublicLayout({
           <div className="footer-column">
             <h2>Access</h2>
             <Link href="/sign-in">Sign In</Link>
-            <Link href="/sign-up">Create Account</Link>
-            <Link href="/admin-login">Admin Portal</Link>
           </div>
         </div>
         <div className="public-container footer-bottom">

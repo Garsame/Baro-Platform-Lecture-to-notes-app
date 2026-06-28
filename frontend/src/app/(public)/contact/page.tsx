@@ -1,4 +1,8 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
+import { apiUrl } from "@/lib/api";
 import {
   MdAdminPanelSettings,
   MdEmail,
@@ -28,6 +32,47 @@ const contactReasons = [
 ];
 
 export default function ContactPage() {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [topic, setTopic] = useState("");
+  const [message, setMessage] = useState("");
+  
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<"idle" | "success" | "error">("idle");
+  const [errorText, setErrorText] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitStatus("idle");
+    setErrorText("");
+
+    try {
+      const res = await fetch(apiUrl("/api/v1/contact/"), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ name, email, topic, message }),
+      });
+
+      if (!res.ok) {
+        throw new Error("Failed to send message. Please try again later.");
+      }
+
+      setSubmitStatus("success");
+      setName("");
+      setEmail("");
+      setTopic("");
+      setMessage("");
+    } catch (err: any) {
+      setSubmitStatus("error");
+      setErrorText(err.message || "An unexpected error occurred.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <>
       <section className="public-section public-section-soft">
@@ -86,55 +131,114 @@ export default function ContactPage() {
           </div>
 
           <div className="form-card">
-            <h2>Send a message</h2>
-            <p>
-              Share a short note about what you need and how the team can help.
-            </p>
-            <form
-              className="public-form"
-              action="mailto:hello@barobadi.ai"
-              method="post"
-              encType="text/plain"
-            >
-              <div className="form-field">
-                <label>Full Name</label>
-                <input
-                  name="name"
-                  type="text"
-                  placeholder="Your full name"
-                  required
-                />
+            {submitStatus === "success" ? (
+              <div 
+                style={{
+                  padding: "2.5rem 1.5rem",
+                  textAlign: "center",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "1.2rem",
+                  animation: "fadeIn 0.4s ease-out forwards"
+                }}
+              >
+                <div
+                  style={{
+                    width: "72px",
+                    height: "72px",
+                    borderRadius: "50%",
+                    background: "rgba(16, 185, 129, 0.15)",
+                    color: "#10b981",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "2rem",
+                    fontWeight: "bold",
+                    boxShadow: "0 8px 20px rgba(16, 185, 129, 0.1)"
+                  }}
+                >
+                  ✓
+                </div>
+                <h2 style={{ fontSize: "1.8rem", margin: 0 }}>Message Sent!</h2>
+                <p style={{ color: "var(--public-muted)", lineHeight: 1.6, margin: 0 }}>
+                  Thank you for reaching out. Your message has been saved in our system and forwarded to the BaroBadi team. We will get back to you by email shortly.
+                </p>
+                <button 
+                  type="button" 
+                  onClick={() => setSubmitStatus("idle")} 
+                  className="public-btn public-btn-primary"
+                  style={{ marginTop: "1rem", width: "auto", paddingInline: "2rem" }}
+                >
+                  Send Another Message
+                </button>
               </div>
-              <div className="form-field">
-                <label>Email Address</label>
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  required
-                />
-              </div>
-              <div className="form-field">
-                <label>Topic</label>
-                <input
-                  name="topic"
-                  type="text"
-                  placeholder="Support, partnership, or setup"
-                  required
-                />
-              </div>
-              <div className="form-field">
-                <label>Message</label>
-                <textarea
-                  name="message"
-                  placeholder="Tell us what you need help with"
-                  required
-                />
-              </div>
-              <button type="submit" className="public-btn public-btn-primary">
-                Send Message
-              </button>
-            </form>
+            ) : (
+              <>
+                <h2>Send a message</h2>
+                <p>
+                  Share a short note about what you need and how the team can help.
+                </p>
+                <form className="public-form" onSubmit={handleSubmit}>
+                  {submitStatus === "error" && (
+                    <div className="alert alert-error" style={{ marginBottom: "1rem" }}>
+                      {errorText}
+                    </div>
+                  )}
+
+                  <div className="form-field">
+                    <label>Full Name</label>
+                    <input
+                      name="name"
+                      type="text"
+                      placeholder="Your full name"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label>Email Address</label>
+                    <input
+                      name="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label>Topic</label>
+                    <input
+                      name="topic"
+                      type="text"
+                      placeholder="Support, partnership, or setup"
+                      value={topic}
+                      onChange={(e) => setTopic(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="form-field">
+                    <label>Message</label>
+                    <textarea
+                      name="message"
+                      placeholder="Tell us what you need help with"
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <button 
+                    type="submit" 
+                    className="public-btn public-btn-primary"
+                    disabled={isSubmitting}
+                  >
+                    {isSubmitting ? "Sending..." : "Send Message"}
+                  </button>
+                </form>
+              </>
+            )}
             <p className="auth-switch">
               Ready to study? <Link href="/sign-up">Create an account</Link>
             </p>

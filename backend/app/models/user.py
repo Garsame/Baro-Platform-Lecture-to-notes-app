@@ -19,6 +19,13 @@ class User(Base):
     role = Column(Enum(RoleEnum), default=RoleEnum.user, nullable=False)
     profile_picture_url = Column(String(500), nullable=True)
     is_active = Column(Boolean, default=True)
+    is_email_verified = Column(Boolean, default=False, nullable=False)
+    has_password = Column(Boolean, default=True, nullable=False)
+    otp_code = Column(String(6), nullable=True)
+    otp_expires_at = Column(DateTime, nullable=True)
+    otp_attempts = Column(Integer, default=0, nullable=False)
+    login_attempts = Column(Integer, default=0, nullable=False)
+    lockout_until = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
     
     lectures = relationship("Lecture", back_populates="owner")

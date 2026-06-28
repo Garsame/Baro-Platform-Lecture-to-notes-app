@@ -60,30 +60,73 @@ Here is a typical workflow on how a user interacts with the application, one pag
 4. Click on the completed lecture card to enter the `dashboard/lecture` details page.
 5. In this detailed view, you can read the formatted Somali notes, view the raw generated transcript, and possibly reference the original video material alongside the notes.
 
-## 4. Understanding Background Tasks (Celery & Redis vs SQLite)
+## 4. Understanding Background Tasks (Native vs Celery)
 
-When you submit a video, the server needs to extract audio, run AI transcription, and translate it to Somali notes. If the webpage waited for all this to finish, your browser would "time out" and freeze.
+When you submit a video, the server needs to extract audio, run AI transcription, and translate it to Somali notes. If the webpage waited for all this to finish, your browser would "time out" and freeze. To solve this, the application supports two background processing modes:
 
-To solve this, we use a tool called **Celery** as a background worker. 
-* **The Message Broker (The Middleman)**: Celery doesn't talk directly to FastAPI. It uses a "middleman" to pass messages like "Hey, a new video is ready to be transcribed!" 
-* **Redis (Production-Standard)**: Most production servers use an in-memory database called Redis as the middleman because it's insanely fast. On Windows, Redis must be installed using **Docker Desktop** (a container engine) or WSL (Windows Subsystem for Linux).
-* **SQLite (Local Development)**: To make it easy to run the app on your local Windows machine without Docker, we swapped the middleman from Redis to **SQLite**. SQLite uses simple local `.sqlite` files, which means Celery can run immediately without needing to install anything extra on your computer.
+### Mode A: FastAPI Native Background Tasks (`USE_CELERY=False`) -- RECOMMENDED FOR LOCAL DEVELOPMENT
+Instead of using an external message queue, FastAPI runs the processing job in a background thread inside the same FastAPI server process.
+* **Why it's better for Windows**: Celery has known multiprocessing issues on Windows (often leading to silent freezes or database locking). Native background tasks run in-process, meaning you **only need to run the FastAPI server** and the pipeline will work perfectly without starting a separate queue worker.
+* **Database Setup**: The app writes and reads straight to `sql_app.db`, bypassing the need for temporary broker databases.
+
+### Mode B: Celery Worker (`USE_CELERY=True`) -- OPTIONAL FOR PRODUCTION
+FastAPI sends the task to a message broker, which triggers a separate worker process (`celery -A app.jobs.worker.celery_app worker`).
+* **The Message Broker**: Celery uses a database to queue tasks. In production, this is **Redis**. For local SQLite development, this uses `celery_broker.sqlite` and `celery_backend.sqlite`.
+
+---
 
 ## 5. Where Is the Database Data?
 
-This application now uses **SQLite** for everything (both the main app data and the background task queues). Because SQLite is file-based, your data isn't hidden inside a background service; it physically sits as files in the `backend` folder.
+This application now uses **SQLite** for everything (both the main app data and the background task queues). Because SQLite is file-based, your data sits as files in the `backend` folder.
 
-Here is the data breakdown:
-1. **`backend/sql_app.db`**: This is the main application database. It stores the Users, the Lectures (titles, paths), the actual Transcripts, and the final Somali generated Notes.
-2. **`backend/celery_broker.sqlite`**: This is where FastAPI writes simple "todo" messages for Celery to pick up.
-3. **`backend/celery_backend.sqlite`**: This is where Celery writes the temporary status results ("Pending", "Running", "Failed") so FastAPI can check if a task is done.
+1. **`backend/sql_app.db`**: This is the main application database. It stores Users, Lectures, Transcripts, and the final Somali Notes.
+2. **`backend/celery_broker.sqlite`**: Temp queue file (used only when `USE_CELERY=True`).
+3. **`backend/celery_backend.sqlite`**: Temp task status file (used only when `USE_CELERY=True`).
 
-### How to Interactive With Your Databases
-To view or manually edit the data inside these databases, you don't need a complex server. 
-**Option 1 (Using VS Code)**:
-   - Go to VS Code Extensions and install **"SQLite Viewer"**.
-   - Simply click on `sql_app.db` in your file explorer, and it will open like an Excel sheet right in VS Code!
+### How to Interact With Your Databases
+* **Option 1 (Using VS Code)**: Install the **"SQLite Viewer"** extension. Simply click on `sql_app.db` in your file explorer to view your tables.
+* **Option 2 (Standalone App)**: Download **[DB Browser for SQLite](https://sqlitebrowser.org/)** and open `sql_app.db`.
 
-**Option 2 (Standalone App)**:
-   - Download and install **[DB Browser for SQLite](https://sqlitebrowser.org/)**.
-   - Open the app, click "Open Database", navigate to your project's `backend` folder, and select `sql_app.db`. From there, you can easily view tables, execute SQL, and modify records.
+---
+
+## 6. The Fail-Safe AI Pipeline (How the Models Connect)
+
+For the best pipeline reliability, speed, and safety, we have configured a **hybrid AI structure** that combines the strengths of OpenAI and Google Gemini:
+
+```
+[User Ingestion] -> Paste YouTube URL / Upload Local Video
+                       |
+                       v
+[Transcription]  -> Check YouTube Captions. If missing:
+                       |---> Call OpenAI Whisper (whisper-1)
+                       |     (Bypasses Google copyright/safety recitation blocks)
+                       v
+[Note Generation]-> Try gemini-2.5-flash-lite (10 RPM free limit)
+                       |
+                       |-- (If hits 503 Busy or 429 Rate Limit)
+                       |---> Auto-Fallback to gemini-2.5-flash
+                       v
+[QA & Repair]    -> Verify Somali text content. If Arabic/non-Somali scripts detected:
+                       |---> Send to Gemini for automated translation repair
+                       v
+[Final Save]     -> Notes, summary, key points saved to sql_app.db
+```
+
+### Why this setup guarantees success:
+1. **OpenAI Whisper (`whisper-1`) for Transcription**:
+   * Google's Gemini models are highly sensitive and will **block transcription** (throwing a `RECITATION` or safety block error) if they detect audio from popular YouTube videos, music, or copy-protected courses.
+   * OpenAI Whisper does not block transcription based on content, guaranteeing a 100% success rate on audio-to-text.
+2. **Double-Tiered Gemini for Somali Notes**:
+   * `gemini-2.5-flash-lite` is the primary model because it has a higher free limit of 10 requests-per-minute (RPM).
+   * `gemini-2.5-flash` is configured as the active fallback. If the lite model is busy (returns a `503 Service Unavailable` error), the pipeline catches it automatically and completes the note generation using the standard flash model.
+3. **Sequential Concurrency (`max_workers=1`)**:
+   * The server runs note generation steps sequentially rather than in parallel. This avoids hitting concurrent rate limits (burst limits) on free API keys.
+
+---
+
+## 7. How to Maintain a Healthy Pipeline
+To keep your platform working perfectly:
+* **API Keys**: Ensure valid `GEMINI_API_KEY` and `OPENAI_API_KEY` are present in your `backend/.env`.
+* **OpenAI Credits**: Ensure your OpenAI account has a pre-paid credit balance (at least $5) in [OpenAI API Billing](https://platform.openai.com/settings/organization/billing/overview). The OpenAI API will not work if the balance is $0, even if a credit card is linked.
+* **Google Billing (Optional)**: If you want to increase note-generation capacity, link your Google Cloud project to a credit card to upgrade from the Free Tier limits.
+

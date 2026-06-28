@@ -1,6 +1,7 @@
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, BackgroundTasks, Query, Request
 from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import BaseModel
 from jose import JWTError, jwt
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Any
@@ -11,7 +12,7 @@ import mimetypes
 from app.core.config import BACKEND_ROOT, settings
 from app.core.database import get_db
 from app.models.log import SystemLog, ActivityLog
-from app.models.user import User
+from app.models.user import User, RoleEnum
 from app.models.lecture import Lecture as ModelLecture, LectureStatus
 from app.schemas.chat import (
     LectureChatAskRequest,
@@ -314,6 +315,12 @@ def create_new_lecture(
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """Create new lecture from youtube link."""
+    if not current_user.is_email_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Email verification required to generate lectures."
+        )
+
     if lecture_in.source_type == "youtube" and not lecture_in.source_url:
         raise HTTPException(status_code=400, detail="YouTube URL is required.")
 
@@ -377,19 +384,54 @@ async def upload_lecture_video(
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
     """Upload a new lecture video file."""
+    if not current_user.is_email_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Email verification required to generate lectures."
+        )
+
     MAX_SIZE = 500 * 1024 * 1024 # 500MB
-    ALLOWED_EXTENSIONS = {"mp4", "avi", "mov", "mkv", "mp3", "wav"}
+    ALLOWED_EXTENSIONS = {"mp4", "avi", "mov", "mkv", "webm"}
     ALLOWED_MIME_TYPES = {
-        "video/mp4", "video/x-msvideo", "video/quicktime", "video/x-matroska", "video/webm",
-        "audio/mpeg", "audio/wav", "audio/x-wav"
+        "video/mp4", "video/x-msvideo", "video/quicktime", "video/x-matroska", "video/webm"
     }
 
     if file.content_type not in ALLOWED_MIME_TYPES:
-        raise HTTPException(status_code=400, detail="Invalid media type. Please upload a valid video or audio file.")
+        raise HTTPException(status_code=400, detail="Invalid media type. Please upload a valid video file.")
 
     ext = file.filename.split(".")[-1].lower() if "." in file.filename else ""
     if ext not in ALLOWED_EXTENSIONS:
         raise HTTPException(status_code=400, detail="Unsupported file extension.")
+
+    # Read first 256 bytes to inspect file signature (magic number validation)
+    header = file.file.read(256)
+    file.file.seek(0)
+
+    def has_valid_video_signature(header_bytes: bytes) -> bool:
+        if len(header_bytes) < 12:
+            return False
+        # WEBM or MKV (EBML)
+        if header_bytes.startswith(b"\x1a\x45\xdf\xa3"):
+            return True
+        # MP4 / MOV (contains 'ftyp')
+        if b"ftyp" in header_bytes[:24]:
+            return True
+        # AVI
+        if header_bytes.startswith(b"RIFF") and header_bytes[8:12] == b"AVI ":
+            return True
+        # MPEG
+        if header_bytes.startswith(b"\x00\x00\x01\xba") or header_bytes.startswith(b"\x00\x00\x01\xb3"):
+            return True
+        # FLV
+        if header_bytes.startswith(b"FLV\x01"):
+            return True
+        return False
+
+    if not has_valid_video_signature(header):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid file signature. The uploaded file is not a valid video file."
+        )
 
     file.file.seek(0, 2)
     file_size = file.file.tell()
@@ -640,14 +682,13 @@ def read_lecture_media(
     token: str | None = Query(default=None),
     db: Session = Depends(get_db),
 ) -> Any:
-    lecture_service = LectureService(db)
-    # TEMPORARY AUTH BYPASS
-    # current_user = _get_user_from_media_token(db, token)
-    # lecture = lecture_service.get_lecture(
-    #    lecture_id=lecture_id,
-    #    owner_id=current_user.id,
-    # )
+    current_user = _get_user_from_media_token(db, token)
     lecture = db.query(ModelLecture).filter(ModelLecture.id == lecture_id).first()
+    if not lecture:
+        raise HTTPException(status_code=404, detail="Lecture not found")
+
+    if lecture.owner_id != current_user.id and current_user.role != RoleEnum.admin:
+        raise HTTPException(status_code=403, detail="Not authorized to access this lecture media")
 
 
     if not lecture or not lecture.media_asset:
@@ -812,3 +853,98 @@ def ask_lecture_chatbot(
         "user_message": user_message,
         "assistant_message": assistant_message,
     }
+
+
+class NotesAudioRequest(BaseModel):
+    voice: str = "female"
+
+
+TTS_DIR = os.path.join(UPLOAD_DIR, "tts")
+os.makedirs(TTS_DIR, exist_ok=True)
+
+
+@router.post("/{lecture_id}/notes-audio")
+def generate_lecture_notes_audio(
+    *,
+    lecture_id: int,
+    payload: NotesAudioRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Generate or retrieve cached text-to-speech audio for Somali notes."""
+    lecture_service = LectureService(db)
+    lecture = lecture_service.get_lecture(lecture_id=lecture_id, owner_id=current_user.id)
+    if not lecture:
+        raise HTTPException(status_code=404, detail="Lecture not found")
+
+    if not lecture.notes:
+        raise HTTPException(status_code=400, detail="Notes are not generated yet for this lecture.")
+
+    voice = payload.voice.lower()
+    if voice not in ("female", "male"):
+        raise HTTPException(status_code=400, detail="Invalid voice option. Must be 'female' or 'male'.")
+
+    filename = f"{lecture_id}_{voice}.mp3"
+    relative_path = f"/uploads/tts/{filename}"
+    absolute_path = os.path.join(TTS_DIR, filename)
+
+    # Check cache
+    if os.path.exists(absolute_path) and os.path.getsize(absolute_path) > 0:
+        return {"url": relative_path}
+
+    # Generate TTS
+    from app.services.speech_service import SpeechService
+    speech_service = SpeechService()
+
+    # Clean and combine content
+    cleaned_text = speech_service.clean_notes_for_tts(
+        summary=lecture.notes.summary,
+        key_points=lecture.notes.key_points,
+        structured_content=lecture.notes.structured_content
+    )
+
+    if not cleaned_text:
+        raise HTTPException(status_code=400, detail="Somali notes content is empty, cannot synthesize.")
+
+    try:
+        speech_service.synthesize_notes(cleaned_text, absolute_path, voice=voice)
+    except Exception as exc:
+        # If partial/broken file is created, clean it up
+        if os.path.exists(absolute_path):
+            try:
+                os.remove(absolute_path)
+            except Exception:
+                pass
+        raise HTTPException(status_code=500, detail=f"Failed to synthesize speech: {str(exc)}") from exc
+
+    return {"url": relative_path}
+
+
+class LectureUpdateTitleRequest(BaseModel):
+    title: str
+
+
+@router.patch("/{lecture_id}/title", response_model=Lecture)
+def update_lecture_title(
+    *,
+    lecture_id: int,
+    payload: LectureUpdateTitleRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_active_user),
+) -> Any:
+    """Update the title of a lecture."""
+    lecture_service = LectureService(db)
+    lecture = lecture_service.get_lecture(lecture_id=lecture_id, owner_id=current_user.id)
+    if not lecture:
+        raise HTTPException(status_code=404, detail="Lecture not found")
+
+    trimmed_title = payload.title.strip()
+    if not trimmed_title:
+        raise HTTPException(status_code=400, detail="Title cannot be empty")
+
+    lecture.title = trimmed_title
+    db.commit()
+    db.refresh(lecture)
+    return lecture
+
+

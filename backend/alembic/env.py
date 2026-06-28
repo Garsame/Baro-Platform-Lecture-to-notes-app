@@ -22,6 +22,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 # for 'autogenerate' support
 from app.models.base import Base
 import app.models # Import all models to ensure they are registered
+from app.core.config import settings
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -42,7 +43,7 @@ def run_migrations_offline() -> None:
     script output.
 
     """
-    url = config.get_main_option("sqlalchemy.url")
+    url = settings.DATABASE_URL
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -61,6 +62,8 @@ def run_migrations_online() -> None:
     and associate a connection with the context.
 
     """
+    # Override configuration URL dynamically
+    config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
     connectable = engine_from_config(
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",

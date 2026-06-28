@@ -27,6 +27,12 @@ function detailMessage(detail: unknown, fallback: string): string {
   return fallback;
 }
 
+function resolveAvatar(url: string | null | undefined): string | null {
+  if (!url || url.includes("next.svg")) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  return apiUrl(url);
+}
+
 export default function AdminProfilePage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -48,8 +54,7 @@ export default function AdminProfilePage() {
           setName(data.full_name || "");
           setEmail(data.email || "");
           if (data.profile_picture_url) {
-             const isNext = data.profile_picture_url.includes("next.svg");
-             setProfilePic(isNext ? null : apiUrl(data.profile_picture_url));
+             setProfilePic(resolveAvatar(data.profile_picture_url));
           }
         }
       } catch {}
@@ -126,8 +131,7 @@ export default function AdminProfilePage() {
               }
               const data = (await res.json()) as ProfileResponse;
               if(data.profile_picture_url) {
-                  const isNext = data.profile_picture_url.includes("next.svg");
-                  setProfilePic(isNext ? null : apiUrl(data.profile_picture_url));
+                  setProfilePic(resolveAvatar(data.profile_picture_url));
                   setMessage({ text: "Image successfully uploaded and routed to local disk storage!", type: "success" });
               }
           } catch (err: unknown) {

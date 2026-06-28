@@ -1,16 +1,13 @@
-import sqlite3
+import subprocess
+import sys
 
-def upgrade():
-    conn = sqlite3.connect('sql_app.db')
-    c = conn.cursor()
-    try:
-        c.execute("ALTER TABLE users ADD COLUMN profile_picture_url VARCHAR(500);")
-        conn.commit()
-        print("Schema successfully updated with profile_picture_url")
-    except sqlite3.OperationalError as e:
-        print("OperationalError:", e)
-    finally:
-        conn.close()
+print("DEPRECATION WARNING: Manual schema upgrades are deprecated.")
+print("Running modern database migrations (Alembic) instead...")
 
-if __name__ == "__main__":
-    upgrade()
+try:
+    # Run alembic upgrade head using current interpreter
+    subprocess.run([sys.executable, "-m", "alembic", "upgrade", "head"], check=True)
+    print("Database successfully migrated!")
+except subprocess.CalledProcessError as e:
+    print(f"Error running database migrations: {e}")
+    sys.exit(1)

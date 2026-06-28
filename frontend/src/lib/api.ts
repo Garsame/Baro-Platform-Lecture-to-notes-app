@@ -11,6 +11,8 @@ export interface AuthenticatedUser {
   full_name: string;
   role: string;
   profile_picture_url?: string | null;
+  is_email_verified?: boolean;
+  has_password?: boolean;
 }
 
 export class ApiError extends Error {

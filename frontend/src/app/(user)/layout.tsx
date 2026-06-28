@@ -28,6 +28,9 @@ import {
   type AuthenticatedUser,
 } from "@/lib/api";
 import { clearSession, getSessionToken } from "@/lib/session";
+import PublicHeader from "../(public)/PublicHeader";
+import OtpVerificationModal from "@/components/OtpVerificationModal";
+import "../(public)/public.css";
 import "./user-dashboard-shell.css";
 
 interface ActivityNotification {
@@ -82,6 +85,9 @@ function getNotificationView(notification: ActivityNotification) {
     tone = "danger";
     title = "Processing failed";
     description = `"${notification.details?.title || "Untitled"}" failed at ${notification.details?.error_stage || "unknown stage"}.`;
+  } else if (notification.action === "EMAIL_VERIFIED") {
+    title = "User verified";
+    description = "Your email has been verified successfully.";
   }
 
   return { Icon, tone, title, description };
@@ -96,7 +102,25 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   const [showProfile, setShowProfile] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState<ActivityNotification[]>([]);
+  const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
+  const [isSendingVerification, setIsSendingVerification] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar-collapsed");
+    if (saved === "true") {
+      setIsSidebarCollapsed(true);
+    }
+  }, []);
+
+  const handleToggleCollapse = () => {
+    setIsSidebarCollapsed((prev) => {
+      const next = !prev;
+      localStorage.setItem("sidebar-collapsed", String(next));
+      return next;
+    });
+  };
 
   useEffect(() => {
     setIsSidebarOpen(false);
@@ -134,6 +158,41 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
     window.addEventListener("user-profile-updated", handleUserProfileUpdated);
     return () => window.removeEventListener("user-profile-updated", handleUserProfileUpdated);
+  }, []);
+
+  useEffect(() => {
+    function handleOpenOtpModal() {
+      setIsOtpModalOpen(true);
+    }
+    window.addEventListener("open-otp-modal", handleOpenOtpModal);
+    return () => window.removeEventListener("open-otp-modal", handleOpenOtpModal);
+  }, []);
+
+  // Inactivity timeout of 30 minutes (1800000 milliseconds)
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        clearSession();
+        window.location.replace("/sign-in?expired=true");
+      }, 30 * 60 * 1000);
+    };
+
+    const events = ["mousemove", "keydown", "click", "scroll"];
+    events.forEach((event) => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    resetTimer();
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach((event) => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
   }, []);
 
   useEffect(() => {
@@ -242,168 +301,192 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   };
 
   return (
-    <div className="inapp-dashboard-shell" data-theme={theme}>
-      {isSidebarOpen && (
-        <button
-          className="inapp-sidebar-backdrop"
-          aria-label="Close menu"
-          onClick={() => setIsSidebarOpen(false)}
+    <div className="inapp-dashboard-shell-container" data-theme={theme} style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+      <PublicHeader />
+      
+      <div className={`inapp-dashboard-shell ${isSidebarCollapsed ? "is-collapsed" : ""}`} style={{ flex: 1 }}>
+        {isSidebarOpen && (
+          <button
+            className="inapp-sidebar-backdrop"
+            aria-label="Close menu"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+
+        <aside className={`inapp-sidebar ${isSidebarOpen ? "is-open" : ""}`}>
+          <div className="inapp-nav-group" style={{ marginTop: "1rem" }}>
+            <span className="inapp-nav-label">Main</span>
+            <nav className="inapp-nav" aria-label="User dashboard navigation">
+              {navLinks.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <Link
+                    href={item.href}
+                    className={`inapp-nav-link ${isActive(item.href) ? "active" : ""}`}
+                    key={item.href}
+                  >
+                    <Icon />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+
+          <div className="inapp-nav-group account">
+            <span className="inapp-nav-label">Account</span>
+            <Link href="/dashboard/profile" className="inapp-nav-link">
+              <MdSettings />
+              <span>Profile Settings</span>
+            </Link>
+            <button className="inapp-nav-link danger" onClick={handleLogout}>
+              <MdLogout />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </aside>
+
+        <div className="inapp-main-shell" style={{ minHeight: "calc(100vh - 76px)" }}>
+          {/* Top toolbar containing mobile open button and desktop collapse button */}
+          <div className="inapp-top-toolbar-bar">
+            <button 
+              className="inapp-mobile-menu-btn"
+              onClick={() => setIsSidebarOpen(true)}
+            >
+              <MdMenu size={22} />
+              <span>Dashboard Menu</span>
+            </button>
+            <button 
+              className="inapp-desktop-collapse-btn"
+              onClick={handleToggleCollapse}
+            >
+              <MdMenu size={22} />
+              <span>{isSidebarCollapsed ? "Show Sidebar" : "Hide Sidebar"}</span>
+            </button>
+          </div>
+
+          {/* Unverified email warning banner */}
+          {user && !user.is_email_verified && (
+            <div className="unverified-email-banner" style={{
+              background: "#fffbeb",
+              border: "1px solid #f59e0b",
+              borderRadius: "12px",
+              padding: "1rem 1.25rem",
+              margin: "1.25rem 1.25rem 0",
+              color: "#78350f",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "1rem",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <MdWarning size={22} style={{ color: "#d97706", flexShrink: 0 }} />
+                <span style={{ fontSize: "0.9rem", fontWeight: "600" }}>
+                  Your email address is unverified. Please verify your email to secure your account.
+                </span>
+              </div>
+              <button
+                disabled={isSendingVerification}
+                onClick={async () => {
+                  if (isSendingVerification) return;
+                  setIsSendingVerification(true);
+                  try {
+                    const res = await fetch(apiUrl("/api/v1/auth/verify-email"), {
+                      method: "POST",
+                      headers: authHeaders()
+                    });
+                    if (res.ok) {
+                      setIsOtpModalOpen(true);
+                    }
+                  } catch(e) {}
+                  finally {
+                    setIsSendingVerification(false);
+                  }
+                }}
+                style={{
+                  background: "#d97706",
+                  color: "#ffffff",
+                  border: "none",
+                  borderRadius: "8px",
+                  padding: "8px 16px",
+                  fontSize: "0.85rem",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  transition: "background 0.2s"
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = "#b45309"}
+                onMouseOut={(e) => e.currentTarget.style.background = "#d97706"}
+              >
+                Verify Email Now
+              </button>
+            </div>
+          )}
+
+          {/* Missing password warning banner */}
+          {user && !user.has_password && (
+            <div className="missing-password-banner" style={{
+              background: "rgba(59, 130, 246, 0.08)",
+              border: "1px solid rgba(59, 130, 246, 0.2)",
+              borderRadius: "12px",
+              padding: "1rem 1.25rem",
+              margin: "1.25rem 1.25rem 0",
+              color: "#1e3a8a",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: "1rem",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <MdAutoAwesome size={22} style={{ color: "#3b82f6", flexShrink: 0 }} />
+                <span style={{ fontSize: "0.9rem", fontWeight: "600" }}>
+                  You signed in via Google. Set a password in Profile Settings if you want to use manual email sign-in later.
+                </span>
+              </div>
+              <Link
+                href="/dashboard/profile"
+                style={{
+                  background: "#3b82f6",
+                  color: "#ffffff",
+                  textDecoration: "none",
+                  borderRadius: "8px",
+                  padding: "8px 16px",
+                  fontSize: "0.85rem",
+                  fontWeight: "700",
+                  cursor: "pointer",
+                  whiteSpace: "nowrap",
+                  textAlign: "center",
+                  transition: "background 0.2s"
+                }}
+                onMouseOver={(e) => e.currentTarget.style.background = "#2563eb"}
+                onMouseOut={(e) => e.currentTarget.style.background = "#3b82f6"}
+              >
+                Set Password Now
+              </Link>
+            </div>
+          )}
+
+          <main className="inapp-dashboard-main" style={{ padding: "1.5rem 1.25rem" }}>{children}</main>
+        </div>
+      </div>
+
+      {user && (
+        <OtpVerificationModal
+          isOpen={isOtpModalOpen}
+          onClose={() => setIsOtpModalOpen(false)}
+          email={user.email}
+          onSuccess={() => {
+            window.dispatchEvent(
+              new CustomEvent("user-profile-updated", {
+                detail: { is_email_verified: true },
+              })
+            );
+            window.location.replace("/dashboard");
+          }}
         />
       )}
-
-      <aside className={`inapp-sidebar ${isSidebarOpen ? "is-open" : ""}`}>
-        <Link href="/dashboard" className="inapp-brand">
-          <img src={theme === "dark" ? "/barobadi-logo-dark.png" : "/barobadi-logo.png"} alt="BaroBadi Logo" style={{ width: "135px", height: "auto", objectFit: "contain" }} />
-        </Link>
-
-        <div className="inapp-nav-group">
-          <span className="inapp-nav-label">Main</span>
-          <nav className="inapp-nav" aria-label="User dashboard navigation">
-            {navLinks.map((item) => {
-              const Icon = item.icon;
-              return (
-                <Link
-                  href={item.href}
-                  className={`inapp-nav-link ${isActive(item.href) ? "active" : ""}`}
-                  key={item.href}
-                >
-                  <Icon />
-                  <span>{item.label}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="inapp-nav-group account">
-          <span className="inapp-nav-label">Account</span>
-          <Link href="/dashboard/profile" className="inapp-nav-link">
-            <MdSettings />
-            <span>Profile Settings</span>
-          </Link>
-          <button className="inapp-nav-link danger" onClick={handleLogout}>
-            <MdLogout />
-            <span>Sign Out</span>
-          </button>
-        </div>
-      </aside>
-
-      <div className="inapp-main-shell">
-        <header className="inapp-topbar">
-          <button
-            className="inapp-icon-button inapp-menu-button"
-            onClick={() => setIsSidebarOpen(true)}
-            aria-label="Open menu"
-            title="Open menu"
-          >
-            <MdMenu />
-          </button>
-
-          <div className="inapp-topbar-spacer" />
-
-          <div className="inapp-topbar-actions" ref={dropdownRef}>
-            <button
-              className="inapp-icon-button"
-              onClick={toggleTheme}
-              aria-label="Toggle theme"
-              title="Toggle theme"
-            >
-              {theme === "dark" ? <MdLightMode /> : <MdDarkMode />}
-            </button>
-
-            <div className="inapp-popover-wrap">
-              <button
-                className="inapp-icon-button"
-                onClick={() => {
-                  setShowNotifications(!showNotifications);
-                  setShowProfile(false);
-                }}
-                aria-label="Show notifications"
-                title="Notifications"
-              >
-                <MdNotifications />
-                {notifications.length > 0 && <span className="inapp-unread-dot" />}
-              </button>
-
-              {showNotifications && (
-                <div className="inapp-dropdown inapp-notifications">
-                  <div className="inapp-dropdown-heading">
-                    <strong>Recent Activity</strong>
-                    <span>{notifications.length} updates</span>
-                  </div>
-                  {notifications.length === 0 ? (
-                    <p className="inapp-dropdown-empty">No recent activity.</p>
-                  ) : (
-                    notifications.map((notification) => {
-                      const item = getNotificationView(notification);
-                      const Icon = item.Icon;
-                      return (
-                        <div className="inapp-notification-item" key={notification.id}>
-                          <span className={`inapp-notification-icon ${item.tone}`}>
-                            <Icon />
-                          </span>
-                          <div>
-                            <strong>{item.title}</strong>
-                            {item.description && <p>{item.description}</p>}
-                            <small>{new Date(notification.created_at).toLocaleString()}</small>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="inapp-popover-wrap">
-              <button
-                className="inapp-profile-trigger"
-                onClick={() => {
-                  setShowProfile(!showProfile);
-                  setShowNotifications(false);
-                }}
-                aria-label="Show profile menu"
-              >
-                <span className="inapp-avatar">
-                  {profileImageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={profileImageUrl} alt="Profile" />
-                  ) : (
-                    getInitials(user.full_name)
-                  )}
-                </span>
-                <span className="inapp-profile-name">{user.full_name}</span>
-                <MdKeyboardArrowDown />
-              </button>
-
-              {showProfile && (
-                <div className="inapp-dropdown inapp-profile-dropdown">
-                  <div className="inapp-profile-summary">
-                    <span className="inapp-avatar large">
-                      {profileImageUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={profileImageUrl} alt="Profile" />
-                      ) : (
-                        getInitials(user.full_name)
-                      )}
-                    </span>
-                    <strong>{user.full_name}</strong>
-                    <small>{user.email}</small>
-                  </div>
-                  <Link href="/dashboard/profile" onClick={() => setShowProfile(false)}>
-                    <MdSettings /> Edit Profile
-                  </Link>
-                  <button onClick={handleLogout}>
-                    <MdLogout /> Sign Out
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </header>
-
-        <main className="inapp-dashboard-main">{children}</main>
-      </div>
     </div>
   );
 }

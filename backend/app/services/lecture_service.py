@@ -9,8 +9,8 @@ from app.models.note import Note
 from app.models.transcript import Transcript
 from app.schemas.lecture import LectureCreate
 from typing import List, Optional
-
 from fastapi import BackgroundTasks
+from app.core.config import settings
 
 logger = logging.getLogger("somali_notes.lecture_service")
 
@@ -146,8 +146,11 @@ class LectureService:
         self.db.add(job)
         self.db.commit()
         
-        # Trigger background job gracefully using native FastAPI background tasks
-        if self.background_tasks:
+        # Trigger background job. Use Celery if configured, else fallback to FastAPI background tasks
+        if settings.USE_CELERY:
+            from app.jobs.worker import process_lecture_pipeline
+            process_lecture_pipeline.delay(db_obj.id)
+        elif self.background_tasks:
             from app.jobs.worker import process_lecture_pipeline_sync
             self.background_tasks.add_task(process_lecture_pipeline_sync, db_obj.id)
         
@@ -192,7 +195,10 @@ class LectureService:
         self.db.commit()
         self.db.refresh(lecture)
 
-        if self.background_tasks:
+        if settings.USE_CELERY:
+            from app.jobs.worker import process_lecture_pipeline
+            process_lecture_pipeline.delay(lecture.id)
+        elif self.background_tasks:
             from app.jobs.worker import process_lecture_pipeline_sync
             self.background_tasks.add_task(process_lecture_pipeline_sync, lecture.id)
 

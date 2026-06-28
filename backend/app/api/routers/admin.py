@@ -12,6 +12,7 @@ from app.models.lecture import Lecture, LectureStatus
 from app.models.job import JobStatus, ProcessingJob
 from app.models.note import Note
 from app.models.log import ActivityLog, SystemLog
+from app.models.contact_message import ContactMessage
 from app.api.dependencies import get_current_active_admin
 from app.schemas.user import User as UserResponse, UserCreate
 from app.services.auth_service import AuthService
@@ -462,3 +463,112 @@ def delete_user_by_admin(
     db.delete(user)
     db.commit()
     return {"message": "User deleted"}
+
+@router.get("/messages")
+def get_all_contact_messages(
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    """Get all contact messages received from users."""
+    messages = db.query(ContactMessage).order_by(ContactMessage.created_at.desc()).all()
+    return [
+        {
+            "id": msg.id,
+            "name": msg.name,
+            "email": msg.email,
+            "topic": msg.topic,
+            "message": msg.message,
+            "is_read": msg.is_read,
+            "created_at": msg.created_at,
+            "reply_message": msg.reply_message,
+            "replied_at": msg.replied_at,
+            "is_replied": msg.is_replied,
+        } for msg in messages
+    ]
+
+from app.schemas.contact_message import ContactMessageReply
+from app.services.email import send_contact_reply_email
+
+@router.post("/messages/{message_id}/reply")
+def reply_to_contact_message(
+    message_id: int,
+    reply_in: ContactMessageReply,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    """Reply to a contact message and send an email to the sender."""
+    msg = db.query(ContactMessage).filter(ContactMessage.id == message_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    
+    if not reply_in.reply_message.strip():
+        raise HTTPException(status_code=400, detail="Reply message cannot be empty")
+    
+    # Send email
+    email_sent = send_contact_reply_email(
+        to_email=msg.email,
+        name=msg.name,
+        topic=msg.topic,
+        original_message=msg.message,
+        reply_message=reply_in.reply_message
+    )
+    
+    if not email_sent:
+        raise HTTPException(status_code=500, detail="Failed to send reply email")
+        
+    # Update status in db
+    msg.reply_message = reply_in.reply_message
+    msg.replied_at = datetime.utcnow()
+    msg.is_replied = True
+    msg.is_read = True # Automatically mark as read/processed when replied
+    db.commit()
+    db.refresh(msg)
+    
+    # Create system log
+    db.add(
+        SystemLog(
+            level="INFO",
+            message=f"Admin {current_admin.email} replied to message ID {msg.id} (sent to {msg.email})",
+        )
+    )
+    db.commit()
+    
+    return {
+        "message": "Reply sent successfully",
+        "reply_message": msg.reply_message,
+        "replied_at": msg.replied_at,
+        "is_replied": msg.is_replied,
+        "is_read": msg.is_read,
+    }
+
+@router.put("/messages/{message_id}/read")
+def toggle_message_read_status(
+    message_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    """Toggle the read/unread status of a contact message."""
+    msg = db.query(ContactMessage).filter(ContactMessage.id == message_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    
+    msg.is_read = not msg.is_read
+    db.commit()
+    db.refresh(msg)
+    return {"message": "Message status updated", "is_read": msg.is_read}
+
+@router.delete("/messages/{message_id}")
+def delete_contact_message(
+    message_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    """Delete a contact message."""
+    msg = db.query(ContactMessage).filter(ContactMessage.id == message_id).first()
+    if not msg:
+        raise HTTPException(status_code=404, detail="Message not found")
+    
+    db.delete(msg)
+    db.commit()
+    return {"message": "Message deleted"}
+

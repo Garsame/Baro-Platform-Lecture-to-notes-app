@@ -18,6 +18,10 @@ class TranscriptionService:
         "finishreason.recitation",
         "finish_reason=finishreason.recitation",
         "recitation",
+        "safety",
+        "block",
+        "harm",
+        "blocked",
     )
 
     RETRYABLE_ERROR_MARKERS = (
@@ -50,6 +54,16 @@ class TranscriptionService:
             30,
             settings.GEMINI_FILE_READY_TIMEOUT_SECONDS,
         )
+        self.use_openai_for_transcription = settings.USE_OPENAI_FOR_TRANSCRIPTION
+        self.openai_api_key = (settings.OPENAI_API_KEY or "").strip()
+        self.openai_model = settings.OPENAI_TRANSCRIPTION_MODEL
+        self.openai_client = None
+        if self.openai_api_key:
+            try:
+                from openai import OpenAI
+                self.openai_client = OpenAI(api_key=self.openai_api_key)
+            except Exception as e:
+                logger.error("Failed to initialize OpenAI client: %s", e)
 
     def _wait_for_file_ready(self, file_name: str):
         attempts = max(1, self.file_ready_timeout_seconds // 2)
@@ -186,7 +200,41 @@ class TranscriptionService:
                         getattr(uploaded_file, "name", "unknown"),
                     )
 
+    def _transcribe_audio_with_whisper(self, audio_file_path: str) -> str:
+        """
+        Transcribes audio using OpenAI Whisper API.
+        """
+        if not self.openai_client:
+            raise RuntimeError("OpenAI client is not configured for Whisper fallback.")
+
+        logger.info(
+            "Starting OpenAI Whisper transcription for %s with model %s",
+            audio_file_path,
+            self.openai_model,
+        )
+        try:
+            with open(audio_file_path, "rb") as audio_file:
+                response = self.openai_client.audio.transcriptions.create(
+                    model=self.openai_model,
+                    file=audio_file
+                )
+            transcript_text = getattr(response, "text", "") or ""
+            transcript_text = transcript_text.strip()
+            logger.info(
+                "OpenAI Whisper transcription completed for %s with %s characters.",
+                audio_file_path,
+                len(transcript_text),
+            )
+            return transcript_text
+        except Exception as e:
+            logger.exception("OpenAI Whisper transcription failed for %s", audio_file_path)
+            raise
+
     def transcribe_audio(self, audio_file_path: str) -> str:
+        if self.use_openai_for_transcription and self.openai_client:
+            logger.info("Forcing OpenAI Whisper transcription by default as configured.")
+            return self._transcribe_audio_with_whisper(audio_file_path)
+
         last_error: Exception | None = None
 
         for attempt in range(1, self.max_retries + 1):
@@ -201,6 +249,13 @@ class TranscriptionService:
                 return self._transcribe_audio_once(audio_file_path)
             except Exception as exc:
                 last_error = exc
+                if self.is_recitation_error(exc) and self.openai_client:
+                    logger.warning("Recitation/Safety block triggered on Gemini. Falling back to OpenAI Whisper for %s", audio_file_path)
+                    try:
+                        return self._transcribe_audio_with_whisper(audio_file_path)
+                    except Exception as whisper_exc:
+                        logger.error("OpenAI Whisper fallback transcription failed: %s", whisper_exc)
+                        last_error = whisper_exc
                 if attempt >= self.max_retries or not self._is_retryable_error(exc):
                     break
                 time.sleep(min(2 ** attempt, 10))

@@ -75,8 +75,8 @@ This system solves these problems by automating lecture ingestion, transcription
 - Checks YouTube captions first, so the system can use captions when available and avoid unnecessary transcription.
 - Uses FFmpeg to extract audio from uploaded or downloaded media.
 - Splits long audio into chunks so large lectures can be processed more reliably.
-- Uses Gemini AI models for transcription and lecture chat.
-- Uses Gemma or Gemini models for Somali note generation and fallback.
+- Uses OpenAI Whisper by default for audio transcription to bypass Google's strict recitation/safety blocks.
+- Uses Google Gemini models (gemini-2.5-flash-lite with gemini-2.5-flash auto-fallback) for Somali note generation, QA repair, and chat.
 - Generates:
   - raw transcript.
   - cleaned transcript.
@@ -119,17 +119,18 @@ This system solves these problems by automating lecture ingestion, transcription
   - The backend saves the file under the uploads folder.
 - The backend creates a lecture record in the database.
 - The backend creates a processing job linked to that lecture.
-- The processing pipeline begins in the background.
+- The processing pipeline begins in the background (using FastAPI native background tasks for stable local execution).
 - The job status changes from pending to running.
 - The lecture status changes from submitted to processing.
 - The pipeline prepares the media.
-- If captions are available from YouTube, the system can use them as the transcript source.
+- If captions are available from YouTube, the system uses them as the transcript source.
 - If captions are not available, the system extracts audio using FFmpeg.
 - Long audio is split into smaller chunks.
-- Each chunk is transcribed using the configured Gemini transcription model.
+- Each chunk is transcribed using the OpenAI Whisper model (to avoid Gemini safety/copyright recitation blocks).
 - The raw transcript parts are joined into one transcript.
 - The transcript is cleaned.
 - The note generation service sends the transcript to the AI model.
+- The note generation service attempts to use gemini-2.5-flash-lite, automatically falling back to gemini-2.5-flash if rate limits or temporary 503 errors occur.
 - The AI model returns structured Somali notes, a summary, and key points.
 - The system validates the generated notes for quality.
 - If the generated notes are too short, too English-heavy, malformed, or missing important structure, the system asks the AI model to repair them.
@@ -466,12 +467,13 @@ The lecture detail page is the main study screen after processing.
   - SQLAlchemy.
   - Pydantic.
   - Alembic.
-  - Celery.
+  - Celery (optional) and FastAPI BackgroundTasks (default/recommended for Windows).
   - SQLite for local development.
 - Media and AI:
   - FFmpeg for audio extraction and splitting.
   - yt-dlp for YouTube metadata, captions, and media download.
-  - Google Gemini and Gemma models for transcription, note generation, lecture analysis, and chatbot support.
+  - OpenAI Whisper (`whisper-1`) for primary audio transcription.
+  - Google Gemini (`gemini-2.5-flash-lite`, `gemini-2.5-flash`) for note generation, translation, QA, analysis, and chat.
 - Security:
   - JWT authentication.
   - Hashed passwords.

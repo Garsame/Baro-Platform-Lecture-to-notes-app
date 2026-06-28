@@ -9,7 +9,7 @@ from typing import Any
 from pydantic import BaseModel
 
 from app.core.config import load_settings
-from app.services.ai_error_utils import format_exception_for_user, is_transient_ai_provider_error
+from app.services.ai_error_utils import format_exception_for_user, is_transient_ai_provider_error, is_rate_limit_error
 from app.services.genai_client_factory import create_genai_client
 
 try:
@@ -445,6 +445,13 @@ class NoteGenerationService:
                     )
                 except Exception as exc:
                     last_error = exc
+                    if is_rate_limit_error(exc):
+                        logger.warning(
+                            "Model %s hit a rate limit (429). Falling back to the next model in the list.",
+                            model,
+                        )
+                        break
+
                     if not is_transient_ai_provider_error(exc):
                         raise RuntimeError(format_exception_for_user(exc, "generating_notes")) from exc
 
@@ -682,7 +689,7 @@ Transcript chunk:
                 logger.error(f"Error digesting chunk {index}: {exc}")
                 return f"### Qaybta {index}\n[Error summary generation failed for this part]"
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(chunks), 16)) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
             future_to_index = {
                 executor.submit(process_chunk_digest, i, chunk): i
                 for i, chunk in enumerate(chunks, start=1)

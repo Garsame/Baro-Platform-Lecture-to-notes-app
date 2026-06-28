@@ -4,7 +4,7 @@ import time
 from pydantic import BaseModel, Field
 
 from app.core.config import load_settings
-from app.services.ai_error_utils import format_exception_for_user, is_transient_ai_provider_error
+from app.services.ai_error_utils import format_exception_for_user, is_transient_ai_provider_error, is_rate_limit_error
 from app.services.genai_client_factory import create_genai_client
 
 try:
@@ -141,6 +141,13 @@ Somali detailed notes excerpt:
                     )
                 except Exception as exc:
                     last_error = exc
+                    if is_rate_limit_error(exc):
+                        logger.warning(
+                            "Model %s hit a rate limit (429). Falling back to the next model in the list.",
+                            model,
+                        )
+                        break
+
                     if not is_transient_ai_provider_error(exc):
                         raise RuntimeError(format_exception_for_user(exc, "lecture_analysis")) from exc
 

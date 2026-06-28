@@ -1,9 +1,9 @@
 from celery import Celery
 import os
 
-# Instead of Redis, we use local SQLite files for local development on Windows
-broker_url = os.getenv("CELERY_BROKER_URL", "sqla+sqlite:///celery_broker.sqlite")
-backend_url = os.getenv("CELERY_RESULT_BACKEND", "db+sqlite:///celery_backend.sqlite")
+# We use Redis for both broker and result backend by default
+broker_url = os.getenv("CELERY_BROKER_URL", "redis://localhost:6379/0")
+backend_url = os.getenv("CELERY_RESULT_BACKEND", "redis://localhost:6379/1")
 
 celery_app = Celery(
     "somali_notes_worker",

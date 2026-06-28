@@ -10,6 +10,9 @@ import {
   MdAutoAwesome,
   MdSchedule,
   MdSource,
+  MdEdit,
+  MdCheck,
+  MdClose,
 } from "react-icons/md";
 import {
   CONNECTION_QUALITY_META,
@@ -388,6 +391,13 @@ function findTranscriptSegmentIndex(
 
   const lastIndex = segments.length - 1;
   return currentSecond >= segments[lastIndex].startSecond ? lastIndex : -1;
+}
+
+function getYoutubeVideoId(url?: string | null): string | null {
+  if (!url) return null;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+  const match = url.match(regExp);
+  return match && match[2].length === 11 ? match[2] : null;
 }
 
 function isRemoteMediaPath(filePath?: string | null): boolean {
@@ -917,6 +927,7 @@ export default function LectureDetailPage({
   const transcriptAudioRef = useRef<HTMLAudioElement | null>(null);
   const transcriptScrollContainerRef = useRef<HTMLDivElement | null>(null);
   const transcriptSegmentRefs = useRef<Array<HTMLDivElement | null>>([]);
+  const ytPlayerRef = useRef<any>(null);
   const [activeTab, setActiveTab] =
     useState<(typeof tabs)[number]>("overview");
   const [lecture, setLecture] = useState<LectureDetail | null>(null);
@@ -947,6 +958,12 @@ export default function LectureDetailPage({
     null,
   );
   const [isNotesPlaying, setIsNotesPlaying] = useState(false);
+  const [notesAudio, setNotesAudio] = useState<HTMLAudioElement | null>(null);
+  const [isNotesLoading, setIsNotesLoading] = useState(false);
+  const [notesVoice, setNotesVoice] = useState<"female" | "male">("female");
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editedTitle, setEditedTitle] = useState("");
+  const [savingTitle, setSavingTitle] = useState(false);
   const [showSlowConnectionToast, setShowSlowConnectionToast] =
     useState(false);
   const [hasShownSlowConnectionToast, setHasShownSlowConnectionToast] =
@@ -1188,11 +1205,19 @@ export default function LectureDetailPage({
   }, [id]);
 
   useEffect(() => {
-    const audio = transcriptAudioRef.current;
-
-    if (audio) {
-      audio.pause();
-      audio.currentTime = 0;
+    if (lecture?.source_type === "youtube" && ytPlayerRef.current && typeof ytPlayerRef.current.pauseVideo === "function") {
+      try {
+        ytPlayerRef.current.pauseVideo();
+        ytPlayerRef.current.seekTo(0, true);
+      } catch (e) {
+        // ignore
+      }
+    } else {
+      const audio = transcriptAudioRef.current;
+      if (audio) {
+        audio.pause();
+        audio.currentTime = 0;
+      }
     }
 
     setIsTranscriptPlaying(false);
@@ -1200,15 +1225,119 @@ export default function LectureDetailPage({
     setCurrentTranscriptTime(0);
     setAudioDurationSeconds(null);
     setMediaPlaybackError(null);
-  }, [id, mediaPlaybackUrl]);
+  }, [id, mediaPlaybackUrl, lecture?.source_type]);
 
   useEffect(() => {
     if (activeTab === "transcript") {
       return;
     }
 
-    transcriptAudioRef.current?.pause();
-  }, [activeTab]);
+    if (lecture?.source_type === "youtube" && ytPlayerRef.current && typeof ytPlayerRef.current.pauseVideo === "function") {
+      try {
+        ytPlayerRef.current.pauseVideo();
+      } catch (e) {
+        // ignore
+      }
+    } else {
+      transcriptAudioRef.current?.pause();
+    }
+  }, [activeTab, lecture?.source_type]);
+
+  // Load YouTube Iframe API
+  useEffect(() => {
+    if (lecture?.source_type !== "youtube") return;
+
+    if (!(window as any).YT) {
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+    }
+  }, [lecture?.source_type]);
+
+  // Initialize YouTube Player on embed iframe
+  useEffect(() => {
+    if (lecture?.source_type !== "youtube" || !lecture?.source_url || activeTab !== "transcript") return;
+
+    let intervalId: NodeJS.Timeout;
+    const initPlayer = () => {
+      const YT = (window as any).YT;
+      const iframe = document.getElementById("youtube-player-iframe");
+      
+      if (YT && YT.Player && iframe) {
+        clearInterval(intervalId);
+        const videoId = getYoutubeVideoId(lecture.source_url);
+        if (!videoId) return;
+
+        // Clean up old instance if it exists
+        if (ytPlayerRef.current) {
+          try {
+            ytPlayerRef.current.destroy();
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        ytPlayerRef.current = new YT.Player("youtube-player-iframe", {
+          events: {
+            onStateChange: (event: any) => {
+              const state = event.data;
+              if (state === YT.PlayerState.PLAYING) {
+                setIsTranscriptPlaying(true);
+                setHasTranscriptPlaybackStarted(true);
+              } else if (state === YT.PlayerState.PAUSED) {
+                setIsTranscriptPlaying(false);
+              } else if (state === YT.PlayerState.ENDED) {
+                setIsTranscriptPlaying(false);
+                setHasTranscriptPlaybackStarted(false);
+              }
+            },
+          },
+        });
+      }
+    };
+
+    intervalId = setInterval(initPlayer, 500);
+    return () => {
+      clearInterval(intervalId);
+      if (ytPlayerRef.current && typeof ytPlayerRef.current.destroy === "function") {
+        try {
+          ytPlayerRef.current.destroy();
+          ytPlayerRef.current = null;
+        } catch (e) {
+          // ignore
+        }
+      }
+    };
+  }, [lecture?.source_type, lecture?.source_url, activeTab]);
+
+  // Track YouTube Player Current Time
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout;
+
+    if (isTranscriptPlaying && lecture?.source_type === "youtube" && ytPlayerRef.current) {
+      intervalId = setInterval(() => {
+        if (ytPlayerRef.current && typeof ytPlayerRef.current.getCurrentTime === "function") {
+          const time = ytPlayerRef.current.getCurrentTime();
+          setCurrentTranscriptTime(time);
+        }
+      }, 250);
+    }
+
+    return () => clearInterval(intervalId);
+  }, [isTranscriptPlaying, lecture?.source_type]);
+
+  // Sync YouTube Player Duration
+  useEffect(() => {
+    if (isTranscriptPlaying && lecture?.source_type === "youtube" && ytPlayerRef.current) {
+      if (typeof ytPlayerRef.current.getDuration === "function") {
+        const duration = ytPlayerRef.current.getDuration();
+        if (duration > 0) {
+          setAudioDurationSeconds(duration);
+        }
+      }
+    }
+  }, [isTranscriptPlaying, lecture?.source_type]);
 
   useEffect(() => {
     if (
@@ -1255,69 +1384,98 @@ export default function LectureDetailPage({
     hasTranscriptPlaybackStarted,
   ]);
 
+  // Reset audio when voice selection changes
+  useEffect(() => {
+    if (notesAudio) {
+      notesAudio.pause();
+      setNotesAudio(null);
+      setIsNotesPlaying(false);
+    }
+  }, [notesVoice]);
+
+  // Clean up audio on unmount
   useEffect(() => {
     return () => {
-      if (typeof window !== "undefined" && "speechSynthesis" in window) {
-        window.speechSynthesis.cancel();
+      if (notesAudio) {
+        notesAudio.pause();
       }
     };
-  }, []);
+  }, [notesAudio]);
 
-  const toggleSomaliNotesAudio = () => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-      alert("Your browser does not support text-to-speech playback.");
-      return;
-    }
+  const toggleSomaliNotesAudio = async () => {
+    if (isNotesLoading) return;
 
-    if (isNotesPlaying) {
-      window.speechSynthesis.cancel();
+    if (isNotesPlaying && notesAudio) {
+      notesAudio.pause();
       setIsNotesPlaying(false);
       return;
     }
 
-    setIsNotesPlaying(true);
-
-    const rawNotes = `
-      Fahamka Guud ahaan.
-      ${noteSummary || ""}
-
-      Qodobbada Muhiimka ah.
-      ${keyPoints.join(". ")}
-
-      Faahfaahin.
-      ${(structuredNotes || "").replace(/[*#`]/g, "")}
-    `;
-
-    const utterance = new SpeechSynthesisUtterance(rawNotes);
-    utterance.lang = "so-SO";
-    utterance.rate = 0.85; // Slow down slightly for better clarity
-    utterance.pitch = 1.0;
-
-    const voices = window.speechSynthesis.getVoices();
-
-    // 1. Try to find a premium "Natural" or "Online" Somali voice (usually provided by Microsoft Edge)
-    let bestVoice = voices.find(
-      (v) => v.lang.startsWith("so") && (v.name.includes("Natural") || v.name.includes("Online"))
-    );
-
-    // 2. Fallback to any generic Somali voice (Google Chrome Android, etc)
-    if (!bestVoice) {
-      bestVoice = voices.find((v) => v.lang.startsWith("so") || v.name.toLowerCase().includes("somali"));
+    if (notesAudio && !isNotesPlaying) {
+      try {
+        await notesAudio.play();
+        setIsNotesPlaying(true);
+      } catch (err) {
+        console.error("Failed to play notes audio:", err);
+        alert("Failed to play the audio. Please try again.");
+      }
+      return;
     }
 
-    if (bestVoice) {
-      utterance.voice = bestVoice;
+    setIsNotesLoading(true);
+    setActionError(null);
+
+    try {
+      const response = await fetch(apiUrl(`/api/v1/lectures/${id}/notes-audio`), {
+        method: "POST",
+        headers: authHeaders({
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({
+          voice: notesVoice,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          await getErrorMessage(response, "Failed to generate notes audio."),
+        );
+      }
+
+      const data = await response.json();
+      const resolvedAudioUrl = apiUrl(data.url);
+
+      const audio = new Audio(resolvedAudioUrl);
+
+      audio.onplay = () => {
+        setIsNotesPlaying(true);
+      };
+
+      audio.onpause = () => {
+        setIsNotesPlaying(false);
+      };
+
+      audio.onended = () => {
+        setIsNotesPlaying(false);
+      };
+
+      audio.onerror = () => {
+        setIsNotesPlaying(false);
+        setIsNotesLoading(false);
+        alert("An error occurred during audio playback.");
+      };
+
+      audio.oncanplaythrough = () => {
+        setIsNotesLoading(false);
+      };
+
+      setNotesAudio(audio);
+      await audio.play();
+    } catch (err: unknown) {
+      console.error(err);
+      setIsNotesLoading(false);
+      alert(err instanceof Error ? err.message : "Failed to load/generate notes audio.");
     }
-
-    utterance.onend = () => {
-      setIsNotesPlaying(false);
-    };
-
-    utterance.onerror = () => {
-      setIsNotesPlaying(false);
-    };
-
-    window.speechSynthesis.speak(utterance);
   };
 
   const downloadNotesAsWord = () => {
@@ -1509,6 +1667,44 @@ export default function LectureDetailPage({
     setLoadError(null);
   };
 
+  const handleSaveTitle = async () => {
+    const trimmed = editedTitle.trim();
+    if (!trimmed) {
+      alert("Lecture title cannot be empty.");
+      return;
+    }
+
+    setSavingTitle(true);
+    setActionError(null);
+
+    try {
+      const response = await fetch(apiUrl(`/api/v1/lectures/${id}/title`), {
+        method: "PATCH",
+        headers: authHeaders({
+          "Content-Type": "application/json",
+        }),
+        body: JSON.stringify({
+          title: trimmed,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          await getErrorMessage(response, "Failed to update lecture title."),
+        );
+      }
+
+      const updatedLecture = await response.json();
+      setLecture(updatedLecture);
+      setIsEditingTitle(false);
+    } catch (err: unknown) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : "Failed to update lecture title.");
+    } finally {
+      setSavingTitle(false);
+    }
+  };
+
   const handleRetry = async () => {
     setRetrying(true);
     setActionError(null);
@@ -1619,6 +1815,18 @@ export default function LectureDetailPage({
   };
 
   const handleTranscriptPlayPause = async () => {
+    if (lecture?.source_type === "youtube") {
+      const player = ytPlayerRef.current;
+      if (player && typeof player.playVideo === "function") {
+        if (isTranscriptPlaying) {
+          player.pauseVideo();
+        } else {
+          player.playVideo();
+        }
+      }
+      return;
+    }
+
     const audio = transcriptAudioRef.current;
     if (!audio || !mediaPlaybackUrl) {
       return;
@@ -1640,6 +1848,42 @@ export default function LectureDetailPage({
     }
   };
 
+  const downloadWebVTT = () => {
+    if (!transcriptSegments || transcriptSegments.length === 0) return;
+
+    let vttContent = "WEBVTT\n\n";
+
+    const formatVttTime = (seconds: number): string => {
+      const hrs = Math.floor(seconds / 3600);
+      const mins = Math.floor((seconds % 3600) / 60);
+      const secs = Math.floor(seconds % 60);
+      const ms = Math.round((seconds % 1) * 1000);
+
+      const pad = (num: number, size: number) => {
+        let s = num.toString();
+        while (s.length < size) s = "0" + s;
+        return s;
+      };
+
+      return `${pad(hrs, 2)}:${pad(mins, 2)}:${pad(secs, 2)}.${pad(ms, 3)}`;
+    };
+
+    transcriptSegments.forEach((segment) => {
+      const start = formatVttTime(segment.startSecond);
+      const end = formatVttTime(segment.endSecond);
+      vttContent += `${start} --> ${end}\n${segment.text}\n\n`;
+    });
+
+    const blob = new Blob([vttContent], { type: "text/vtt;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `${lecture?.title || "lecture"}_subtitles.vtt`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const renderFormattedTranscript = (text: string, segments: TranscriptSegment[]) => {
     if (!text) return <p>Transcript is not ready yet.</p>;
 
@@ -1658,6 +1902,21 @@ export default function LectureDetailPage({
                  ref={(element) => {
                    transcriptSegmentRefs.current[idx] = element;
                  }}
+                 onClick={() => {
+                   if (lecture?.source_type === "youtube" && ytPlayerRef.current && typeof ytPlayerRef.current.seekTo === "function") {
+                     try {
+                       ytPlayerRef.current.seekTo(segment.startSecond, true);
+                       setCurrentTranscriptTime(segment.startSecond);
+                     } catch (e) {
+                       // ignore
+                     }
+                   } else {
+                     const media = transcriptAudioRef.current;
+                     if (media) {
+                       media.currentTime = segment.startSecond;
+                     }
+                   }
+                 }}
                  aria-current={isActiveSegment ? "true" : undefined}
                  style={{
                    display: "flex",
@@ -1673,6 +1932,7 @@ export default function LectureDetailPage({
                    boxShadow: isActiveSegment
                      ? "0 0 0 4px rgba(99, 102, 241, 0.14)"
                      : "none",
+                   cursor: "pointer",
                    transition:
                      "border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease",
                  }}
@@ -2210,7 +2470,105 @@ export default function LectureDetailPage({
           </Link>
           <div className="lecture-detail-heading">
             <span className="lecture-detail-eyebrow">Lecture Workspace</span>
-            <h1>{lecture.title}</h1>
+            {isEditingTitle ? (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.25rem", marginBottom: "0.25rem" }}>
+                <input
+                  type="text"
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  disabled={savingTitle}
+                  style={{
+                    fontSize: "1.8rem",
+                    fontWeight: "bold",
+                    padding: "0.3rem 0.6rem",
+                    borderRadius: "6px",
+                    border: "2px solid var(--primary-color)",
+                    backgroundColor: "var(--bg-color)",
+                    color: "var(--text-color)",
+                    outline: "none",
+                    width: "100%",
+                    maxWidth: "500px",
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      void handleSaveTitle();
+                    } else if (e.key === "Escape") {
+                      setIsEditingTitle(false);
+                    }
+                  }}
+                  autoFocus
+                />
+                <button
+                  onClick={handleSaveTitle}
+                  disabled={savingTitle}
+                  title="Save Title"
+                  style={{
+                    padding: "0.4rem",
+                    borderRadius: "6px",
+                    backgroundColor: "var(--primary-color)",
+                    color: "#fff",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <MdCheck size={20} />
+                </button>
+                <button
+                  onClick={() => setIsEditingTitle(false)}
+                  disabled={savingTitle}
+                  title="Cancel"
+                  style={{
+                    padding: "0.4rem",
+                    borderRadius: "6px",
+                    backgroundColor: "var(--border-color)",
+                    color: "var(--text-color)",
+                    border: "none",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <MdClose size={20} />
+                </button>
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                <h1 style={{ margin: 0 }}>{lecture.title}</h1>
+                <button
+                  onClick={() => {
+                    setEditedTitle(lecture.title);
+                    setIsEditingTitle(true);
+                  }}
+                  title="Edit Lecture Name"
+                  style={{
+                    background: "none",
+                    border: "none",
+                    color: "gray",
+                    cursor: "pointer",
+                    padding: "4px",
+                    borderRadius: "50%",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    transition: "background-color 0.2s, color 0.2s",
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.backgroundColor = "rgba(0, 0, 0, 0.05)";
+                    e.currentTarget.style.color = "var(--primary-color)";
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.backgroundColor = "transparent";
+                    e.currentTarget.style.color = "gray";
+                  }}
+                >
+                  <MdEdit size={20} />
+                </button>
+              </div>
+            )}
             <div className="lecture-detail-meta">
               <span>
                 Status: {" "}
@@ -2218,7 +2576,6 @@ export default function LectureDetailPage({
                   {lecture.status}
                 </strong>
               </span>
-              <span>Lecture ID: {lecture.id}</span>
               <span>Submitted: {formatDate(lecture.created_at)}</span>
             </div>
             {isProcessingLecture && (
@@ -2387,39 +2744,53 @@ export default function LectureDetailPage({
               minHeight: 0,
             }}
           >
-            {isLectureComplete && mediaPlaybackUrl && (
-              <audio
-                ref={transcriptAudioRef}
-                src={mediaPlaybackUrl}
-                preload="metadata"
-                onLoadedMetadata={(event) => {
-                  const duration = event.currentTarget.duration;
-                  if (Number.isFinite(duration) && duration > 0) {
-                    setAudioDurationSeconds(duration);
-                  }
-                }}
-                onPlay={() => {
-                  setIsTranscriptPlaying(true);
-                  setHasTranscriptPlaybackStarted(true);
-                }}
-                onPause={() => {
-                  setIsTranscriptPlaying(false);
-                }}
-                onEnded={() => {
-                  setIsTranscriptPlaying(false);
-                  setHasTranscriptPlaybackStarted(false);
-                }}
-                onTimeUpdate={(event) => {
-                  setCurrentTranscriptTime(event.currentTarget.currentTime);
-                }}
-                onError={(e) => {
-                  setIsTranscriptPlaying(false);
-                  const audioError = e.currentTarget.error;
-                  setMediaPlaybackError(
-                    `Original lecture audio could not be loaded for playback. (Error Code: ${audioError?.code || 'Unknown'}, Message: ${audioError?.message || 'None'})`,
-                  );
-                }}
-              />
+            {isLectureComplete && mediaPlaybackUrl && lecture.source_type === "upload" && (
+              <div style={{ marginBottom: "1.5rem", display: "flex", justifyContent: "center", width: "100%" }}>
+                <video
+                  ref={(el) => {
+                    transcriptAudioRef.current = el;
+                  }}
+                  src={mediaPlaybackUrl}
+                  controls
+                  preload="metadata"
+                  style={{
+                    width: "100%",
+                    maxWidth: "720px",
+                    borderRadius: "14px",
+                    border: "1px solid var(--border-color)",
+                    background: "#000",
+                    maxHeight: "400px",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)"
+                  }}
+                  onLoadedMetadata={(event) => {
+                    const duration = event.currentTarget.duration;
+                    if (Number.isFinite(duration) && duration > 0) {
+                      setAudioDurationSeconds(duration);
+                    }
+                  }}
+                  onPlay={() => {
+                    setIsTranscriptPlaying(true);
+                    setHasTranscriptPlaybackStarted(true);
+                  }}
+                  onPause={() => {
+                    setIsTranscriptPlaying(false);
+                  }}
+                  onEnded={() => {
+                    setIsTranscriptPlaying(false);
+                    setHasTranscriptPlaybackStarted(false);
+                  }}
+                  onTimeUpdate={(event) => {
+                    setCurrentTranscriptTime(event.currentTarget.currentTime);
+                  }}
+                  onError={(e) => {
+                    setIsTranscriptPlaying(false);
+                    const videoError = e.currentTarget.error;
+                    setMediaPlaybackError(
+                      `Original lecture video could not be loaded for playback. (Error Code: ${videoError?.code || 'Unknown'}, Message: ${videoError?.message || 'None'})`,
+                    );
+                  }}
+                />
+              </div>
             )}
             <div
               style={{
@@ -2452,85 +2823,142 @@ export default function LectureDetailPage({
               </div>
 
               {isLectureComplete && (
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.85rem",
-                    background: "var(--bg-color)",
-                    border: "1px solid var(--border-color)",
-                    borderRadius: "12px",
-                    padding: "0.85rem 1rem",
-                    minWidth: "280px",
-                    maxWidth: "100%",
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => void handleTranscriptPlayPause()}
-                    disabled={!mediaPlaybackUrl}
-                    aria-label={
-                      isTranscriptPlaying
-                        ? "Pause transcript audio"
-                        : "Play transcript audio"
-                    }
-                    style={{
-                      width: "44px",
-                      height: "44px",
-                      borderRadius: "999px",
-                      border: "none",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      background: mediaPlaybackUrl
-                        ? "var(--primary-color)"
-                        : "var(--border-color)",
-                      color: mediaPlaybackUrl ? "#fff" : "var(--text-muted)",
-                      cursor: mediaPlaybackUrl ? "pointer" : "not-allowed",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {isTranscriptPlaying ? <FaPause /> : <FaPlay />}
-                  </button>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.85rem", flexWrap: "wrap" }}>
+                  {transcriptSegments.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={downloadWebVTT}
+                      title="Download Subtitles (.vtt)"
+                      style={{
+                        padding: "0.5rem 1rem",
+                        backgroundColor: "#10b981",
+                        color: "#fff",
+                        border: "none",
+                        borderRadius: "10px",
+                        cursor: "pointer",
+                        fontWeight: "bold",
+                        fontSize: "0.88rem",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.5rem",
+                        transition: "opacity 0.2s",
+                        height: "44px",
+                      }}
+                      onMouseOver={(e) => e.currentTarget.style.opacity = "0.85"}
+                      onMouseOut={(e) => e.currentTarget.style.opacity = "1"}
+                    >
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="7 10 12 15 17 10"></polyline>
+                        <line x1="12" y1="15" x2="12" y2="3"></line>
+                      </svg>
+                      Subtitles (.vtt)
+                    </button>
+                  )}
+                  
+                  {lecture.source_type === "youtube" && (
                     <div
                       style={{
                         display: "flex",
-                        justifyContent: "space-between",
-                        gap: "0.75rem",
-                        fontSize: "0.88rem",
-                        color: "var(--text-muted)",
-                        marginBottom: "0.45rem",
-                        whiteSpace: "nowrap",
+                        alignItems: "center",
+                        gap: "0.85rem",
+                        background: "var(--bg-color)",
+                        border: "1px solid var(--border-color)",
+                        borderRadius: "12px",
+                        padding: "0.85rem 1rem",
+                        minWidth: "280px",
+                        maxWidth: "100%",
+                        height: "44px",
                       }}
                     >
-                      <span>{isTranscriptPlaying ? "Playing" : "Paused"}</span>
-                      <span>
-                        {formatTranscriptTimestamp(currentTranscriptTime)} /{" "}
-                        {formatTranscriptTimestamp(displayAudioDuration)}
-                      </span>
-                    </div>
-                    <div
-                      style={{
-                        height: "6px",
-                        borderRadius: "999px",
-                        background: "var(--border-color)",
-                        overflow: "hidden",
-                      }}
-                    >
-                      <div
+                      <button
+                        type="button"
+                        onClick={() => void handleTranscriptPlayPause()}
+                        disabled={!mediaPlaybackUrl}
+                        aria-label={
+                          isTranscriptPlaying
+                            ? "Pause transcript audio"
+                            : "Play transcript audio"
+                        }
                         style={{
-                          width: `${playbackProgressPercent}%`,
-                          height: "100%",
-                          background: "var(--primary-color)",
-                          transition: "width 0.15s linear",
+                          width: "30px",
+                          height: "30px",
+                          borderRadius: "999px",
+                          border: "none",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          background: mediaPlaybackUrl
+                            ? "var(--primary-color)"
+                            : "var(--border-color)",
+                          color: mediaPlaybackUrl ? "#fff" : "var(--text-muted)",
+                          cursor: mediaPlaybackUrl ? "pointer" : "not-allowed",
+                          flexShrink: 0,
                         }}
-                      />
+                      >
+                        {isTranscriptPlaying ? <FaPause /> : <FaPlay />}
+                      </button>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            gap: "0.75rem",
+                            fontSize: "0.82rem",
+                            color: "var(--text-muted)",
+                            marginBottom: "0.2rem",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          <span>{isTranscriptPlaying ? "Playing" : "Paused"}</span>
+                          <span>
+                            {formatTranscriptTimestamp(currentTranscriptTime)} /{" "}
+                            {formatTranscriptTimestamp(displayAudioDuration)}
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            height: "4px",
+                            borderRadius: "999px",
+                            background: "var(--border-color)",
+                            overflow: "hidden",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: `${playbackProgressPercent}%`,
+                              height: "100%",
+                              background: "var(--primary-color)",
+                              transition: "width 0.15s linear",
+                            }}
+                          />
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </div>
               )}
             </div>
+            
+            {isLectureComplete && lecture.source_type === "youtube" && getYoutubeVideoId(lecture.source_url) && (
+              <div style={{ marginBottom: "1.5rem", display: "flex", justifyContent: "center", width: "100%" }}>
+                <iframe
+                  id="youtube-player-iframe"
+                  width="100%"
+                  height="360"
+                  src={`https://www.youtube.com/embed/${getYoutubeVideoId(lecture.source_url)}?enablejsapi=1&origin=${typeof window !== "undefined" ? window.location.origin : ""}`}
+                  title="YouTube video player"
+                  style={{
+                    borderRadius: "14px",
+                    border: "1px solid var(--border-color)",
+                    maxWidth: "720px",
+                    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.05)"
+                  }}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                />
+              </div>
+            )}
             {isLectureComplete && (mediaUnavailableMessage || mediaPlaybackError) && (
               <div className="alert alert-info" style={{ marginBottom: "1rem" }}>
                 {mediaPlaybackError || mediaUnavailableMessage}
@@ -2564,40 +2992,83 @@ export default function LectureDetailPage({
                 Somali Study Notes
               </h2>
               {isLectureComplete && (
-              <div style={{ display: "flex", gap: "10px" }}>
-              <button
-                onClick={toggleSomaliNotesAudio}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  padding: "0.5rem 1rem",
-                  backgroundColor: isNotesPlaying ? "var(--danger-color)" : "var(--primary-color)",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: "8px",
-                  cursor: "pointer",
-                  fontWeight: "bold",
-                  transition: "background-color 0.2s",
-                }}
-              >
-                {isNotesPlaying ? (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="6" y="4" width="4" height="16"></rect>
-                      <rect x="14" y="4" width="4" height="16"></rect>
-                    </svg>
-                    Stop Reading
-                  </>
-                ) : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                    </svg>
-                    Listen to Notes
-                  </>
-                )}
-              </button>
+              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                  <label htmlFor="voice-select" style={{ fontSize: "0.95rem", fontWeight: "bold", color: "var(--text-color)" }}>
+                    Codka:
+                  </label>
+                  <select
+                    id="voice-select"
+                    value={notesVoice}
+                    onChange={(e) => setNotesVoice(e.target.value as "female" | "male")}
+                    disabled={isNotesPlaying || isNotesLoading}
+                    style={{
+                      padding: "0.4rem 0.8rem",
+                      borderRadius: "8px",
+                      border: "1px solid var(--border-color)",
+                      backgroundColor: "var(--bg-color)",
+                      color: "var(--text-color)",
+                      cursor: (isNotesPlaying || isNotesLoading) ? "not-allowed" : "pointer",
+                      fontWeight: "bold",
+                      outline: "none",
+                    }}
+                  >
+                    <option value="female">Ubax (Female)</option>
+                    <option value="male">Muuse (Male)</option>
+                  </select>
+                </div>
+
+                <button
+                  onClick={toggleSomaliNotesAudio}
+                  disabled={isNotesLoading}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.5rem",
+                    padding: "0.5rem 1rem",
+                    backgroundColor: isNotesLoading
+                      ? "var(--border-color)"
+                      : isNotesPlaying
+                        ? "var(--danger-color)"
+                        : "var(--primary-color)",
+                    color: "#fff",
+                    border: "none",
+                    borderRadius: "8px",
+                    cursor: isNotesLoading ? "not-allowed" : "pointer",
+                    fontWeight: "bold",
+                    transition: "background-color 0.2s",
+                  }}
+                >
+                  {isNotesLoading ? (
+                    <>
+                      <span className="spinner-mini" style={{
+                        display: "inline-block",
+                        width: "14px",
+                        height: "14px",
+                        border: "2px solid #fff",
+                        borderTop: "2px solid transparent",
+                        borderRadius: "50%",
+                        animation: "spin 1s linear infinite"
+                      }}></span>
+                      Sugayaa...
+                    </>
+                  ) : isNotesPlaying ? (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="6" y="4" width="4" height="16"></rect>
+                        <rect x="14" y="4" width="4" height="16"></rect>
+                      </svg>
+                      Jooji
+                    </>
+                  ) : (
+                    <>
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                      </svg>
+                      Dhageyso
+                    </>
+                  )}
+                </button>
 
               <button
                 onClick={downloadNotesAsWord}

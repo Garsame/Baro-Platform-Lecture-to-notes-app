@@ -21,6 +21,8 @@ class UserInDBBase(UserBase):
     id: int
     role: str
     is_active: bool
+    is_email_verified: bool
+    has_password: bool
     created_at: datetime
     profile_picture_url: Optional[str] = None
 

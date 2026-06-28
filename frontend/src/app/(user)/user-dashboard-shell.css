@@ -74,17 +74,24 @@
   color: var(--user-muted);
 }
 
+.inapp-dashboard-shell-container {
+  background: var(--user-bg);
+  color: var(--user-text);
+}
+
 .inapp-dashboard-shell {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
   background: var(--user-bg);
   color: var(--user-text);
+  width: min(1180px, calc(100% - 40px));
+  margin: 0 auto;
 }
 
 .inapp-sidebar {
   position: sticky;
-  top: 0;
-  height: 100vh;
+  top: 76px;
+  height: calc(100vh - 76px);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
@@ -437,6 +444,8 @@
 
   .inapp-sidebar {
     position: fixed;
+    top: 0;
+    height: 100vh;
     left: 0;
     transform: translateX(-100%);
     width: 240px;
@@ -473,5 +482,61 @@
 
   .inapp-dashboard-main {
     padding: 1.5rem 0.85rem;
+  }
+}
+
+.inapp-top-toolbar-bar {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--user-border);
+  background: var(--user-surface);
+}
+
+.inapp-mobile-menu-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--user-text);
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0;
+}
+
+.inapp-desktop-collapse-btn {
+  display: flex;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--user-text);
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+  padding: 0;
+  transition: opacity 0.2s;
+}
+
+.inapp-desktop-collapse-btn:hover {
+  opacity: 0.8;
+}
+
+.inapp-dashboard-shell.is-collapsed {
+  grid-template-columns: 1fr;
+}
+
+.inapp-dashboard-shell.is-collapsed .inapp-sidebar {
+  display: none !important;
+}
+
+@media (max-width: 1024px) {
+  .inapp-mobile-menu-btn {
+    display: flex;
+  }
+  .inapp-desktop-collapse-btn {
+    display: none;
   }
 }

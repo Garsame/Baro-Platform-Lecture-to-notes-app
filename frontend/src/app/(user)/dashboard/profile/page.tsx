@@ -15,6 +15,8 @@ interface ProfileResponse {
   full_name?: string | null;
   email?: string | null;
   profile_picture_url?: string | null;
+  has_password?: boolean;
+  is_email_verified?: boolean;
 }
 
 interface ProfilePayload {
@@ -35,14 +37,22 @@ function errorMessage(error: unknown, fallback: string): string {
   return error instanceof Error ? error.message : fallback;
 }
 
+function resolveAvatar(url: string | null | undefined): string | null {
+  if (!url || url.includes("next.svg")) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  return apiUrl(url);
+}
+
 export default function UserProfilePage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [initialEmail, setInitialEmail] = useState("");
   const [password, setPassword] = useState("");
   const [profilePic, setProfilePic] = useState<string | null>(null);
   const [message, setMessage] = useState({ text: "", type: "" });
   const [showPassword, setShowPassword] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
+  const [hasPassword, setHasPassword] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -51,9 +61,10 @@ export default function UserProfilePage() {
       .then((d: ProfileResponse) => {
         setName(d.full_name || "");
         setEmail(d.email || "");
+        setInitialEmail(d.email || "");
+        setHasPassword(d.has_password !== false);
         if (d.profile_picture_url) {
-          const isNext = d.profile_picture_url.includes("next.svg");
-          setProfilePic(isNext ? null : apiUrl(d.profile_picture_url));
+          setProfilePic(resolveAvatar(d.profile_picture_url));
         }
       })
       .catch();
@@ -64,6 +75,12 @@ export default function UserProfilePage() {
     if (!isEditing) {
       return;
     }
+    if (password && password.length < 8) {
+      setMessage({ text: "Password must be at least 8 characters long.", type: "error" });
+      return;
+    }
+
+    const emailChanged = email.trim().toLowerCase() !== initialEmail.trim().toLowerCase();
 
     try {
       setMessage({ text: "Saving...", type: "success" });
@@ -78,12 +95,24 @@ export default function UserProfilePage() {
 
       if (!res.ok) throw new Error("Failed to update profile");
       const data = (await res.json()) as ProfileResponse;
+      setHasPassword(data.has_password !== false);
       notifyUserProfileUpdated({
         full_name: data.full_name || name,
         email: data.email || email,
         profile_picture_url: data.profile_picture_url ?? null,
+        is_email_verified: data.is_email_verified,
       });
-      setMessage({ text: "Profile updated successfully.", type: "success" });
+
+      if (emailChanged) {
+        setInitialEmail(email);
+        setMessage({
+          text: "Profile updated. An OTP verification code has been sent to your new email. Please verify it.",
+          type: "success",
+        });
+        window.dispatchEvent(new CustomEvent("open-otp-modal"));
+      } else {
+        setMessage({ text: "Profile updated successfully.", type: "success" });
+      }
       setPassword("");
       setIsEditing(false);
     } catch (err: unknown) {
@@ -123,8 +152,7 @@ export default function UserProfilePage() {
 
         const data = (await res.json()) as ProfileResponse;
         if (data.profile_picture_url) {
-          const isNext = data.profile_picture_url.includes("next.svg");
-          setProfilePic(isNext ? null : apiUrl(data.profile_picture_url));
+          setProfilePic(resolveAvatar(data.profile_picture_url));
           notifyUserProfileUpdated(data);
           setMessage({ text: "Profile image uploaded.", type: "success" });
         }
@@ -160,7 +188,7 @@ export default function UserProfilePage() {
             <div className="profile-avatar">
               {profilePic ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={profilePic} alt="Profile" />
+                <img src={profilePic} alt="Profile" referrerPolicy="no-referrer" />
               ) : (
                 <span>{initial}</span>
               )}
@@ -239,13 +267,13 @@ export default function UserProfilePage() {
             </label>
 
             <label>
-              <span>Change Password</span>
+              <span>{hasPassword ? "Change Password" : "Set Account Password"}</span>
               <div className="profile-password-field">
                 <input
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Leave blank to keep current password"
+                  placeholder={hasPassword ? "Leave blank to keep current password" : "Enter new password for email login"}
                   readOnly={!isEditing}
                 />
                 <button
@@ -261,6 +289,11 @@ export default function UserProfilePage() {
                   )}
                 </button>
               </div>
+              {!hasPassword && (
+                <small style={{ color: "#009ffd", display: "block", marginTop: "0.4rem", fontSize: "0.82rem", lineHeight: "1.4" }}>
+                  💡 You logged in with Google. You can set a password here to sign in with email in the future.
+                </small>
+              )}
             </label>
 
             <button type="submit" className="profile-save-button" disabled={!isEditing}>

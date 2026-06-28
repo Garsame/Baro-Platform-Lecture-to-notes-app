@@ -556,7 +556,7 @@ def execute_pipeline(db: Session, job: ProcessingJob, lecture_id: int):
                 lecture_id,
             )
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=min(total_chunks, 10)) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
                 future_to_index = {
                     executor.submit(process_chunk, i, path): i
                     for i, path in enumerate(transcription_chunk_paths, start=1)

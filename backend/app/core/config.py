@@ -10,6 +10,12 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8 # 8 days
     ALGORITHM: str = "HS256"
+    ALLOW_MOCK_LOGIN: bool = False
+    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/somali_notes_db"
+    USE_CELERY: bool = True
+    OPENAI_API_KEY: str = ""
+    OPENAI_TRANSCRIPTION_MODEL: str = "whisper-1"
+    USE_OPENAI_FOR_TRANSCRIPTION: bool = False
     GEMINI_API_KEY: str = ""
     GEMINI_TRANSCRIPTION_MODEL: str = "gemini-2.5-flash-lite"
     GEMINI_CHAT_MODEL: str = "gemini-2.5-flash"
@@ -27,6 +33,16 @@ class Settings(BaseSettings):
     NOTES_TRANSCRIPT_CHUNK_CHAR_LIMIT: int = 18000
     FFMPEG_BINARY: Optional[str] = None
     FFPROBE_BINARY: Optional[str] = None
+    AZURE_SPEECH_KEY: str = ""
+    AZURE_SPEECH_REGION: str = ""
+    
+    SMTP_HOST: str = "smtp.gmail.com"
+    SMTP_PORT: int = 587
+    SMTP_TLS: bool = True
+    SMTP_USER: Optional[str] = None
+    SMTP_PASSWORD: Optional[str] = None
+    SMTP_FROM_EMAIL: Optional[str] = None
+    SMTP_FROM_NAME: str = "BaroBadi App"
 
     class Config:
         env_file = str(BACKEND_ROOT / ".env")

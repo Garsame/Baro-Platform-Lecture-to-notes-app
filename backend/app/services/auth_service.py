@@ -19,7 +19,9 @@ class AuthService:
             hashed_password=get_password_hash(user_in.password),
             full_name=user_in.full_name,
             role=role,
-            is_active=True
+            is_active=True,
+            is_email_verified=False,
+            has_password=True
         )
         self.db.add(db_obj)
         self.db.commit()

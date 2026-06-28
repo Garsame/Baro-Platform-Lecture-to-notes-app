@@ -10,7 +10,7 @@ import {
   type AuthenticatedUser,
 } from "@/lib/api";
 import { clearSession, getSessionToken } from "@/lib/session";
-import { MdDashboard, MdPeople, MdOutlineOndemandVideo, MdSettings, MdLogout, MdNotifications, MdLightMode, MdDarkMode, MdKeyboardArrowDown } from 'react-icons/md';
+import { MdDashboard, MdPeople, MdOutlineOndemandVideo, MdSettings, MdLogout, MdNotifications, MdLightMode, MdDarkMode, MdKeyboardArrowDown, MdEmail, MdMenu } from 'react-icons/md';
 import { FaCheckCircle, FaRocket, FaExclamationTriangle, FaTools } from 'react-icons/fa';
 
 interface SystemNotification {
@@ -30,6 +30,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [showProfile, setShowProfile] = useState(false);
   const [notifications, setNotifications] = useState<SystemNotification[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isSidebarOpen]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -53,7 +69,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     const redirectToAdminLogin = () => {
       clearSession();
-      window.location.replace("/admin-login");
+      window.location.replace("/maamul-login");
     };
 
     // Fetch user details & recent notifications
@@ -112,6 +128,33 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     };
   }, []);
 
+  // Inactivity timeout of 30 minutes (1800000 milliseconds)
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
+    const resetTimer = () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        clearSession();
+        window.location.replace("/maamul-login?expired=true");
+      }, 30 * 60 * 1000);
+    };
+
+    const events = ["mousemove", "keydown", "click", "scroll"];
+    events.forEach((event) => {
+      window.addEventListener(event, resetTimer);
+    });
+
+    resetTimer();
+
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+      events.forEach((event) => {
+        window.removeEventListener(event, resetTimer);
+      });
+    };
+  }, []);
+
   const toggleTheme = () => {
     const newTheme = theme === "dark" ? "light" : "dark";
     setTheme(newTheme);
@@ -120,7 +163,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   const handleLogout = () => {
     clearSession();
-    window.location.replace("/admin-login");
+    window.location.replace("/maamul-login");
   };
 
   if (isLoading) {
@@ -1101,10 +1144,52 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                border-bottom: 0;
             }
          }
+
+         @media (max-width: 980px) {
+             .admin-mobile-menu-btn {
+                display: inline-flex !important;
+             }
+             .admin-sidebar {
+                position: fixed;
+                top: 0;
+                bottom: 0;
+                left: 0;
+                z-index: 10000;
+                width: 288px;
+                transform: translateX(-100%);
+                transition: transform 0.28s cubic-bezier(0.4, 0, 0.2, 1);
+                box-shadow: 20px 0 50px rgba(0, 0, 0, 0.3);
+             }
+             .admin-sidebar.is-open {
+                transform: translateX(0);
+             }
+             .admin-sidebar-backdrop {
+                position: fixed;
+                inset: 0;
+                background: rgba(15, 23, 42, 0.6);
+                backdrop-filter: blur(4px);
+                z-index: 9999;
+                border: none;
+                cursor: pointer;
+                animation: admin-fade-in 0.2s ease-out;
+             }
+             @keyframes admin-fade-in {
+                from { opacity: 0; }
+                to { opacity: 1; }
+             }
+          }
       `}</style>
 
       <div className="admin-theme-aware admin-shell">
-        <aside className="admin-sidebar">
+        {isSidebarOpen && (
+          <button
+            className="admin-sidebar-backdrop"
+            aria-label="Close menu"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+        
+        <aside className={`admin-sidebar ${isSidebarOpen ? "is-open" : ""}`}>
           
           <div className="admin-brand-panel">
             <img src={theme === "dark" ? "/barobadi-logo-dark.png" : "/barobadi-logo.png"} alt="BaroBadi Admin Logo" style={{ width: '150px', height: 'auto', objectFit: 'contain', cursor: 'pointer' }} onClick={() => router.push('/admin/dashboard')} />
@@ -1119,6 +1204,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Link>
             <Link href="/admin/lectures" className={`admin-nav-link ${pathname === '/admin/lectures' ? 'active' : ''}`}>
               <MdOutlineOndemandVideo size={20} /> Lecture Oversight
+            </Link>
+            <Link href="/admin/messages" className={`admin-nav-link ${pathname === '/admin/messages' ? 'active' : ''}`}>
+              <MdEmail size={20} /> User Messages
             </Link>
             <Link href="/admin/logs" className={`admin-nav-link ${pathname === '/admin/logs' ? 'active' : ''}`}>
               <FaTools size={20} /> System Logs
@@ -1138,7 +1226,25 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <header className="admin-topbar">
-             <div className="admin-topbar-title">Admin Portal</div>
+             <div className="admin-topbar-title">
+                 <button
+                   className="admin-mobile-menu-btn"
+                   onClick={() => setIsSidebarOpen(true)}
+                   style={{
+                     background: "transparent",
+                     border: "none",
+                     color: "var(--text-color)",
+                     cursor: "pointer",
+                     marginRight: "0.75rem",
+                     display: "none",
+                     alignItems: "center",
+                     padding: "4px"
+                   }}
+                 >
+                    <MdMenu size={24} style={{ color: "var(--primary-color)" }} />
+                 </button>
+                 Admin Portal
+             </div>
              <div ref={dropdownRef} style={{ display: "flex", gap: "1rem", alignItems: "center" }}>
                  <button onClick={toggleTheme} className="admin-icon-btn" title="Toggle Theme">
                     {theme === "dark" ? <MdLightMode size={20} /> : <MdDarkMode size={20} />}
@@ -1151,7 +1257,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                          {notifications.length > 0 && <span className="admin-badge-dot"></span>}
                      </button>
                     {showNotifications && (
-                        <div style={{ position: "absolute", top: "100%", right: "0", background: cardBg, border: `1px solid ${border}`, borderRadius: "8px", width: "350px", padding: "1rem", boxShadow: "0 10px 15px rgba(0,0,0,0.1)", zIndex: 100 }}>
+                        <div style={{ position: "absolute", top: "100%", right: "0", background: cardBg, border: `1px solid ${border}`, borderRadius: "8px", width: "350px", padding: "1rem", boxShadow: "0 10px 15px rgba(0,0,0,0.1)", zIndex: 9999 }}>
                             <h4 style={{ margin: "0 0 1rem 0", color: text }}>Recent Activity</h4>
                             {notifications.length === 0 ? (
                                 <div style={{ color: textMuted, fontSize: "0.9rem" }}>No recent activity.</div>
@@ -1185,7 +1291,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <span style={{ color: text, fontWeight: "bold" }}><MdKeyboardArrowDown size={22} color="var(--text-muted)" style={{marginLeft: "4px"}} /></span>
                     </button>
                     {showProfile && (
-                        <div style={{ position: "absolute", top: "100%", right: "0", background: cardBg, border: `1px solid ${border}`, borderRadius: "8px", width: "250px", padding: "1rem", boxShadow: "0 10px 15px rgba(0,0,0,0.1)", zIndex: 100, marginTop: "10px" }}>
+                        <div style={{ position: "absolute", top: "100%", right: "0", background: cardBg, border: `1px solid ${border}`, borderRadius: "8px", width: "250px", padding: "1rem", boxShadow: "0 10px 15px rgba(0,0,0,0.1)", zIndex: 9999, marginTop: "10px" }}>
                             <div style={{ textAlign: "center", marginBottom: "1rem" }}>
                                 <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "var(--primary-color)", overflow: "hidden", display: "inline-flex", justifyContent: "center", alignItems: "center", fontSize: "1.5rem", fontWeight: "bold", marginBottom: "10px" }}>
                                      {user.profile_picture_url && !user.profile_picture_url.includes("next.svg") ? (

@@ -1,28 +1,30 @@
-import sqlite3
+import sys
 import os
 
-db_path = 'sql_app.db'
-if os.path.exists(db_path):
-    conn = sqlite3.connect(db_path)
-    c = conn.cursor()
-    c.execute('PRAGMA foreign_keys=OFF;')
-    tables = c.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall()
-    for t in tables:
-        try:
-            c.execute(f"DELETE FROM {t[0]}")
-        except Exception as e:
-            print(f"Error wiping {t[0]}: {e}")
-    conn.commit()
-    conn.close()
-    print('All user and lecture data wiped perfectly.')
-    
-    # Also wipe celery databases if they exist
-    for cdb in ['celery_backend.sqlite', 'celery_broker.sqlite']:
-        if os.path.exists(cdb):
+# Add the parent directory to sys.path so we can import app modules
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+
+from app.core.database import SessionLocal, Base
+
+def main():
+    db = SessionLocal()
+    try:
+        # Get all table metadata
+        metadata = Base.metadata
+        # Clear database tables (reversed list to handle dependencies first)
+        for table in reversed(metadata.sorted_tables):
             try:
-                os.remove(cdb)
-                print(f"Removed old celery database: {cdb}")
-            except:
-                pass
-else:
-    print('Database not found.')
+                db.execute(table.delete())
+                print(f"Wiped table: {table.name}")
+            except Exception as e:
+                print(f"Error wiping table {table.name}: {e}")
+        db.commit()
+        print('All user and lecture data wiped perfectly.')
+    except Exception as e:
+        print(f"Error during database wipe: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
+if __name__ == "__main__":
+    main()

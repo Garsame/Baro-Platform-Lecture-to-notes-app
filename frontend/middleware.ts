@@ -12,7 +12,7 @@ const API_BASE_URL =
 const PUBLIC_AUTH_ROUTES = new Set([
   "/sign-in",
   "/sign-up",
-  "/admin-login",
+  "/maamul-login",
   "/admin-signup",
 ]);
 
@@ -81,7 +81,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (adminRoute) {
-      return redirectTo(request, "/admin-login", true);
+      return redirectTo(request, "/maamul-login", true);
     }
 
     return applyNoStore(NextResponse.next());
@@ -95,7 +95,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (adminRoute) {
-      return redirectTo(request, "/admin-login", true);
+      return redirectTo(request, "/maamul-login", true);
     }
 
     const response = NextResponse.next();
@@ -131,7 +131,7 @@ export const config = {
     "/admin/:path*",
     "/sign-in",
     "/sign-up",
-    "/admin-login",
+    "/maamul-login",
     "/admin-signup",
   ],
 };

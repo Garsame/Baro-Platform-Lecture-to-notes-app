@@ -29,7 +29,12 @@ export default function AdminSignInPage() {
     if (savedTheme === "light" || savedTheme === "dark") {
       setTheme(savedTheme);
     }
-  }, []);
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("expired") === "true") {
+      setError("Session expired due to inactivity. Please sign in again.");
+      router.replace("/maamul-login");
+    }
+  }, [router]);
 
   const toggleTheme = () => {
     const nextTheme = theme === "dark" ? "light" : "dark";
@@ -47,7 +52,7 @@ export default function AdminSignInPage() {
       formData.append("username", email);
       formData.append("password", password);
 
-      const res = await fetch(apiUrl("/api/v1/auth/login"), {
+      const res = await fetch(apiUrl("/api/v1/auth/admin-login"), {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formData.toString(),

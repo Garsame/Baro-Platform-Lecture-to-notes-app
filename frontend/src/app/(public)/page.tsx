@@ -167,8 +167,8 @@ export default function LandingPage() {
               material from one focused learning dashboard.
             </p>
             <div className="hero-actions">
-              <Link href="/sign-up" className="public-btn public-btn-secondary">
-                Create Account
+              <Link href="/sign-in" className="public-btn public-btn-secondary">
+                Get Started
               </Link>
               <Link href="/about" className="public-btn public-btn-ghost">
                 Explore Platform
@@ -286,7 +286,7 @@ export default function LandingPage() {
               designed for review, recall, and follow-up questions.
             </p>
             <div className="section-actions">
-              <Link href="/sign-up" className="public-btn public-btn-primary">
+              <Link href="/sign-in" className="public-btn public-btn-primary">
                 Start Learning
               </Link>
               <Link href="/contact" className="public-btn public-btn-ghost">
@@ -360,8 +360,8 @@ export default function LandingPage() {
             </p>
           </div>
           <div className="section-actions">
-            <Link href="/sign-up" className="public-btn public-btn-secondary">
-              Create Account
+            <Link href="/sign-in" className="public-btn public-btn-secondary">
+              Get Started
             </Link>
             <Link href="/about" className="public-btn public-btn-ghost">
               Learn More

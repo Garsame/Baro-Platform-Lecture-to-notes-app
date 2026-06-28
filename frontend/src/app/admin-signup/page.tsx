@@ -40,6 +40,10 @@ export default function AdminSignUpPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters long.");
+      return;
+    }
     setLoading(true);
     setError(null);
 
@@ -65,7 +69,7 @@ export default function AdminSignUpPage() {
       formData.append("username", email);
       formData.append("password", password);
 
-      const loginRes = await fetch(apiUrl("/api/v1/auth/login"), {
+      const loginRes = await fetch(apiUrl("/api/v1/auth/admin-login"), {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: formData.toString(),
@@ -81,7 +85,7 @@ export default function AdminSignUpPage() {
         );
       } else {
         clearSession();
-        router.replace("/admin-login");
+        router.replace("/maamul-login");
       }
     } catch (err: unknown) {
       clearSession();
@@ -175,7 +179,7 @@ export default function AdminSignUpPage() {
 
         <p className="admin-auth-switch">
           Already have an admin account?{" "}
-          <Link href="/admin-login">Sign in here</Link>
+          <Link href="/maamul-login">Sign in here</Link>
         </p>
       </section>
     </main>

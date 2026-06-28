@@ -8,4 +8,6 @@ from .quiz import (
     QuizAttemptResponse,
     QuizDashboardSummary,
 )
+from .contact_message import ContactMessageCreate, ContactMessageInDB, ContactMessageUpdate, ContactMessageReply
+
 
