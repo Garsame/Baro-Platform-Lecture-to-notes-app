@@ -3021,12 +3021,12 @@ export default function LectureDetailPage({
 
         {activeTab === "somali-notes" && (
           <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-              <h2 style={{ fontSize: "1.8rem", margin: 0 }}>
+            <div className="somali-notes-header">
+              <h2>
                 Somali Study Notes
               </h2>
               {isLectureComplete && (
-              <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <div className="somali-notes-controls">
                 <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
                   <label htmlFor="voice-select" style={{ fontSize: "0.95rem", fontWeight: "bold", color: "var(--text-color)" }}>
                     Codka:
@@ -3159,18 +3159,7 @@ export default function LectureDetailPage({
               </div>
               )}
             </div>
-            <div
-              style={{
-                padding: "1.75rem",
-                backgroundColor: "var(--bg-color)",
-                borderRadius: "14px",
-                borderLeft: "4px solid var(--primary-color)",
-                marginTop: "1rem",
-                display: "flex",
-                flexDirection: "column",
-                gap: "1.75rem",
-              }}
-            >
+            <div className="somali-notes-body">
               <section>
                 <h3 style={{ marginBottom: "0.75rem", fontSize: "1.15rem" }}>
                   Fahamka Guud ahaan (Summary)
@@ -3294,7 +3283,7 @@ export default function LectureDetailPage({
         {activeTab === "processing-log" && (
           <div>
             <h2>Processing Timeline</h2>
-            <ul style={{ listStyle: "none", padding: 0, marginTop: "1rem" }}>
+            <ul className="timeline-log-list">
               {logs.length > 0 ? logs.map((logEntry) => {
                 const logMessage =
                   logEntry.level === "ERROR"
@@ -3305,26 +3294,19 @@ export default function LectureDetailPage({
                     : logEntry.message;
 
                 return (
-                  <li
-                    key={logEntry.id}
-                    style={{
-                      padding: "0.75rem 0",
-                      borderBottom: "1px solid var(--border-color)",
-                      display: "flex",
-                      gap: "1rem",
-                      justifyContent: "space-between",
-                      alignItems: "flex-start",
-                    }}
-                  >
-                    <div style={{ display: "flex", gap: "1rem" }}>
-                      <span style={{ color: getAccentColor(logEntry.level) }}>
+                  <li key={logEntry.id} className="timeline-log-item">
+                    <div className="timeline-log-left">
+                      <span
+                        className="timeline-log-level"
+                        style={{ color: getAccentColor(logEntry.level) }}
+                      >
                         {logEntry.level}
                       </span>
-                      <span style={{ fontFamily: "monospace", whiteSpace: "pre-wrap" }}>
+                      <span className="timeline-log-message">
                         {logMessage}
                       </span>
                     </div>
-                    <span style={{ opacity: 0.7, whiteSpace: "nowrap" }}>
+                    <span className="timeline-log-date">
                       {formatDate(logEntry.created_at)}
                     </span>
                   </li>

@@ -16,6 +16,7 @@ import {
   MdMenu,
   MdNotifications,
   MdOutlineOndemandVideo,
+  MdPerson,
   MdRocketLaunch,
   MdSchool,
   MdSettings,
@@ -479,6 +480,45 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
           }}
         />
       )}
+
+      {/* Mobile App Bottom Navigation Bar */}
+      <nav className="inapp-mobile-bottom-nav">
+        <Link
+          href="/dashboard/new-lecture"
+          className={`inapp-bottom-nav-item ${isActive("/dashboard/new-lecture") ? "active" : ""}`}
+        >
+          <MdAdd />
+          <span>New</span>
+        </Link>
+        <Link
+          href="/dashboard/my-lectures"
+          className={`inapp-bottom-nav-item ${isActive("/dashboard/my-lectures") ? "active" : ""}`}
+        >
+          <MdOutlineOndemandVideo />
+          <span>My Lectures</span>
+        </Link>
+        <Link
+          href="/dashboard/notes"
+          className={`inapp-bottom-nav-item ${isActive("/dashboard/notes") ? "active" : ""}`}
+        >
+          <MdLibraryBooks />
+          <span>Library</span>
+        </Link>
+        <Link
+          href="/dashboard/quizzes"
+          className={`inapp-bottom-nav-item ${isActive("/dashboard/quizzes") ? "active" : ""}`}
+        >
+          <MdSchool />
+          <span>AI Quizzes</span>
+        </Link>
+        <Link
+          href="/dashboard/profile"
+          className={`inapp-bottom-nav-item ${isActive("/dashboard/profile") ? "active" : ""}`}
+        >
+          <MdPerson />
+          <span>Profile</span>
+        </Link>
+      </nav>
     </div>
   );
 }

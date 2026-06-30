@@ -293,3 +293,128 @@
     width: 100%;
   }
 }
+
+/* Somali Notes responsive layout */
+.somali-notes-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.somali-notes-header h2 {
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.somali-notes-controls {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.somali-notes-body {
+  padding: 1.75rem;
+  background-color: var(--bg-color);
+  border-radius: 14px;
+  border-left: 4px solid var(--primary-color);
+  margin-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+@media (max-width: 768px) {
+  .somali-notes-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+  
+  .somali-notes-controls {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .somali-notes-controls > div {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .somali-notes-controls select {
+    flex: 1;
+    max-width: 70%;
+  }
+
+  .somali-notes-controls button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .somali-notes-body {
+    padding: 1rem;
+  }
+}
+
+/* Timeline Log list responsiveness */
+.timeline-log-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 1rem;
+}
+
+.timeline-log-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  gap: 1rem;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.timeline-log-left {
+  display: flex;
+  gap: 1rem;
+  min-width: 0;
+  flex: 1;
+}
+
+.timeline-log-level {
+  flex-shrink: 0;
+  font-weight: bold;
+}
+
+.timeline-log-message {
+  font-family: monospace;
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-width: 0;
+}
+
+.timeline-log-date {
+  opacity: 0.7;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 640px) {
+  .timeline-log-item {
+    flex-direction: column;
+    gap: 0.35rem;
+    align-items: stretch;
+  }
+
+  .timeline-log-left {
+    width: 100%;
+  }
+
+  .timeline-log-date {
+    align-self: flex-end;
+    font-size: 0.8rem;
+  }
+}

@@ -19,9 +19,9 @@ export const metadata: Metadata = {
   description:
     "AI learning platform that converts lecture videos into structured Somali study notes.",
   icons: {
-    icon: [{ url: "/barobadi-logo.png", type: "image/png" }],
-    shortcut: "/barobadi-logo.png",
-    apple: "/barobadi-logo.png",
+    icon: [{ url: "/baro-icon.png", type: "image/png" }],
+    shortcut: "/baro-icon.png",
+    apple: "/baro-icon.png",
   },
 };
 

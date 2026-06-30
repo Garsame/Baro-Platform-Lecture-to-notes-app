@@ -1392,7 +1392,7 @@
     gap: 14px;
     padding: 16px;
     border-left: 1px solid var(--public-border);
-    background: var(--public-surface);
+    background: var(--user-surface, var(--public-surface, #ffffff)) !important;
     box-shadow: -18px 0 44px rgba(15, 23, 42, 0.14);
     transform: translateX(100%);
     visibility: hidden;
