@@ -648,3 +648,88 @@
     padding-inline: 16px !important;
   }
 }
+
+/* Responsive Banner Adjustments */
+.unverified-email-banner,
+.missing-password-banner {
+  background: #fffbeb;
+  border: 1px solid #f59e0b;
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin: 1.25rem 1.25rem 0;
+  color: #78350f;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+.missing-password-banner {
+  background: rgba(59, 130, 246, 0.08);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  color: #1e3a8a;
+}
+
+.unverified-email-banner-content,
+.missing-password-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.unverified-email-banner-content span,
+.missing-password-banner-content span {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.unverified-email-banner-btn,
+.missing-password-banner-btn {
+  background: #d97706;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.2s;
+  text-decoration: none;
+  text-align: center;
+  display: inline-block;
+}
+
+.unverified-email-banner-btn:hover {
+  background: #b45309;
+}
+
+.missing-password-banner-btn {
+  background: #3b82f6;
+}
+
+.missing-password-banner-btn:hover {
+  background: #2563eb;
+}
+
+@media (max-width: 680px) {
+  .unverified-email-banner,
+  .missing-password-banner {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.85rem;
+    padding: 1rem;
+    margin: 1rem 0 0;
+  }
+
+  .unverified-email-banner-content,
+  .missing-password-banner-content {
+    align-items: flex-start;
+  }
+
+  .unverified-email-banner-btn,
+  .missing-password-banner-btn {
+    width: 100%;
+  }
+}

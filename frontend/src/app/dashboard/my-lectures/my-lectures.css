@@ -348,3 +348,18 @@
     width: 100%;
   }
 }
+
+.lecture-row-actions-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+@media (max-width: 680px) {
+  .lecture-row-actions-meta {
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+}

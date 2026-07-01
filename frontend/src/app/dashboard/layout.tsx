@@ -360,22 +360,10 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
           {/* Unverified email warning banner */}
           {user && !user.is_email_verified && (
-            <div className="unverified-email-banner" style={{
-              background: "#fffbeb",
-              border: "1px solid #f59e0b",
-              borderRadius: "12px",
-              padding: "1rem 1.25rem",
-              margin: "1.25rem 1.25rem 0",
-              color: "#78350f",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "1rem",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div className="unverified-email-banner">
+              <div className="unverified-email-banner-content">
                 <MdWarning size={22} style={{ color: "#d97706", flexShrink: 0 }} />
-                <span style={{ fontSize: "0.9rem", fontWeight: "600" }}>
+                <span>
                   Your email address is unverified. Please verify your email to secure your account.
                 </span>
               </div>
@@ -397,20 +385,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
                     setIsSendingVerification(false);
                   }
                 }}
-                style={{
-                  background: "#d97706",
-                  color: "#ffffff",
-                  border: "none",
-                  borderRadius: "8px",
-                  padding: "8px 16px",
-                  fontSize: "0.85rem",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  transition: "background 0.2s"
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = "#b45309"}
-                onMouseOut={(e) => e.currentTarget.style.background = "#d97706"}
+                className="unverified-email-banner-btn"
               >
                 Verify Email Now
               </button>
@@ -419,47 +394,22 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
 
           {/* Missing password warning banner */}
           {user && !user.has_password && (
-            <div className="missing-password-banner" style={{
-              background: "rgba(59, 130, 246, 0.08)",
-              border: "1px solid rgba(59, 130, 246, 0.2)",
-              borderRadius: "12px",
-              padding: "1rem 1.25rem",
-              margin: "1.25rem 1.25rem 0",
-              color: "#1e3a8a",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "1rem",
-              boxShadow: "0 1px 2px rgba(0,0,0,0.05)"
-            }}>
-              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+            <div className="missing-password-banner">
+              <div className="missing-password-banner-content">
                 <MdAutoAwesome size={22} style={{ color: "#3b82f6", flexShrink: 0 }} />
-                <span style={{ fontSize: "0.9rem", fontWeight: "600" }}>
+                <span>
                   You signed in via Google. Set a password in Profile Settings if you want to use manual email sign-in later.
                 </span>
               </div>
               <Link
                 href="/dashboard/profile"
-                style={{
-                  background: "#3b82f6",
-                  color: "#ffffff",
-                  textDecoration: "none",
-                  borderRadius: "8px",
-                  padding: "8px 16px",
-                  fontSize: "0.85rem",
-                  fontWeight: "700",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                  textAlign: "center",
-                  transition: "background 0.2s"
-                }}
-                onMouseOver={(e) => e.currentTarget.style.background = "#2563eb"}
-                onMouseOut={(e) => e.currentTarget.style.background = "#3b82f6"}
+                className="missing-password-banner-btn"
               >
                 Set Password Now
               </Link>
             </div>
           )}
+
 
           <main className="inapp-dashboard-main" style={{ padding: "1.5rem 1.25rem" }}>{children}</main>
         </div>

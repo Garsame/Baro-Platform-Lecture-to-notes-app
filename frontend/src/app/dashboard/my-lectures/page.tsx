@@ -110,7 +110,7 @@ function SlowConnectionToast({ onClose }: { onClose: () => void }) {
   return (
     <div
       role="status"
-      className="fixed bottom-5 right-5 z-50 flex max-w-sm items-start gap-3 rounded-lg border border-orange-200 bg-white p-4 text-sm shadow-lg"
+      className="slow-connection-toast fixed bottom-5 right-5 z-50 flex max-w-sm items-start gap-3 rounded-lg border border-orange-200 bg-white p-4 text-sm shadow-lg"
       style={{
         position: "fixed",
         right: "1.25rem",
@@ -458,13 +458,17 @@ export default function MyLecturesPage() {
                 </div>
 
                 <div className="lecture-row-actions">
-                  {lecture.job && (
-                    <span className="lecture-progress-text">
-                      {lecture.job.progress_percent}% complete
-                    </span>
-                  )}
-                  {isProcessingStatus(lecture.status) && (
-                    <ConnectionQualityIndicator quality={connectionQuality} />
+                  {(lecture.job || isProcessingStatus(lecture.status)) && (
+                    <div className="lecture-row-actions-meta">
+                      {lecture.job && (
+                        <span className="lecture-progress-text">
+                          {lecture.job.progress_percent}% complete
+                        </span>
+                      )}
+                      {isProcessingStatus(lecture.status) && (
+                        <ConnectionQualityIndicator quality={connectionQuality} />
+                      )}
+                    </div>
                   )}
                   <Link
                     href={`/dashboard/lecture/${lecture.id}`}

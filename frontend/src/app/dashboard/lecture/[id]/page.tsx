@@ -859,7 +859,7 @@ function SlowConnectionToast({ onClose }: { onClose: () => void }) {
   return (
     <div
       role="status"
-      className="fixed bottom-5 right-5 z-50 flex max-w-sm items-start gap-3 rounded-lg border border-orange-200 bg-white p-4 text-sm shadow-lg"
+      className="slow-connection-toast fixed bottom-5 right-5 z-50 flex max-w-sm items-start gap-3 rounded-lg border border-orange-200 bg-white p-4 text-sm shadow-lg"
       style={{
         position: "fixed",
         right: "1.25rem",
@@ -1918,30 +1918,12 @@ export default function LectureDetailPage({
                    }
                  }}
                  aria-current={isActiveSegment ? "true" : undefined}
-                 style={{
-                   display: "flex",
-                   gap: "1.5rem",
-                   padding: "1.25rem",
-                   background: isActiveSegment
-                     ? "rgba(99, 102, 241, 0.08)"
-                     : "var(--bg-color)",
-                   borderRadius: "12px",
-                   border: isActiveSegment
-                     ? "2px solid var(--primary-color)"
-                     : "2px solid var(--border-color)",
-                   boxShadow: isActiveSegment
-                     ? "0 0 0 4px rgba(99, 102, 241, 0.14)"
-                     : "none",
-                   cursor: "pointer",
-                   transition:
-                     "border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease",
-                 }}
-                 className="hover:shadow-md"
+                 className="transcript-segment-card hover:shadow-md"
                >
-                   <div style={{ fontWeight: "bold", color: isActiveSegment ? "var(--primary-hover)" : "var(--primary-color)", flexShrink: 0, width: "145px", fontFamily: "monospace", fontSize: "1.05rem", borderRight: "2px solid var(--border-color)", paddingRight: "10px" }}>
+                   <div className="transcript-time-header">
                        {segment.timeRange}
                    </div>
-                   <div style={{ lineHeight: "1.8", color: "var(--text-color)", flex: 1, fontSize: "1.05rem" }}>
+                   <div className="transcript-text-body">
                        {segment.text}
                    </div>
                </div>

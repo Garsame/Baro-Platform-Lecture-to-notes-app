@@ -301,3 +301,21 @@ textarea::placeholder {
   font-size: 1rem;
   opacity: 0.8;
 }
+
+/* Global Slow Connection Toast layout styles */
+.slow-connection-toast {
+  position: fixed !important;
+  right: 1.25rem !important;
+  bottom: 1.25rem !important;
+  z-index: 10000 !important;
+}
+
+@media (max-width: 680px) {
+  .slow-connection-toast {
+    top: 5.5rem !important;
+    bottom: auto !important;
+    left: 1.25rem !important;
+    right: 1.25rem !important;
+    max-width: none !important;
+  }
+}
