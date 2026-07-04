@@ -8,6 +8,8 @@ import {
   MdCheckCircle,
   MdLibraryBooks,
   MdOutlineVideoSettings,
+  MdVisibility,
+  MdVisibilityOff,
 } from "react-icons/md";
 import { apiUrl, getErrorMessage } from "@/lib/api";
 
@@ -19,6 +21,7 @@ export default function SignUpPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -105,16 +108,25 @@ export default function SignUpPage() {
 
             <div className="form-field">
               <label htmlFor="signup-password" style={{ fontFamily: "var(--public-font-title)", fontWeight: 500 }}>Password</label>
-              <input
-                id="signup-password"
-                type="password"
-                autoComplete="new-password"
-                placeholder="Create at least 8 characters"
-                value={password}
-                onChange={(event) => setPassword(event.target.value)}
-                required
-              />
-              <small>Use at least 8 characters.</small>
+              <div className="password-field">
+                <input
+                  id="signup-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="new-password"
+                  placeholder="Create at least 8 characters"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((current) => !current)}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <MdVisibilityOff /> : <MdVisibility />}
+                </button>
+              </div>
+              <small style={{ marginTop: "4px", display: "block" }}>Use at least 8 characters.</small>
             </div>
 
             <button
