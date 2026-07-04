@@ -61,9 +61,7 @@ export default function AdminSignInPage() {
       const currentUser = await fetchCurrentUser(data.access_token);
 
       persistSession(data.access_token);
-      router.replace(
-        currentUser.role === "admin" ? "/admin/dashboard" : "/dashboard",
-      );
+      window.location.href = currentUser.role === "admin" ? "/admin/dashboard" : "/dashboard";
     } catch (err: unknown) {
       clearSession();
       setError(

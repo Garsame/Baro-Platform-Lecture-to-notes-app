@@ -98,9 +98,7 @@ export default function SignInPage() {
         const currentUser = await fetchCurrentUser(data.access_token);
 
         persistSession(data.access_token);
-        router.replace(
-          currentUser.role === "admin" ? "/admin/dashboard" : "/dashboard",
-        );
+        window.location.href = currentUser.role === "admin" ? "/admin/dashboard" : "/dashboard";
       } catch (caughtError: unknown) {
         clearSession();
         setError(
@@ -242,9 +240,7 @@ export default function SignInPage() {
       const currentUser = await fetchCurrentUser(data.access_token);
 
       persistSession(data.access_token);
-      router.replace(
-        currentUser.role === "admin" ? "/admin/dashboard" : "/dashboard",
-      );
+      window.location.href = currentUser.role === "admin" ? "/admin/dashboard" : "/dashboard";
     } catch (caughtError: unknown) {
       clearSession();
       setError(
