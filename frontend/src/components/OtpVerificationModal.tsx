@@ -21,6 +21,7 @@ export default function OtpVerificationModal({
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
     if (cooldown > 0) {
@@ -34,6 +35,7 @@ export default function OtpVerificationModal({
     if (!isOpen) {
       setOtp("");
       setError(null);
+      setSuccess(null);
       setIsLoading(false);
     }
   }, [isOpen]);
@@ -49,6 +51,7 @@ export default function OtpVerificationModal({
 
     setIsLoading(true);
     setError(null);
+    setSuccess(null);
 
     try {
       const res = await fetch(apiUrl("/api/v1/auth/verify-email"), {
@@ -77,6 +80,7 @@ export default function OtpVerificationModal({
   const handleResend = async () => {
     if (cooldown > 0) return;
     setError(null);
+    setSuccess(null);
     setIsLoading(true);
 
     try {
@@ -91,7 +95,7 @@ export default function OtpVerificationModal({
 
       setCooldown(60);
       setError(null);
-      alert("A new verification code has been sent to your email!");
+      setSuccess("A new verification code has been sent to your email!");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to resend code.");
     } finally {
@@ -204,6 +208,24 @@ export default function OtpVerificationModal({
             textAlign: "center"
           }}>
             {error}
+          </div>
+        )}
+
+        {/* Success Alert */}
+        {success && (
+          <div style={{
+            background: "rgba(16, 185, 129, 0.08)",
+            border: "1px solid rgba(16, 185, 129, 0.2)",
+            borderRadius: "10px",
+            color: "#10b981",
+            padding: "10px 14px",
+            fontSize: "0.85rem",
+            fontWeight: "600",
+            marginBottom: "20px",
+            width: "100%",
+            textAlign: "center"
+          }}>
+            {success}
           </div>
         )}
 

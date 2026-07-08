@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
 from sqlalchemy.orm import Session
@@ -226,6 +226,9 @@ def get_recent_all_lectures(
             "file_size_bytes": lec.media_asset.file_size_bytes if lec.media_asset else None,
             "job_progress_percent": lec.job.progress_percent if lec.job else None,
             "job_completed_at": lec.job.completed_at if lec.job else None,
+            "job_status": lec.job.status.value if lec.job and hasattr(lec.job.status, "value") else (str(lec.job.status) if lec.job else None),
+            "job_stage": lec.job.stage.value if lec.job and hasattr(lec.job.stage, "value") else (str(lec.job.stage) if lec.job else None),
+            "job_error_message": lec.job.error_message if lec.job else None,
             "valuation_score": analysis.get("confidence_score"),
             "valuation_label": analysis.get("confidence_label"),
             "valuation_summary": analysis.get("valuation_summary"),
@@ -233,6 +236,68 @@ def get_recent_all_lectures(
             "genre_explanation": analysis.get("genre_explanation"),
         })
     return result
+
+@router.post("/lectures/{lecture_id}/reprocess")
+def reprocess_lecture(
+    lecture_id: int,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    """Reprocess a lecture (forces resetting status to submitted and running pipeline)."""
+    from app.services.lecture_service import LectureService
+    lecture_service = LectureService(db, background_tasks=background_tasks)
+    lecture = lecture_service.reprocess_lecture_by_admin(lecture_id)
+    if not lecture:
+        raise HTTPException(status_code=404, detail="Lecture not found")
+    
+    # Log admin action
+    db.add(
+        ActivityLog(
+            action="LECTURE_REPROCESSED_BY_ADMIN",
+            user_id=current_admin.id,
+            details={
+                "lecture_id": lecture.id,
+                "title": lecture.title,
+                "admin_email": current_admin.email,
+            }
+        )
+    )
+    db.commit()
+    
+    return {
+        "id": lecture.id,
+        "title": lecture.title,
+        "status": lecture.status.value if hasattr(lecture.status, "value") else str(lecture.status),
+    }
+
+@router.delete("/lectures/{lecture_id}")
+def delete_lecture(
+    lecture_id: int,
+    db: Session = Depends(get_db),
+    current_admin: User = Depends(get_current_active_admin),
+) -> Any:
+    """Delete a lecture and all its associated data (files, transcript, notes, quiz, etc.)."""
+    from app.services.lecture_service import LectureService
+    lecture_service = LectureService(db)
+    success = lecture_service.delete_lecture(lecture_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Lecture not found")
+        
+    # Log admin action
+    db.add(
+        ActivityLog(
+            action="LECTURE_DELETED_BY_ADMIN",
+            user_id=current_admin.id,
+            details={
+                "lecture_id": lecture_id,
+                "admin_email": current_admin.email,
+            }
+        )
+    )
+    db.commit()
+    
+    return {"message": "Lecture successfully deleted"}
 
 @router.get("/system-logs")
 def get_system_logs(

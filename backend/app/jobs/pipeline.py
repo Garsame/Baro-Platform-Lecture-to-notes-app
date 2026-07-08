@@ -675,6 +675,45 @@ def execute_pipeline(db: Session, job: ProcessingJob, lecture_id: int):
     # Link everything cleanly and commit
     raise_if_canceled(db, job, lecture_id, lecture)
     db.commit()
+
+    # Pre-generate Somali TTS notes audio files
+    try:
+        from app.services.speech_service import SpeechService
+        speech_svc = SpeechService()
+        if speech_svc.speech_key and speech_svc.speech_region:
+            cleaned_text_tts = speech_svc.clean_notes_for_tts(
+                summary=note.summary,
+                key_points=note.key_points,
+                structured_content=note.structured_content
+            )
+            if cleaned_text_tts:
+                tts_dir = os.path.join(BACKEND_ROOT, "uploads", "tts")
+                os.makedirs(tts_dir, exist_ok=True)
+                
+                # Pre-generate Female voice
+                female_path = os.path.join(tts_dir, f"{lecture_id}_female.mp3")
+                create_system_log(db, "INFO", "Pre-generating Somali notes audio (Female voice)...", lecture_id)
+                speech_svc.synthesize_notes(cleaned_text_tts, female_path, voice="female")
+                
+                # Pre-generate Male voice
+                male_path = os.path.join(tts_dir, f"{lecture_id}_male.mp3")
+                create_system_log(db, "INFO", "Pre-generating Somali notes audio (Male voice)...", lecture_id)
+                speech_svc.synthesize_notes(cleaned_text_tts, male_path, voice="male")
+                
+                create_system_log(db, "INFO", "Somali notes audio pre-generated successfully for both voices.", lecture_id)
+            else:
+                create_system_log(db, "WARNING", "Somali notes content is empty, skipping audio pre-generation.", lecture_id)
+        else:
+            create_system_log(db, "WARNING", "Azure Speech credentials not configured, skipping audio pre-generation.", lecture_id)
+    except Exception as tts_exc:
+        logger.error(f"Optional Somali notes audio pre-generation failed: {tts_exc}", exc_info=True)
+        create_system_log(
+            db,
+            "WARNING",
+            f"Optional Somali notes audio pre-generation failed: {str(tts_exc)}",
+            lecture_id,
+        )
+
     create_system_log(db, "INFO", "Lecture processing completed successfully.", lecture_id)
 
     try:

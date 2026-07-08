@@ -61,6 +61,7 @@ export default function QuizDetail({
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showConfirmSubmitModal, setShowConfirmSubmitModal] = useState(false);
 
   // Review states
   const [reviewMode, setReviewMode] = useState(false);
@@ -155,15 +156,18 @@ export default function QuizDetail({
     }
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     // Check if all questions are answered
     const unansweredCount = questions.filter((q) => !answers[q.id]).length;
     if (unansweredCount > 0) {
-      if (!confirm(`Waxaa kuu dhiman ${unansweredCount} su'aalood. Ma rabtaa inaad gudbiso kediska oo la saxo?`)) {
-        return;
-      }
+      setShowConfirmSubmitModal(true);
+    } else {
+      void executeSubmit();
     }
+  };
 
+  const executeSubmit = async () => {
+    setShowConfirmSubmitModal(false);
     try {
       setIsSubmitting(true);
       setError(null);
@@ -647,6 +651,80 @@ export default function QuizDetail({
           </button>
         )}
       </div>
+
+      {/* Custom Confirmation Modal for Submission */}
+      {showConfirmSubmitModal && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(6px)",
+            padding: "1rem",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "460px",
+              background: "var(--secondary-bg, #ffffff)",
+              border: "1px solid var(--border-color, #e2e8f0)",
+              borderRadius: "16px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              padding: "1.75rem",
+              textAlign: "center",
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: "1.25rem", fontWeight: 700, color: "var(--text-color)" }}>
+              Kediska ma dhammaystirin!
+            </h3>
+            <p style={{ margin: "1rem 0 1.5rem", color: "var(--text-muted)", fontSize: "0.95rem", lineHeight: "1.6" }}>
+              Waxaa kuu dhiman {questions.filter((q) => !answers[q.id]).length} su&apos;aalood oo aadan ka jawaabin. Ma rabtaa inaad hadda gudbiso kediska si loo saxo?
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", gap: "0.75rem" }}>
+              <button
+                type="button"
+                onClick={() => setShowConfirmSubmitModal(false)}
+                style={{
+                  padding: "0.6rem 1.25rem",
+                  borderRadius: "10px",
+                  border: "1px solid var(--border-color, #e2e8f0)",
+                  background: "transparent",
+                  color: "var(--text-color)",
+                  fontSize: "0.9rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Ku laabo kediska
+              </button>
+              <button
+                type="button"
+                onClick={() => void executeSubmit()}
+                style={{
+                  padding: "0.6rem 1.25rem",
+                  borderRadius: "10px",
+                  border: "none",
+                  background: "var(--primary-color)",
+                  color: "white",
+                  fontSize: "0.9rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Haa, Gudbi
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

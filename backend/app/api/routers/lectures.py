@@ -857,8 +857,30 @@ class NotesAudioRequest(BaseModel):
     voice: str = "female"
 
 
+import threading
+
 TTS_DIR = os.path.join(UPLOAD_DIR, "tts")
 os.makedirs(TTS_DIR, exist_ok=True)
+
+active_tts_generations = set()
+active_tts_lock = threading.Lock()
+
+def run_tts_synthesis(lecture_id: int, voice: str, cleaned_text: str, absolute_path: str):
+    try:
+        from app.services.speech_service import SpeechService
+        speech_service = SpeechService()
+        speech_service.synthesize_notes(cleaned_text, absolute_path, voice=voice)
+    except Exception as exc:
+        logger.error(f"Failed to synthesize speech in background for lecture {lecture_id}: {exc}", exc_info=True)
+        # If partial/broken file is created, clean it up
+        if os.path.exists(absolute_path):
+            try:
+                os.remove(absolute_path)
+            except Exception:
+                pass
+    finally:
+        with active_tts_lock:
+            active_tts_generations.discard((lecture_id, voice))
 
 
 @router.post("/{lecture_id}/notes-audio")
@@ -866,10 +888,11 @@ def generate_lecture_notes_audio(
     *,
     lecture_id: int,
     payload: NotesAudioRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_active_user),
 ) -> Any:
-    """Generate or retrieve cached text-to-speech audio for Somali notes."""
+    """Generate or retrieve cached text-to-speech audio for Somali notes asynchronously."""
     lecture_service = LectureService(db)
     lecture = lecture_service.get_lecture(lecture_id=lecture_id, owner_id=current_user.id)
     if not lecture:
@@ -888,9 +911,15 @@ def generate_lecture_notes_audio(
 
     # Check cache
     if os.path.exists(absolute_path) and os.path.getsize(absolute_path) > 0:
-        return {"url": relative_path}
+        return {"url": relative_path, "status": "ready"}
 
-    # Generate TTS
+    # Check if already processing
+    key = (lecture_id, voice)
+    with active_tts_lock:
+        if key in active_tts_generations:
+            return {"url": None, "status": "generating"}
+
+    # Generate TTS in background
     from app.services.speech_service import SpeechService
     speech_service = SpeechService()
 
@@ -904,18 +933,18 @@ def generate_lecture_notes_audio(
     if not cleaned_text:
         raise HTTPException(status_code=400, detail="Somali notes content is empty, cannot synthesize.")
 
-    try:
-        speech_service.synthesize_notes(cleaned_text, absolute_path, voice=voice)
-    except Exception as exc:
-        # If partial/broken file is created, clean it up
-        if os.path.exists(absolute_path):
-            try:
-                os.remove(absolute_path)
-            except Exception:
-                pass
-        raise HTTPException(status_code=500, detail=f"Failed to synthesize speech: {str(exc)}") from exc
+    with active_tts_lock:
+        active_tts_generations.add(key)
 
-    return {"url": relative_path}
+    background_tasks.add_task(
+        run_tts_synthesis,
+        lecture_id,
+        voice,
+        cleaned_text,
+        absolute_path
+    )
+
+    return {"url": None, "status": "generating"}
 
 
 class LectureUpdateTitleRequest(BaseModel):

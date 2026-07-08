@@ -239,3 +239,112 @@ class LectureService:
         self.db.commit()
         self.db.refresh(lecture)
         return lecture
+
+    def reprocess_lecture_by_admin(self, lecture_id: int) -> Optional[Lecture]:
+        lecture = self.db.query(Lecture).options(joinedload(Lecture.job)).filter(
+            Lecture.id == lecture_id
+        ).first()
+        if not lecture or not lecture.job:
+            return None
+
+        # If it's already running/pending, cancel it first so we clean up and start fresh
+        if lecture.job.status in {JobStatus.pending, JobStatus.running}:
+            logger.warning(
+                "Admin reprocess requested for lecture_id=%s but it is already %s. Canceling first.",
+                lecture_id,
+                lecture.job.status,
+            )
+            try:
+                lecture.job.status = JobStatus.canceled
+                lecture.job.stage = JobStage.canceled
+                self.db.commit()
+            except Exception as e:
+                logger.error(f"Failed to cancel running job during admin reprocess: {e}")
+
+        # Now clean up DB results and logs before triggering processing pipeline
+        transcript = self.db.query(Transcript).filter(Transcript.lecture_id == lecture_id).first()
+        note = self.db.query(Note).filter(Note.lecture_id == lecture_id).first()
+        media_asset = self.db.query(MediaAsset).filter(MediaAsset.lecture_id == lecture_id).first()
+
+        if transcript:
+            self.db.delete(transcript)
+        if note:
+            self.db.delete(note)
+        if media_asset:
+            self.db.delete(media_asset)
+
+        self._delete_lecture_processing_logs(lecture_id)
+
+        lecture.status = LectureStatus.submitted
+        lecture.job.status = JobStatus.pending
+        lecture.job.stage = JobStage.validating_input
+        lecture.job.progress_percent = 0
+        lecture.job.error_message = None
+        lecture.job.started_at = None
+        lecture.job.completed_at = None
+        lecture.job.task_id = None
+        self.db.commit()
+        self.db.refresh(lecture)
+
+        if settings.USE_CELERY:
+            from app.jobs.worker import process_lecture_pipeline
+            process_lecture_pipeline.delay(lecture.id)
+        elif self.background_tasks:
+            from app.jobs.worker import process_lecture_pipeline_sync
+            self.background_tasks.add_task(process_lecture_pipeline_sync, lecture.id)
+
+        return lecture
+
+    def delete_lecture(self, lecture_id: int) -> bool:
+        import os
+        lecture = self.db.query(Lecture).options(
+            joinedload(Lecture.media_asset),
+            joinedload(Lecture.job)
+        ).filter(Lecture.id == lecture_id).first()
+        if not lecture:
+            return False
+
+        # Cancel any active running job
+        if lecture.job and lecture.job.status in {JobStatus.pending, JobStatus.running}:
+            try:
+                lecture.job.status = JobStatus.canceled
+                lecture.job.stage = JobStage.canceled
+                self.db.commit()
+            except Exception as e:
+                logger.error(f"Failed to cancel active job before delete: {e}")
+
+        # Clean up physical files
+        if lecture.source_type == "upload" and lecture.source_url:
+            try:
+                if os.path.exists(lecture.source_url):
+                    os.remove(lecture.source_url)
+                    logger.info(f"Deleted source upload file: {lecture.source_url}")
+            except Exception as e:
+                logger.error(f"Failed to delete source file {lecture.source_url}: {e}")
+
+        if lecture.media_asset and lecture.media_asset.file_path:
+            try:
+                if os.path.exists(lecture.media_asset.file_path):
+                    os.remove(lecture.media_asset.file_path)
+                    logger.info(f"Deleted extracted media file: {lecture.media_asset.file_path}")
+            except Exception as e:
+                logger.error(f"Failed to delete media asset file {lecture.media_asset.file_path}: {e}")
+
+        # TTS files
+        for voice in ("female", "male"):
+            tts_path = os.path.join("uploads", "tts", f"{lecture_id}_{voice}.mp3")
+            try:
+                if os.path.exists(tts_path):
+                    os.remove(tts_path)
+                    logger.info(f"Deleted TTS file: {tts_path}")
+            except Exception as e:
+                logger.error(f"Failed to delete TTS file {tts_path}: {e}")
+
+        # Clean up logs referencing this lecture
+        self._delete_lecture_processing_logs(lecture_id)
+
+        # Delete database records (cascade takes care of children relationships)
+        self.db.delete(lecture)
+        self.db.commit()
+        logger.info(f"Successfully deleted lecture ID {lecture_id} and all related database records.")
+        return True

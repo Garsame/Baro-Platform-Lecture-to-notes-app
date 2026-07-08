@@ -314,6 +314,18 @@ export default function NotesLibraryPage() {
   const [renaming, setRenaming] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newLibraryName, setNewLibraryName] = useState("");
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+    setToast({ message, type });
+  };
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
 
 
   // Load empty categories from LocalStorage
@@ -433,7 +445,7 @@ export default function NotesLibraryPage() {
   const handleRenameCategory = async (oldCategory: string) => {
     const trimmed = editCategoryValue.trim();
     if (!trimmed) {
-      alert("Category name cannot be empty.");
+      showToast("Category name cannot be empty.", "error");
       return;
     }
     if (trimmed === oldCategory) {
@@ -486,9 +498,10 @@ export default function NotesLibraryPage() {
       });
 
       setEditingCategory(null);
+      showToast("Category renamed successfully!", "success");
     } catch (err) {
       console.error(err);
-      alert("Error renaming library category.");
+      showToast("Error renaming library category.", "error");
     } finally {
       setRenaming(false);
     }
@@ -524,9 +537,11 @@ export default function NotesLibraryPage() {
         next.add(targetCategory);
         return next;
       });
+
+      showToast("Lecture moved successfully!", "success");
     } catch (err) {
       console.error(err);
-      alert("Error moving lecture to target category.");
+      showToast("Error moving lecture to target category.", "error");
     }
   };
 
@@ -539,13 +554,13 @@ export default function NotesLibraryPage() {
   const handleCreateLibraryConfirm = () => {
     const trimmed = newLibraryName.trim();
     if (!trimmed) {
-      alert("Category name cannot be empty.");
+      showToast("Category name cannot be empty.", "error");
       return;
     }
 
     const exists = genreGroups.some((g) => g.category.toLowerCase() === trimmed.toLowerCase());
     if (exists) {
-      alert("Maktabaddan mar hore ayay jirtay (This library already exists).");
+      showToast("Maktabaddan mar hore ayay jirtay (This library already exists).", "error");
       return;
     }
 
@@ -563,6 +578,7 @@ export default function NotesLibraryPage() {
 
     setShowCreateModal(false);
     setNewLibraryName("");
+    showToast("New library category created!", "success");
   };
 
 
@@ -1134,6 +1150,32 @@ export default function NotesLibraryPage() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Custom Toast Alert */}
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "2rem",
+            right: "2rem",
+            zIndex: 10000,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            padding: "0.9rem 1.25rem",
+            borderRadius: "12px",
+            background: toast.type === "success" ? "rgba(16, 185, 129, 0.95)" : toast.type === "error" ? "rgba(239, 68, 68, 0.95)" : "rgba(59, 130, 246, 0.95)",
+            backdropFilter: "blur(8px)",
+            color: "white",
+            boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+            fontSize: "0.9rem",
+            fontWeight: 600,
+            animation: "notes-fade-in 0.2s ease-out",
+          }}
+        >
+          {toast.type === "success" ? "✓" : toast.type === "error" ? "⚠" : "ℹ"} {toast.message}
         </div>
       )}
     </div>

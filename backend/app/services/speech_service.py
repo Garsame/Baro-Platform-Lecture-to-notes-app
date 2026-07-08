@@ -36,7 +36,7 @@ class SpeechService:
         cleaned = re.sub(r' +', ' ', cleaned)
         return cleaned.strip()
 
-    def split_text_into_chunks(self, text: str, max_chunk_size: int = 3000) -> list[str]:
+    def split_text_into_chunks(self, text: str, max_chunk_size: int = 800) -> list[str]:
         # Split text into paragraphs first
         paragraphs = text.split("\n")
         chunks = []
@@ -92,7 +92,7 @@ class SpeechService:
         speech_config.speech_synthesis_voice_name = voice_name
 
         # Split text into safe chunks to avoid 10-minute (600,000ms) limit errors
-        chunks = self.split_text_into_chunks(text, max_chunk_size=3000)
+        chunks = self.split_text_into_chunks(text, max_chunk_size=800)
         logger.info(f"Split text into {len(chunks)} chunks for synthesis.")
 
         # Create synthesizer with audio_config=None to write to memory

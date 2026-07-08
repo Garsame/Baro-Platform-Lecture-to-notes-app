@@ -934,6 +934,21 @@ export default function LectureDetailPage({
   const [logs, setLogs] = useState<LectureLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "info" } | null>(null);
+  const [activeConfirmModal, setActiveConfirmModal] = useState<"word" | "pdf" | "cancel" | null>(null);
+  const [notesAudioStatus, setNotesAudioStatus] = useState<string | null>(null);
+
+  const showToast = (message: string, type: "success" | "error" | "info" = "success") => {
+    setToast({ message, type });
+  };
+
+  useEffect(() => {
+    if (toast) {
+      const timer = setTimeout(() => setToast(null), 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [toast]);
+
   const [actionError, setActionError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
   const [canceling, setCanceling] = useState(false);
@@ -1417,72 +1432,87 @@ export default function LectureDetailPage({
         setIsNotesPlaying(true);
       } catch (err) {
         console.error("Failed to play notes audio:", err);
-        alert("Failed to play the audio. Please try again.");
+        showToast("Failed to play the audio. Please try again.", "error");
       }
       return;
     }
 
     setIsNotesLoading(true);
+    setNotesAudioStatus("Sugayaa...");
     setActionError(null);
 
-    try {
-      const response = await fetch(apiUrl(`/api/v1/lectures/${id}/notes-audio`), {
-        method: "POST",
-        headers: authHeaders({
-          "Content-Type": "application/json",
-        }),
-        body: JSON.stringify({
-          voice: notesVoice,
-        }),
-      });
+    const pollAudioFile = async () => {
+      try {
+        const response = await fetch(apiUrl(`/api/v1/lectures/${id}/notes-audio`), {
+          method: "POST",
+          headers: authHeaders({
+            "Content-Type": "application/json",
+          }),
+          body: JSON.stringify({
+            voice: notesVoice,
+          }),
+        });
 
-      if (!response.ok) {
-        throw new Error(
-          await getErrorMessage(response, "Failed to generate notes audio."),
-        );
+        if (!response.ok) {
+          throw new Error(
+            await getErrorMessage(response, "Failed to generate notes audio."),
+          );
+        }
+
+        const data = await response.json();
+
+        if (data.status === "generating") {
+          setNotesAudioStatus("Diyaarinaya...");
+          // Poll again after 3 seconds
+          setTimeout(pollAudioFile, 3000);
+          return;
+        }
+
+        const resolvedAudioUrl = apiUrl(data.url);
+        const audio = new Audio(resolvedAudioUrl);
+
+        audio.onplay = () => {
+          setIsNotesPlaying(true);
+        };
+
+        audio.onpause = () => {
+          setIsNotesPlaying(false);
+        };
+
+        audio.onended = () => {
+          setIsNotesPlaying(false);
+        };
+
+        audio.onerror = () => {
+          setIsNotesPlaying(false);
+          setIsNotesLoading(false);
+          setNotesAudioStatus(null);
+          showToast("An error occurred during audio playback.", "error");
+        };
+
+        audio.oncanplaythrough = () => {
+          setIsNotesLoading(false);
+          setNotesAudioStatus(null);
+        };
+
+        setNotesAudio(audio);
+        await audio.play();
+      } catch (err: unknown) {
+        console.error(err);
+        setIsNotesLoading(false);
+        setNotesAudioStatus(null);
+        showToast(err instanceof Error ? err.message : "Failed to load/generate notes audio.", "error");
       }
+    };
 
-      const data = await response.json();
-      const resolvedAudioUrl = apiUrl(data.url);
-
-      const audio = new Audio(resolvedAudioUrl);
-
-      audio.onplay = () => {
-        setIsNotesPlaying(true);
-      };
-
-      audio.onpause = () => {
-        setIsNotesPlaying(false);
-      };
-
-      audio.onended = () => {
-        setIsNotesPlaying(false);
-      };
-
-      audio.onerror = () => {
-        setIsNotesPlaying(false);
-        setIsNotesLoading(false);
-        alert("An error occurred during audio playback.");
-      };
-
-      audio.oncanplaythrough = () => {
-        setIsNotesLoading(false);
-      };
-
-      setNotesAudio(audio);
-      await audio.play();
-    } catch (err: unknown) {
-      console.error(err);
-      setIsNotesLoading(false);
-      alert(err instanceof Error ? err.message : "Failed to load/generate notes audio.");
-    }
+    void pollAudioFile();
   };
 
   const downloadNotesAsWord = () => {
-    if (!window.confirm("Are you sure you want to download the Somali notes as a Word document?")) {
-      return;
-    }
+    setActiveConfirmModal("word");
+  };
 
+  const executeDownloadNotesAsWord = () => {
     const title = lecture?.title || "Somali_Study_Notes";
 
     const htmlContent = `
@@ -1539,13 +1569,14 @@ export default function LectureDetailPage({
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+    setActiveConfirmModal(null);
   };
 
-  const downloadNotesAsPdf = async () => {
-    if (!window.confirm("Are you sure you want to download the Somali notes as a PDF?")) {
-      return;
-    }
+  const downloadNotesAsPdf = () => {
+    setActiveConfirmModal("pdf");
+  };
 
+  const executeDownloadNotesAsPdf = async () => {
     const title = lecture?.title || "Somali_Study_Notes";
     const safeTitle = title.replace(/[^a-zA-Z0-9]/g, "_");
 
@@ -1591,7 +1622,9 @@ export default function LectureDetailPage({
       await html2pdf().set(opt).from(element).save();
     } catch (err) {
       console.error("Failed to generate PDF:", err);
-      alert("Failed to generate the PDF file.");
+      showToast("Failed to generate the PDF file.", "error");
+    } finally {
+      setActiveConfirmModal(null);
     }
   };
 
@@ -1670,7 +1703,7 @@ export default function LectureDetailPage({
   const handleSaveTitle = async () => {
     const trimmed = editedTitle.trim();
     if (!trimmed) {
-      alert("Lecture title cannot be empty.");
+      showToast("Lecture title cannot be empty.", "error");
       return;
     }
 
@@ -1697,9 +1730,10 @@ export default function LectureDetailPage({
       const updatedLecture = await response.json();
       setLecture(updatedLecture);
       setIsEditingTitle(false);
+      showToast("Lecture title updated successfully!", "success");
     } catch (err: unknown) {
       console.error(err);
-      alert(err instanceof Error ? err.message : "Failed to update lecture title.");
+      showToast(err instanceof Error ? err.message : "Failed to update lecture title.", "error");
     } finally {
       setSavingTitle(false);
     }
@@ -1730,15 +1764,11 @@ export default function LectureDetailPage({
     }
   };
 
-  const handleCancel = async () => {
-    const confirmed = window.confirm(
-      "Cancel this lecture processing? You can reprocess it again later.",
-    );
+  const handleCancel = () => {
+    setActiveConfirmModal("cancel");
+  };
 
-    if (!confirmed) {
-      return;
-    }
-
+  const executeCancel = async () => {
     setCanceling(true);
     setActionError(null);
     try {
@@ -1754,14 +1784,17 @@ export default function LectureDetailPage({
       }
 
       await refreshLecture();
+      showToast("Lecture processing has been canceled.", "info");
     } catch (err: unknown) {
       setActionError(
         err instanceof Error
           ? err.message
           : "Failed to cancel lecture processing.",
       );
+      showToast(err instanceof Error ? err.message : "Failed to cancel lecture processing.", "error");
     } finally {
       setCanceling(false);
+      setActiveConfirmModal(null);
     }
   };
 
@@ -3066,7 +3099,7 @@ export default function LectureDetailPage({
                         borderRadius: "50%",
                         animation: "spin 1s linear infinite"
                       }}></span>
-                      Sugayaa...
+                      {notesAudioStatus || "Sugayaa..."}
                     </>
                   ) : isNotesPlaying ? (
                     <>
@@ -3311,6 +3344,113 @@ export default function LectureDetailPage({
         <SlowConnectionToast
           onClose={() => setShowSlowConnectionToast(false)}
         />
+      )}
+
+      {/* Custom Confirmation Modals */}
+      {activeConfirmModal !== null && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(6px)",
+            padding: "1rem",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "480px",
+              background: "var(--secondary-bg, #ffffff)",
+              border: "1px solid var(--border-color, #e2e8f0)",
+              borderRadius: "16px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              padding: "1.75rem",
+              textAlign: "left",
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700, color: "var(--text-color)" }}>
+              {activeConfirmModal === "word" && "Download Study Notes (Word)?"}
+              {activeConfirmModal === "pdf" && "Download Study Notes (PDF)?"}
+              {activeConfirmModal === "cancel" && "Cancel Processing?"}
+            </h3>
+            <p style={{ margin: "1rem 0 1.5rem", color: "var(--text-muted)", fontSize: "0.95rem", lineHeight: "1.5" }}>
+              {activeConfirmModal === "word" && "Are you sure you want to download the Somali notes as a Word document?"}
+              {activeConfirmModal === "pdf" && "Are you sure you want to download the Somali study notes as a PDF?"}
+              {activeConfirmModal === "cancel" && "Are you sure you want to cancel the processing of this lecture? You can reprocess it again later."}
+            </p>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+              <button
+                type="button"
+                onClick={() => setActiveConfirmModal(null)}
+                style={{
+                  padding: "0.55rem 1.1rem",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border-color, #e2e8f0)",
+                  background: "transparent",
+                  color: "var(--text-color)",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                No, Keep
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (activeConfirmModal === "word") executeDownloadNotesAsWord();
+                  else if (activeConfirmModal === "pdf") void executeDownloadNotesAsPdf();
+                  else if (activeConfirmModal === "cancel") void executeCancel();
+                }}
+                style={{
+                  padding: "0.55rem 1.25rem",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: activeConfirmModal === "cancel" ? "#ef4444" : "var(--primary-color)",
+                  color: "white",
+                  fontSize: "0.85rem",
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                Yes, Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Custom Toast Alert */}
+      {toast && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "2rem",
+            right: "2rem",
+            zIndex: 10000,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            padding: "0.9rem 1.25rem",
+            borderRadius: "12px",
+            background: toast.type === "success" ? "rgba(16, 185, 129, 0.95)" : toast.type === "error" ? "rgba(239, 68, 68, 0.95)" : "rgba(59, 130, 246, 0.95)",
+            backdropFilter: "blur(8px)",
+            color: "white",
+            boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
+            fontSize: "0.9rem",
+            fontWeight: 600,
+          }}
+        >
+          {toast.type === "success" ? "✓" : toast.type === "error" ? "⚠" : "ℹ"} {toast.message}
+        </div>
       )}
     </div>
   );

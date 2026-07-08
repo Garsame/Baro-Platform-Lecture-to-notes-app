@@ -35,6 +35,8 @@ export default function AdminMessagesPage() {
   const [messages, setMessages] = useState<ContactMessageRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deleteConfirmName, setDeleteConfirmName] = useState<string>("");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"all" | "unread" | "read">("all");
   const [expandedMessageId, setExpandedMessageId] = useState<number | null>(null);
@@ -99,11 +101,13 @@ export default function AdminMessagesPage() {
     }
   };
 
-  const handleDelete = async (id: number, name: string) => {
-    if (!confirm(`Are you sure you want to permanently delete the message from ${name}?`)) {
-      return;
-    }
+  const handleDeleteRequest = (id: number, name: string) => {
+    setDeleteConfirmId(id);
+    setDeleteConfirmName(name);
+  };
 
+  const executeDelete = async (id: number) => {
+    setDeleteConfirmId(null);
     setFeedback(null);
     try {
       const res = await fetch(apiUrl(`/api/v1/admin/messages/${id}`), {
@@ -511,7 +515,7 @@ export default function AdminMessagesPage() {
                             </button>
                             <button
                               type="button"
-                              onClick={() => void handleDelete(msg.id, msg.name)}
+                              onClick={() => handleDeleteRequest(msg.id, msg.name)}
                               style={{
                                 background: "transparent",
                                 color: "var(--primary-color)",
@@ -753,6 +757,83 @@ export default function AdminMessagesPage() {
           to { transform: rotate(360deg); }
         }
       `}</style>
+      {/* Custom Confirmation Modal for Delete */}
+      {deleteConfirmId !== null && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(6px)",
+            padding: "1rem",
+            animation: "admin-fade-in 0.2s ease-out forwards",
+          }}
+        >
+          <div
+            className="admin-card"
+            style={{
+              width: "100%",
+              maxWidth: "480px",
+              background: "var(--bg-color, #ffffff)",
+              border: "1px solid var(--border, #e2e8f0)",
+              borderRadius: "16px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              padding: "1.5rem",
+              textAlign: "left",
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "var(--primary-hover)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <MdDelete size={20} /> Delete Message?
+            </h3>
+            <p style={{ margin: "1rem 0 1.5rem", color: "var(--text-muted)", fontSize: "0.92rem", lineHeight: "1.5" }}>
+              Are you sure you want to permanently delete the message from <strong>{deleteConfirmName}</strong>? This action is permanent and cannot be undone.
+            </p>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                style={{
+                  padding: "0.55rem 1.1rem",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border)",
+                  background: "transparent",
+                  color: "var(--text)",
+                  fontSize: "0.85rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (deleteConfirmId !== null) void executeDelete(deleteConfirmId);
+                }}
+                style={{
+                  padding: "0.55rem 1.25rem",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "var(--primary-hover)",
+                  color: "white",
+                  fontSize: "0.85rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Delete Permanently
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

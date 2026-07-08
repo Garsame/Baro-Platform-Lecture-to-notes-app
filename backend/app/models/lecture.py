@@ -25,10 +25,10 @@ class Lecture(Base):
     owner_id = Column(Integer, ForeignKey("users.id"))
     owner = relationship("User", back_populates="lectures")
     
-    job = relationship("ProcessingJob", back_populates="lecture", uselist=False)
-    transcript = relationship("Transcript", back_populates="lecture", uselist=False)
-    notes = relationship("Note", back_populates="lecture", uselist=False)
-    media_asset = relationship("MediaAsset", back_populates="lecture", uselist=False)
+    job = relationship("ProcessingJob", back_populates="lecture", uselist=False, cascade="all, delete-orphan")
+    transcript = relationship("Transcript", back_populates="lecture", uselist=False, cascade="all, delete-orphan")
+    notes = relationship("Note", back_populates="lecture", uselist=False, cascade="all, delete-orphan")
+    media_asset = relationship("MediaAsset", back_populates="lecture", uselist=False, cascade="all, delete-orphan")
     chat_messages = relationship(
         "LectureChatMessage",
         back_populates="lecture",

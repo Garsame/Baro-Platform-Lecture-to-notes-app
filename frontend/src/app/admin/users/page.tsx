@@ -78,6 +78,8 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [feedback, setFeedback] = useState<FeedbackState | null>(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [deleteConfirmEmail, setDeleteConfirmEmail] = useState<string>("");
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [createForm, setCreateForm] = useState<CreateFormState>(defaultCreateForm);
@@ -154,11 +156,13 @@ export default function UsersPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Are you sure you want to permanently delete this user?")) {
-      return;
-    }
+  const handleDeleteRequest = (id: number, email: string) => {
+    setDeleteConfirmId(id);
+    setDeleteConfirmEmail(email);
+  };
 
+  const executeDelete = async (id: number) => {
+    setDeleteConfirmId(null);
     setFeedback(null);
 
     try {
@@ -423,7 +427,7 @@ export default function UsersPage() {
                     </button>
                     <button
                       type="button"
-                      onClick={() => void handleDelete(user.id)}
+                      onClick={() => handleDeleteRequest(user.id, user.email)}
                       style={{
                         background: "transparent",
                         color: "var(--primary-color)",
@@ -733,6 +737,82 @@ export default function UsersPage() {
                 }}
               >
                 {isSavingEdit ? "Saving..." : "Save Changes"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Custom Confirmation Modal for Delete User */}
+      {deleteConfirmId !== null && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            background: "rgba(15, 23, 42, 0.6)",
+            backdropFilter: "blur(6px)",
+            padding: "1rem",
+          }}
+        >
+          <div
+            className="admin-card"
+            style={{
+              width: "100%",
+              maxWidth: "480px",
+              background: "var(--bg-color, #ffffff)",
+              border: "1px solid var(--border, #e2e8f0)",
+              borderRadius: "16px",
+              boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+              padding: "1.5rem",
+              textAlign: "left",
+            }}
+          >
+            <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 800, color: "var(--primary-hover)", display: "flex", alignItems: "center", gap: "0.5rem" }}>
+              <MdDelete size={20} /> Delete User Account?
+            </h3>
+            <p style={{ margin: "1rem 0 1.5rem", color: "var(--text-muted)", fontSize: "0.92rem", lineHeight: "1.5" }}>
+              Are you sure you want to permanently delete the user <strong>{deleteConfirmEmail}</strong>? This will erase their user profile and all metadata. This action is permanent and cannot be undone.
+            </p>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: "0.75rem" }}>
+              <button
+                type="button"
+                onClick={() => setDeleteConfirmId(null)}
+                style={{
+                  padding: "0.55rem 1.1rem",
+                  borderRadius: "8px",
+                  border: "1px solid var(--border)",
+                  background: "transparent",
+                  color: "var(--text)",
+                  fontSize: "0.85rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (deleteConfirmId !== null) void executeDelete(deleteConfirmId);
+                }}
+                style={{
+                  padding: "0.55rem 1.25rem",
+                  borderRadius: "8px",
+                  border: "none",
+                  background: "var(--primary-hover)",
+                  color: "white",
+                  fontSize: "0.85rem",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                }}
+              >
+                Delete Permanently
               </button>
             </div>
           </div>
