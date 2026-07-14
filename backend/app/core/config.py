@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     OPENAI_TRANSCRIPTION_MODEL: str = "whisper-1"
     USE_OPENAI_FOR_TRANSCRIPTION: bool = False
     GEMINI_API_KEY: str = ""
-    GEMINI_TRANSCRIPTION_MODEL: str = "gemini-2.5-flash-lite"
+    GEMINI_TRANSCRIPTION_MODEL: str = "gemini-2.5-flash"
     GEMINI_CHAT_MODEL: str = "gemini-2.5-flash"
     GEMMA_MODEL: str = "gemini-2.5-flash"
     YOUTUBE_MAX_DURATION_MINUTES: int = 0
