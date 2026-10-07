@@ -133,16 +133,17 @@ class TranscriptionService:
 
         return ", ".join(summary_parts)
 
-    def _transcribe_audio_once(self, audio_file_path: str) -> str:
+    def _transcribe_audio_once(self, audio_file_path: str, model_name: str | None = None) -> str:
         """
         Transcribes audio using the Google Gemini API.
         """
+        model = model_name or self.model
         uploaded_file = None
         try:
             logger.info(
                 "Starting Gemini transcription for %s with model %s",
                 audio_file_path,
-                self.model,
+                model,
             )
             uploaded_file = self.client.files.upload(file=audio_file_path)
             logger.info(
@@ -158,7 +159,7 @@ class TranscriptionService:
             )
 
             transcript = self.client.models.generate_content(
-                model=self.model,
+                model=model,
                 contents=[
                     "Generate a plain text transcript of the spoken audio. Do not summarize. Do not add commentary.",
                     uploaded_file,
@@ -187,7 +188,7 @@ class TranscriptionService:
             logger.exception(
                 "Gemini transcription failed for %s with model %s",
                 audio_file_path,
-                self.model,
+                model,
             )
             raise
         finally:
@@ -236,33 +237,40 @@ class TranscriptionService:
             return self._transcribe_audio_with_whisper(audio_file_path)
 
         last_error: Exception | None = None
+        transcription_models = [self.model]
+        if "gemini-1.5-flash" not in transcription_models:
+            transcription_models.append("gemini-1.5-flash")
 
-        for attempt in range(1, self.max_retries + 1):
-            try:
-                if attempt > 1:
-                    logger.warning(
-                        "Retrying Gemini transcription for %s (attempt %s/%s).",
-                        audio_file_path,
-                        attempt,
-                        self.max_retries,
-                    )
-                return self._transcribe_audio_once(audio_file_path)
-            except Exception as exc:
-                last_error = exc
-                if self.is_recitation_error(exc) and self.openai_client:
-                    logger.warning("Recitation/Safety block triggered on Gemini. Falling back to OpenAI Whisper for %s", audio_file_path)
-                    try:
-                        return self._transcribe_audio_with_whisper(audio_file_path)
-                    except Exception as whisper_exc:
-                        logger.error("OpenAI Whisper fallback transcription failed: %s", whisper_exc)
-                        last_error = whisper_exc
-                if attempt >= self.max_retries or not self._is_retryable_error(exc):
-                    break
-                time.sleep(min(2 ** attempt, 10))
+        for model in transcription_models:
+            logger.info(f"Attempting transcription using model: {model}")
+            for attempt in range(1, self.max_retries + 1):
+                try:
+                    if attempt > 1 or model != self.model:
+                        logger.warning(
+                            "Attempting Gemini transcription for %s with model %s (attempt %s/%s).",
+                            audio_file_path,
+                            model,
+                            attempt,
+                            self.max_retries,
+                        )
+                    return self._transcribe_audio_once(audio_file_path, model_name=model)
+                except Exception as exc:
+                    last_error = exc
+                    if self.is_recitation_error(exc) and self.openai_client:
+                        logger.warning("Recitation/Safety block triggered on Gemini. Falling back to OpenAI Whisper for %s", audio_file_path)
+                        try:
+                            return self._transcribe_audio_with_whisper(audio_file_path)
+                        except Exception as whisper_exc:
+                            logger.error("OpenAI Whisper fallback transcription failed: %s", whisper_exc)
+                            last_error = whisper_exc
+                    if attempt >= self.max_retries or not self._is_retryable_error(exc):
+                        # Break inner loop to switch models
+                        break
+                    time.sleep(min(2 ** attempt, 10))
 
         if last_error is None:
             raise RuntimeError("Gemini transcription failed for an unknown reason.")
 
         raise RuntimeError(
-            f"Gemini transcription failed after {self.max_retries} attempt(s): {last_error}"
+            f"Gemini transcription failed after trying fallback models: {last_error}"
         ) from last_error
