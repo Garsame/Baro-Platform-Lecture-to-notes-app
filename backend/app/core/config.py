@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     USE_OPENAI_FOR_TRANSCRIPTION: bool = False
     GEMINI_API_KEY: str = ""
     GEMINI_TRANSCRIPTION_MODEL: str = "gemini-2.5-flash"
+    GEMINI_TRANSCRIPTION_FALLBACK_MODELS: str = "gemini-2.5-flash"  # comma separated, tried in order
     GEMINI_CHAT_MODEL: str = "gemini-2.5-flash"
     GEMMA_MODEL: str = "gemini-2.5-flash"
     YOUTUBE_MAX_DURATION_MINUTES: int = 0
