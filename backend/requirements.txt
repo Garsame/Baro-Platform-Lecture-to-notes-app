@@ -17,3 +17,4 @@ google-genai
 azure-cognitiveservices-speech
 openai
 redis
+httpx

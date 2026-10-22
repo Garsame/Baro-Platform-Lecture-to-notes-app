@@ -2,7 +2,7 @@ import logging
 import time
 
 from fastapi import FastAPI, Request
-from app.api.routers import auth, lectures, admin, contact
+from app.api.routers import auth, lectures, admin, contact, site, admin_site
 from app.core.config import settings
 from app.core.database import engine, Base
 from fastapi.middleware.cors import CORSMiddleware
@@ -81,11 +81,14 @@ app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["aut
 app.include_router(lectures.router, prefix=f"{settings.API_V1_STR}/lectures", tags=["lectures"])
 app.include_router(admin.router, prefix=f"{settings.API_V1_STR}/admin", tags=["admin"])
 app.include_router(contact.router, prefix=f"{settings.API_V1_STR}/contact", tags=["contact"])
+app.include_router(site.router, prefix=f"{settings.API_V1_STR}/site", tags=["site"])
+app.include_router(admin_site.router, prefix=f"{settings.API_V1_STR}/admin/site", tags=["admin-site"])
 
 import os
 from fastapi.staticfiles import StaticFiles
 
 os.makedirs("uploads/profiles", exist_ok=True)
+os.makedirs("uploads/site", exist_ok=True)
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 @app.get("/")
