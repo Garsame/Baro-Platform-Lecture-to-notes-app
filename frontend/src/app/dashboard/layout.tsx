@@ -3,27 +3,9 @@
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import BrandLogo from "@/components/site/BrandLogo";
+import MaterialIcon from "@/components/site/MaterialIcon";
 import { useBranding } from "@/components/site/SiteContentProvider";
-import { usePathname } from "next/navigation";
-import {
-  MdAdd,
-  MdAutoAwesome,
-  MdCheckCircle,
-  MdDarkMode,
-  MdDashboard,
-  MdKeyboardArrowDown,
-  MdLibraryBooks,
-  MdLightMode,
-  MdLogout,
-  MdMenu,
-  MdNotifications,
-  MdOutlineOndemandVideo,
-  MdPerson,
-  MdRocketLaunch,
-  MdSchool,
-  MdSettings,
-  MdWarning,
-} from "react-icons/md";
+import { usePathname, useRouter } from "next/navigation";
 import {
   apiUrl,
   authHeaders,
@@ -32,10 +14,8 @@ import {
 } from "@/lib/api";
 import { clearSession, getSessionToken } from "@/lib/session";
 import { useTheme } from "@/hooks/useTheme";
-import PublicHeader from "../(public)/PublicHeader";
 import OtpVerificationModal from "@/components/OtpVerificationModal";
-import "../(public)/public.css";
-import "./user-dashboard-shell.css";
+import "./app-shell.css";
 
 interface ActivityNotification {
   id: number;
@@ -50,12 +30,13 @@ interface ActivityNotification {
   } | null;
 }
 
-const navLinks = [
-  { href: "/dashboard", label: "Dashboard", icon: MdDashboard },
-  { href: "/dashboard/new-lecture", label: "New Lecture", icon: MdAdd },
-  { href: "/dashboard/my-lectures", label: "My Lectures", icon: MdOutlineOndemandVideo },
-  { href: "/dashboard/notes", label: "Notes Library", icon: MdLibraryBooks },
-  { href: "/dashboard/quizzes", label: "AI Quizzes", icon: MdSchool },
+const railLinks = [
+  { href: "/dashboard", label: "Home", icon: "home" },
+  { href: "/dashboard/my-lectures", label: "My lectures", icon: "video_library" },
+  { href: "/dashboard/notes", label: "Notes library", icon: "menu_book" },
+  { href: "/dashboard/quizzes", label: "Quizzes", icon: "quiz" },
+  { href: "/dashboard/profile", label: "Profile", icon: "person" },
+  { href: "/", label: "Public site", icon: "public" },
 ];
 
 function resolveProfileImageUrl(profilePictureUrl?: string | null): string | null {
@@ -65,11 +46,9 @@ function resolveProfileImageUrl(profilePictureUrl?: string | null): string | nul
 }
 
 function getNotificationView(notification: ActivityNotification, siteName: string) {
-  let Icon = MdCheckCircle;
-  let tone = "success";
   let title = notification.action.replace(/_/g, " ");
   let description = "";
-
+  const name = `"${notification.details?.title || "Untitled"}"`;
   if (notification.action === "USER_LOGIN") {
     title = "Logged in";
     description = `Session started for ${notification.details?.email || "your account"}.`;
@@ -77,24 +56,19 @@ function getNotificationView(notification: ActivityNotification, siteName: strin
     title = "Account created";
     description = `Your ${siteName} workspace is ready.`;
   } else if (notification.action === "LECTURE_SUBMITTED") {
-    Icon = MdRocketLaunch;
-    tone = "info";
     title = "Lecture submitted";
-    description = `"${notification.details?.title || "Untitled"}" is being processed.`;
+    description = `${name} is being processed.`;
   } else if (notification.action === "LECTURE_COMPLETED") {
     title = "Lecture completed";
-    description = `Generated Somali notes for "${notification.details?.title || "Untitled"}".`;
+    description = `Generated Somali notes for ${name}.`;
   } else if (notification.action === "LECTURE_FAILED") {
-    Icon = MdWarning;
-    tone = "danger";
     title = "Processing failed";
-    description = `"${notification.details?.title || "Untitled"}" failed at ${notification.details?.error_stage || "unknown stage"}.`;
+    description = `${name} failed at ${notification.details?.error_stage || "unknown stage"}.`;
   } else if (notification.action === "EMAIL_VERIFIED") {
-    title = "User verified";
+    title = "Email verified";
     description = "Your email has been verified successfully.";
   }
-
-  return { Icon, tone, title, description };
+  return { title, description };
 }
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
@@ -102,42 +76,15 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { theme, setTheme, toggleTheme } = useTheme();
+  const { theme, toggleTheme } = useTheme();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const router = useRouter();
   const [notifications, setNotifications] = useState<ActivityNotification[]>([]);
   const [isOtpModalOpen, setIsOtpModalOpen] = useState(false);
   const [isSendingVerification, setIsSendingVerification] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-
-  useEffect(() => {
-    const saved = localStorage.getItem("sidebar-collapsed");
-    if (saved === "true") {
-      setIsSidebarCollapsed(true);
-    }
-  }, []);
-
-
-  const handleToggleCollapse = () => {
-    setIsSidebarCollapsed((prev) => {
-      const next = !prev;
-      localStorage.setItem("sidebar-collapsed", String(next));
-      return next;
-    });
-  };
-
-  useEffect(() => {
-    setIsSidebarOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    document.body.style.overflow = isSidebarOpen ? "hidden" : "";
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isSidebarOpen]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -270,23 +217,18 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
   if (isLoading || !user) {
     return (
       <div className="inapp-dashboard-loading">
-        <div className="inapp-loading-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
-          <BrandLogo variant={theme === "dark" ? "dark" : "light"} width="150px" style={{ animation: "user-loading-pulse 2s infinite ease-in-out" }} />
-          <style>{`
-            @keyframes user-loading-pulse {
-              0%, 100% { opacity: 0.6; transform: scale(0.98); }
-              50% { opacity: 1; transform: scale(1.02); }
-            }
-          `}</style>
-          <strong>Loading dashboard</strong>
-          <small>Preparing your {siteName} workspace.</small>
+        <div className="inapp-loading-card">
+          <BrandLogo variant={theme === "dark" ? "dark" : "light"} width="150px" />
+          <strong>Loading your workspace</strong>
+          <small>Preparing your {siteName} account.</small>
         </div>
       </div>
     );
   }
 
   const profileImageUrl = resolveProfileImageUrl(user.profile_picture_url);
-  const getInitials = (name: string) => (name ? name.charAt(0).toUpperCase() : "U");
+  const firstName = (user.full_name || "").split(" ")[0] || "Account";
+  const initials = (user.full_name || "U").trim().charAt(0).toUpperCase();
 
   const isActive = (href: string) => {
     if (href === "/dashboard") return pathname === href;
@@ -296,182 +238,147 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     return pathname.startsWith(href);
   };
 
+  const avatar = (size: "" | "lg") => (
+    <span className={`sa-avatar ${size}`}>
+      {profileImageUrl ? <img src={profileImageUrl} alt="" /> : initials}
+    </span>
+  );
+
+  const sendVerification = async () => {
+    if (isSendingVerification) return;
+    setIsSendingVerification(true);
+    try {
+      const res = await fetch(apiUrl("/api/v1/auth/verify-email"), { method: "POST", headers: authHeaders() });
+      if (res.ok) setIsOtpModalOpen(true);
+    } catch {
+      // The banner stays so the student can try again.
+    } finally {
+      setIsSendingVerification(false);
+    }
+  };
+
   return (
-    <div className="inapp-dashboard-shell-container" data-theme={theme} style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
-      <PublicHeader />
-      
-      <div className={`inapp-dashboard-shell ${isSidebarCollapsed ? "is-collapsed" : ""}`} data-theme={theme} style={{ flex: 1 }}>
-        {isSidebarOpen && (
-          <button
-            className="inapp-sidebar-backdrop"
-            aria-label="Close menu"
-            onClick={() => setIsSidebarOpen(false)}
-          />
+    <div className="sa-shell" data-theme={theme}>
+      <nav className="sa-rail" aria-label="Student app">
+        <Link href="/dashboard" className="sa-brand" aria-label={`${siteName} home`}>
+          <BrandLogo height={34} variant={theme === "dark" ? "dark" : "light"} />
+        </Link>
+        <Link href="/dashboard/new-lecture" className="sa-new">
+          <MaterialIcon name="add" />New lecture
+        </Link>
+        {railLinks.map((item) => {
+          const active = item.href !== "/" && isActive(item.href);
+          return (
+            <Link key={item.href} href={item.href} className="sa-link" aria-current={active ? "page" : undefined}>
+              <MaterialIcon name={item.icon} filled={active} />{item.label}
+            </Link>
+          );
+        })}
+      </nav>
+
+      <div className="sa-main">
+        <div className="sa-top">
+          <form
+            className="sa-search"
+            role="search"
+            onSubmit={(e) => {
+              e.preventDefault();
+              router.push(`/dashboard/my-lectures${query.trim() ? `?q=${encodeURIComponent(query.trim())}` : ""}`);
+            }}
+          >
+            <MaterialIcon name="search" />
+            <span className="sa-sr">Search your lectures</span>
+            <input type="search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search your lectures, notes and terms" />
+          </form>
+          <span className="sa-spacer" />
+          <div className="sa-wrap" ref={dropdownRef} style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <div className="sa-wrap">
+              <button
+                type="button"
+                className="sa-icon-btn"
+                aria-label="Notifications"
+                aria-expanded={showNotifications}
+                onClick={() => { setShowNotifications((v) => !v); setShowProfile(false); }}
+              >
+                <MaterialIcon name="notifications" />
+                {notifications.length > 0 && <span className="sa-dot" />}
+              </button>
+              {showNotifications && (
+                <div className="sa-menu sa-note">
+                  <h3>Recent activity</h3>
+                  {notifications.length === 0 && <span className="empty">Nothing new yet.</span>}
+                  {notifications.map((n) => {
+                    const view = getNotificationView(n, siteName);
+                    return (
+                      <div className="sa-note-item" key={n.id}>
+                        <b>{view.title}</b>
+                        {view.description && <span>{view.description}</span>}
+                        <small>{new Date(n.created_at).toLocaleString()}</small>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="sa-wrap">
+              <button
+                type="button"
+                className="sa-avatar-btn"
+                aria-haspopup="menu"
+                aria-expanded={showProfile}
+                onClick={() => { setShowProfile((v) => !v); setShowNotifications(false); }}
+              >
+                {avatar("")}
+                <span className="sa-avatar-name">{firstName}</span>
+                <MaterialIcon name="expand_more" />
+              </button>
+              {showProfile && (
+                <div className="sa-menu" role="menu">
+                  <div className="sa-menu-head">
+                    {avatar("lg")}
+                    <span style={{ minWidth: 0 }}>
+                      <b>{user.full_name}</b>
+                      <small>{user.email}</small>
+                    </span>
+                  </div>
+                  <Link href="/dashboard/profile" className="sa-menu-item" role="menuitem" onClick={() => setShowProfile(false)}><MaterialIcon name="person" />Profile</Link>
+                  <Link href="/" className="sa-menu-item" role="menuitem"><MaterialIcon name="public" />Public site</Link>
+                  <Link href="/contact" className="sa-menu-item" role="menuitem"><MaterialIcon name="help" />Help and contact</Link>
+                  <button type="button" className="sa-menu-item" role="menuitem" onClick={toggleTheme}>
+                    <MaterialIcon name={theme === "dark" ? "light_mode" : "dark_mode"} />{theme === "dark" ? "Light theme" : "Dark theme"}
+                  </button>
+                  <button type="button" className="sa-menu-item" role="menuitem" onClick={handleLogout}><MaterialIcon name="logout" />Sign out</button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {!user.is_email_verified && (
+          <div className="sa-banner">
+            <span><MaterialIcon name="mark_email_unread" />Your email address is unverified. Verify it to keep your account secure.</span>
+            <button type="button" disabled={isSendingVerification} onClick={sendVerification}>Verify email now</button>
+          </div>
+        )}
+        {!user.has_password && (
+          <div className="sa-banner info">
+            <span><MaterialIcon name="key" />You signed in with Google. Set a password in your profile if you want to sign in with email later.</span>
+            <Link href="/dashboard/profile">Set password</Link>
+          </div>
         )}
 
-        <aside className={`inapp-sidebar ${isSidebarOpen ? "is-open" : ""}`}>
-          <div className="inapp-nav-group" style={{ marginTop: "1rem" }}>
-            <span className="inapp-nav-label">Main</span>
-            <nav className="inapp-nav" aria-label="User dashboard navigation">
-              {navLinks.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <Link
-                    href={item.href}
-                    className={`inapp-nav-link ${isActive(item.href) ? "active" : ""}`}
-                    key={item.href}
-                  >
-                    <Icon />
-                    <span>{item.label}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-          </div>
-
-          <div className="inapp-nav-group account">
-            <span className="inapp-nav-label">Account</span>
-            <Link href="/dashboard/profile" className="inapp-nav-link">
-              <MdSettings />
-              <span>Profile Settings</span>
-            </Link>
-            <button className="inapp-nav-link danger" onClick={handleLogout}>
-              <MdLogout />
-              <span>Sign Out</span>
-            </button>
-          </div>
-        </aside>
-
-        <div className="inapp-main-shell" style={{ minHeight: "calc(100vh - 76px)" }}>
-          {/* Top toolbar containing mobile open button and desktop collapse button */}
-          <div className="inapp-top-toolbar-bar">
-            <button 
-              className="inapp-mobile-menu-btn"
-              onClick={() => setIsSidebarOpen(true)}
-            >
-              <MdMenu size={22} />
-              <span>Dashboard Menu</span>
-            </button>
-            <button 
-              className="inapp-desktop-collapse-btn"
-              onClick={handleToggleCollapse}
-            >
-              <MdMenu size={22} />
-              <span>{isSidebarCollapsed ? "Show Sidebar" : "Hide Sidebar"}</span>
-            </button>
-          </div>
-
-          {/* Unverified email warning banner */}
-          {user && !user.is_email_verified && (
-            <div className="unverified-email-banner">
-              <div className="unverified-email-banner-content">
-                <MdWarning size={22} style={{ color: "#d97706", flexShrink: 0 }} />
-                <span>
-                  Your email address is unverified. Please verify your email to secure your account.
-                </span>
-              </div>
-              <button
-                disabled={isSendingVerification}
-                onClick={async () => {
-                  if (isSendingVerification) return;
-                  setIsSendingVerification(true);
-                  try {
-                    const res = await fetch(apiUrl("/api/v1/auth/verify-email"), {
-                      method: "POST",
-                      headers: authHeaders()
-                    });
-                    if (res.ok) {
-                      setIsOtpModalOpen(true);
-                    }
-                  } catch(e) {}
-                  finally {
-                    setIsSendingVerification(false);
-                  }
-                }}
-                className="unverified-email-banner-btn"
-              >
-                Verify Email Now
-              </button>
-            </div>
-          )}
-
-          {/* Missing password warning banner */}
-          {user && !user.has_password && (
-            <div className="missing-password-banner">
-              <div className="missing-password-banner-content">
-                <MdAutoAwesome size={22} style={{ color: "#3b82f6", flexShrink: 0 }} />
-                <span>
-                  You signed in via Google. Set a password in Profile Settings if you want to use manual email sign-in later.
-                </span>
-              </div>
-              <Link
-                href="/dashboard/profile"
-                className="missing-password-banner-btn"
-              >
-                Set Password Now
-              </Link>
-            </div>
-          )}
-
-
-          <main className="inapp-dashboard-main" style={{ padding: "1.5rem 1.25rem" }}>{children}</main>
-        </div>
+        <main className="sa-content">{children}</main>
       </div>
 
-      {user && (
-        <OtpVerificationModal
-          isOpen={isOtpModalOpen}
-          onClose={() => setIsOtpModalOpen(false)}
-          email={user.email}
-          onSuccess={() => {
-            window.dispatchEvent(
-              new CustomEvent("user-profile-updated", {
-                detail: { is_email_verified: true },
-              })
-            );
-            window.location.replace("/dashboard");
-          }}
-        />
-      )}
-
-      {/* Mobile App Bottom Navigation Bar */}
-      <nav className="inapp-mobile-bottom-nav">
-        <Link
-          href="/dashboard/new-lecture"
-          className={`inapp-bottom-nav-item ${isActive("/dashboard/new-lecture") ? "active" : ""}`}
-        >
-          <MdAdd />
-          <span>New</span>
-        </Link>
-        <Link
-          href="/dashboard/my-lectures"
-          className={`inapp-bottom-nav-item ${isActive("/dashboard/my-lectures") ? "active" : ""}`}
-        >
-          <MdOutlineOndemandVideo />
-          <span>My Lectures</span>
-        </Link>
-        <Link
-          href="/dashboard/notes"
-          className={`inapp-bottom-nav-item ${isActive("/dashboard/notes") ? "active" : ""}`}
-        >
-          <MdLibraryBooks />
-          <span>Library</span>
-        </Link>
-        <Link
-          href="/dashboard/quizzes"
-          className={`inapp-bottom-nav-item ${isActive("/dashboard/quizzes") ? "active" : ""}`}
-        >
-          <MdSchool />
-          <span>AI Quizzes</span>
-        </Link>
-        <Link
-          href="/dashboard/profile"
-          className={`inapp-bottom-nav-item ${isActive("/dashboard/profile") ? "active" : ""}`}
-        >
-          <MdPerson />
-          <span>Profile</span>
-        </Link>
-      </nav>
+      <OtpVerificationModal
+        isOpen={isOtpModalOpen}
+        onClose={() => setIsOtpModalOpen(false)}
+        email={user.email}
+        onSuccess={() => {
+          window.dispatchEvent(new CustomEvent("user-profile-updated", { detail: { is_email_verified: true } }));
+          window.location.replace("/dashboard");
+        }}
+      />
     </div>
   );
 }

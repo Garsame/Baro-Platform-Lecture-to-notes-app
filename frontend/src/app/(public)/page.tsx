@@ -210,7 +210,7 @@ export default async function HomePage() {
       )}
 
       {h.show_testimonials && (
-        <section className="home-section">
+        <section className="home-section" id="reviews">
           <div className="home-wrap">
             <div className="home-row-between">
               <div className="home-section-head" style={{ margin: 0 }}>

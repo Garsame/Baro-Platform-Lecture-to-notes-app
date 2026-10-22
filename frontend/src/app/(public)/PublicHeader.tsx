@@ -8,7 +8,7 @@ import {
   MdMenu, 
   MdNotifications, 
   MdKeyboardArrowDown, 
-  MdSettings, 
+  MdSettings, MdDashboard, MdAdd, 
   MdLogout, 
   MdWarning,
   MdCheckCircle,
@@ -657,8 +657,16 @@ export default function PublicHeader() {
                           </strong>
                           <small>{user.email}</small>
                         </div>
+                        <Link href={user.role === "admin" ? "/admin/dashboard" : "/dashboard"} className="header-profile-link" onClick={() => setShowProfile(false)}>
+                          <MdDashboard /> Dashboard
+                        </Link>
+                        {user.role !== "admin" && (
+                          <Link href="/dashboard/new-lecture" className="header-profile-link" onClick={() => setShowProfile(false)}>
+                            <MdAdd /> New lecture
+                          </Link>
+                        )}
                         <Link href="/dashboard/profile" className="header-profile-link" onClick={() => setShowProfile(false)}>
-                          <MdSettings /> Profile Settings
+                          <MdSettings /> Profile
                         </Link>
                         <button onClick={handleLogout} className="header-profile-btn">
                           <MdLogout /> Sign Out

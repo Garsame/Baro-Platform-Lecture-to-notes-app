@@ -189,6 +189,12 @@ export default function MyLecturesPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // The search bar in the app shell sends people here with ?q=
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("q");
+    if (q) setSearchQuery(q);
+  }, []);
   const [slowConnectionToast, setSlowConnectionToast] = useState<{
     lectureId: number;
     shownAt: number;

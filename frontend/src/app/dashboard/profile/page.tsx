@@ -1,308 +1,282 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-import {
-  MdEdit,
-  MdPerson,
-  MdSave,
-  MdVisibility,
-  MdVisibilityOff,
-} from "react-icons/md";
-import { apiUrl, authHeaders } from "@/lib/api";
-import "./profile.css";
+import React, { useCallback, useEffect, useRef, useState } from "react";
+import MaterialIcon from "@/components/site/MaterialIcon";
+import { useSiteContent } from "@/components/site/SiteContentProvider";
+import { apiUrl, authHeaders, fetchCurrentUser, type AuthenticatedUser } from "@/lib/api";
+import { clearSession } from "@/lib/session";
 
-interface ProfileResponse {
-  full_name?: string | null;
-  email?: string | null;
-  profile_picture_url?: string | null;
-  has_password?: boolean;
-  is_email_verified?: boolean;
-}
+type Errors = Record<string, string>;
 
-interface ProfilePayload {
-  full_name: string;
-  email: string;
-  password?: string;
-}
-
-function notifyUserProfileUpdated(profile: Partial<ProfileResponse>) {
-  window.dispatchEvent(
-    new CustomEvent("user-profile-updated", {
-      detail: profile,
-    }),
-  );
-}
-
-function errorMessage(error: unknown, fallback: string): string {
-  return error instanceof Error ? error.message : fallback;
-}
+const PHONE_RE = /^\+?[0-9 ]{7,16}$/;
 
 function resolveAvatar(url: string | null | undefined): string | null {
   if (!url || url.includes("next.svg")) return null;
-  if (/^https?:\/\//i.test(url)) return url;
-  return apiUrl(url);
+  return /^https?:\/\//i.test(url) ? url : apiUrl(url);
+}
+
+async function call(path: string, method: string, body?: unknown): Promise<{ ok: boolean; data: any; message: string }> { // eslint-disable-line @typescript-eslint/no-explicit-any
+  try {
+    const res = await fetch(apiUrl(path), {
+      method,
+      headers: { ...authHeaders(), ...(body ? { "Content-Type": "application/json" } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const data = await res.json().catch(() => null);
+    const detail = data?.detail;
+    const message = typeof detail === "string" ? detail : Array.isArray(detail) ? detail.map((d: { msg?: string }) => d.msg).join(" ") : "Something went wrong. Try again.";
+    return { ok: res.ok, data, message };
+  } catch {
+    return { ok: false, data: null, message: "We could not reach the server. Check your connection and try again." };
+  }
 }
 
 export default function UserProfilePage() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [initialEmail, setInitialEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [profilePic, setProfilePic] = useState<string | null>(null);
-  const [message, setMessage] = useState({ text: "", type: "" });
-  const [showPassword, setShowPassword] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [hasPassword, setHasPassword] = useState(true);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { signup } = useSiteContent().sections;
+  const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [form, setForm] = useState({ name: "", phone: "", email: "", university: "", faculty: "", programme: "", year: "" });
+  const [errors, setErrors] = useState<Errors>({});
+  const [toast, setToast] = useState("");
+  const [code, setCode] = useState("");
+  const [busy, setBusy] = useState("");
+  const [pw, setPw] = useState({ current: "", next: "", again: "" });
+  const photoRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    fetch(apiUrl("/api/v1/auth/me"), { headers: authHeaders() })
-      .then((r) => r.json())
-      .then((d: ProfileResponse) => {
-        setName(d.full_name || "");
-        setEmail(d.email || "");
-        setInitialEmail(d.email || "");
-        setHasPassword(d.has_password !== false);
-        if (d.profile_picture_url) {
-          setProfilePic(resolveAvatar(d.profile_picture_url));
-        }
-      })
-      .catch();
+  const say = useCallback((text: string) => {
+    setToast(text);
+    window.setTimeout(() => setToast(""), 3200);
   }, []);
 
-  const handleUpdate = async (e: React.FormEvent) => {
+  const apply = useCallback((u: AuthenticatedUser) => {
+    setUser(u);
+    setForm({
+      name: u.full_name || "",
+      phone: u.phone || "",
+      email: u.pending_email || u.email || "",
+      university: u.university || "",
+      faculty: u.faculty || "",
+      programme: u.programme || "",
+      year: u.year_of_study || "",
+    });
+    window.dispatchEvent(new CustomEvent("user-profile-updated", { detail: u }));
+  }, []);
+
+  useEffect(() => {
+    fetchCurrentUser().then((u) => {
+      setUser(u);
+      setForm({
+        name: u.full_name || "", phone: u.phone || "", email: u.pending_email || u.email || "",
+        university: u.university || "", faculty: u.faculty || "", programme: u.programme || "", year: u.year_of_study || "",
+      });
+    }).catch(() => undefined);
+  }, []);
+
+  if (!user) return <p style={{ color: "var(--muted)" }}>Loading your profile…</p>;
+
+  const set = (k: keyof typeof form, v: string) => setForm((f) => ({ ...f, [k]: v }));
+  const isAdminLike = user.role === "admin";
+  const avatarUrl = resolveAvatar(user.profile_picture_url);
+  const emailChanged = form.email.trim().toLowerCase() !== (user.pending_email || user.email).toLowerCase();
+
+  const field = (key: string, label: string, control: React.ReactNode, help?: string) => (
+    <div className="sa-field">
+      <label htmlFor={`pf-${key}`}>{label}</label>
+      {control}
+      {help && <span className="sa-help">{help}</span>}
+      {errors[key] && <span className="sa-err" role="alert">{errors[key]}</span>}
+    </div>
+  );
+  const input = (key: keyof typeof form, type = "text") => (
+    <input id={`pf-${key}`} className={`sa-input${errors[key] ? " invalid" : ""}`} type={type} value={form[key]} onChange={(e) => set(key, e.target.value)} />
+  );
+  const select = (key: keyof typeof form, options: string[]) => (
+    <select id={`pf-${key}`} className={`sa-select${errors[key] ? " invalid" : ""}`} value={form[key]} onChange={(e) => set(key, e.target.value)}>
+      {form[key] && !options.includes(form[key]) && <option>{form[key]}</option>}
+      {!form[key] && <option value="">Choose…</option>}
+      {options.map((o) => <option key={o}>{o}</option>)}
+    </select>
+  );
+
+  const saveDetails = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!isEditing) {
-      return;
-    }
-    if (password && password.length < 8) {
-      setMessage({ text: "Password must be at least 8 characters long.", type: "error" });
-      return;
-    }
+    const er: Errors = {};
+    if (form.name.trim().split(/\s+/).filter(Boolean).length < 2) er.name = "Enter your first and last name.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) er.email = "Enter an email address like name@example.com.";
+    if (form.phone && !PHONE_RE.test(form.phone.trim())) er.phone = "Enter a phone number like +252 61 234 5678, or leave it empty.";
+    if (!isAdminLike && form.programme.trim().length < 2) er.programme = "Enter your programme.";
+    setErrors(er);
+    if (Object.keys(er).length) return;
 
-    const emailChanged = email.trim().toLowerCase() !== initialEmail.trim().toLowerCase();
+    setBusy("details");
+    const res = await call("/api/v1/auth/me/profile", "PUT", {
+      full_name: form.name.trim(),
+      phone: form.phone.trim(),
+      ...(isAdminLike ? {} : { university: form.university, faculty: form.faculty, programme: form.programme.trim(), year: form.year }),
+    });
+    if (!res.ok) { setBusy(""); setErrors({ name: res.message }); return; }
+    let latest = res.data as AuthenticatedUser;
 
+    if (emailChanged) {
+      const ch = await call("/api/v1/auth/me/email/change", "POST", { new_email: form.email.trim() });
+      if (!ch.ok) { setBusy(""); apply(latest); setErrors({ email: ch.message }); return; }
+      latest = { ...latest, pending_email: form.email.trim().toLowerCase() };
+      say(`Details saved. Check ${form.email.trim()} for a code to confirm the new email.`);
+    } else {
+      say("Profile saved.");
+    }
+    setBusy("");
+    apply(latest);
+  };
+
+  const confirmEmail = async () => {
+    if (!/^\d{6}$/.test(code.trim())) { setErrors({ code: "Enter the 6-digit code from the email." }); return; }
+    setBusy("code");
+    const res = await call("/api/v1/auth/me/email/confirm", "POST", { code: code.trim() });
+    setBusy("");
+    if (!res.ok) { setErrors({ code: res.message }); return; }
+    setErrors({}); setCode("");
+    apply(res.data as AuthenticatedUser);
+    say("New email verified.");
+  };
+
+  const resendCode = async () => {
+    if (!user.pending_email) return;
+    const res = await call("/api/v1/auth/me/email/change", "POST", { new_email: user.pending_email });
+    if (!res.ok) { setErrors({ code: res.message }); return; }
+    setErrors({});
+    say("A new code is on its way.");
+  };
+
+  const cancelEmail = async () => {
+    const res = await call("/api/v1/auth/me/email/cancel", "POST");
+    if (res.ok) { setErrors({}); setCode(""); apply(res.data as AuthenticatedUser); }
+  };
+
+  const changePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const er: Errors = {};
+    if (user.has_password && !pw.current) er.current = "Enter your current password.";
+    if (pw.next.length < 8 || !(/[a-z]/i.test(pw.next) && /\d/.test(pw.next))) er.newpw = "Use at least 8 characters with a letter and a number.";
+    if (pw.again !== pw.next) er.again = "The passwords do not match.";
+    setErrors(er);
+    if (Object.keys(er).length) return;
+    setBusy("password");
+    const res = await call("/api/v1/auth/me/password", "POST", { current_password: pw.current || null, new_password: pw.next });
+    setBusy("");
+    if (!res.ok) { setErrors({ current: res.message }); return; }
+    setPw({ current: "", next: "", again: "" });
+    apply({ ...user, has_password: true });
+    say("Password updated.");
+  };
+
+  const uploadPhoto = async (file: File | undefined) => {
+    if (!file) return;
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) { say("Use a PNG, JPG or WebP image."); return; }
+    if (file.size > 5 * 1024 * 1024) { say("Photos can be up to 5 MB."); return; }
+    const body = new FormData();
+    body.append("file", file);
     try {
-      setMessage({ text: "Saving...", type: "success" });
-      const payload: ProfilePayload = { full_name: name, email };
-      if (password) payload.password = password;
-
-      const res = await fetch(apiUrl("/api/v1/auth/me/profile"), {
-        method: "PUT",
-        headers: { ...authHeaders(), "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) throw new Error("Failed to update profile");
-      const data = (await res.json()) as ProfileResponse;
-      setHasPassword(data.has_password !== false);
-      notifyUserProfileUpdated({
-        full_name: data.full_name || name,
-        email: data.email || email,
-        profile_picture_url: data.profile_picture_url ?? null,
-        is_email_verified: data.is_email_verified,
-      });
-
-      if (emailChanged) {
-        setInitialEmail(email);
-        setMessage({
-          text: "Profile updated. An OTP verification code has been sent to your new email. Please verify it.",
-          type: "success",
-        });
-        window.dispatchEvent(new CustomEvent("open-otp-modal"));
-      } else {
-        setMessage({ text: "Profile updated successfully.", type: "success" });
-      }
-      setPassword("");
-      setIsEditing(false);
-    } catch (err: unknown) {
-      const message = errorMessage(err, "Failed to update profile");
-      if (
-        message === "Failed to update profile" ||
-        message.includes("fetch") ||
-        message.includes("NetworkError")
-      ) {
-        setMessage({
-          text: "Profile updated successfully. Dev server reloaded during save.",
-          type: "success",
-        });
-      } else {
-        setMessage({ text: message, type: "error" });
-      }
+      const res = await fetch(apiUrl("/api/v1/auth/me/avatar"), { method: "POST", headers: authHeaders(), body });
+      if (!res.ok) throw new Error();
+      apply((await res.json()) as AuthenticatedUser);
+      say("Photo updated.");
+    } catch {
+      say("The photo could not be uploaded. Try a smaller image.");
     }
   };
 
-  const handleImageClick = () => fileInputRef.current?.click();
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files.length > 0) {
-      const file = e.target.files[0];
-      const formData = new FormData();
-      formData.append("file", file);
-
-      try {
-        setMessage({ text: "Uploading image...", type: "success" });
-        const res = await fetch(apiUrl("/api/v1/auth/me/avatar"), {
-          method: "POST",
-          headers: authHeaders(),
-          body: formData,
-        });
-
-        if (!res.ok) throw new Error("Failed to upload image");
-
-        const data = (await res.json()) as ProfileResponse;
-        if (data.profile_picture_url) {
-          setProfilePic(resolveAvatar(data.profile_picture_url));
-          notifyUserProfileUpdated(data);
-          setMessage({ text: "Profile image uploaded.", type: "success" });
-        }
-      } catch (err: unknown) {
-        const message = errorMessage(err, "Failed to upload image");
-        if (message.includes("fetch") || message.includes("NetworkError")) {
-          setMessage({
-            text: "Profile image uploaded. Dev server reloaded during upload.",
-            type: "success",
-          });
-        } else {
-          setMessage({ text: `Upload error: ${message}`, type: "error" });
-        }
-      }
-    }
+  const removePhoto = async () => {
+    const res = await call("/api/v1/auth/me/avatar", "DELETE");
+    if (res.ok) { apply(res.data as AuthenticatedUser); say("Photo removed."); }
   };
 
-  const initial = name.trim().charAt(0) || "U";
+  const member = user.created_at ? new Date(user.created_at).toLocaleDateString(undefined, { month: "long", year: "numeric" }) : "";
 
   return (
-    <div className="profile-page">
-      <header className="profile-hero">
-        <span className="profile-eyebrow">Account Center</span>
-        <h1>Profile Settings</h1>
-        <p>
-          Keep your account identity, avatar, and sign-in details up to date.
-        </p>
-      </header>
+    <div className="sa-page">
+      <div className="sa-greet">
+        <h1>Profile</h1>
+        <p>Your details, study information and password.</p>
+      </div>
 
-      <section className="profile-layout">
-        <aside className="profile-card profile-avatar-card">
-          <div className="profile-avatar-wrap">
-            <div className="profile-avatar">
-              {profilePic ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={profilePic} alt="Profile" referrerPolicy="no-referrer" />
-              ) : (
-                <span>{initial}</span>
-              )}
+      <div className="sa-panel sa-head">
+        <span className="sa-avatar xl">{avatarUrl ? <img src={avatarUrl} alt="" /> : (user.full_name || "U").trim().charAt(0).toUpperCase()}</span>
+        <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
+          <h2>{user.full_name}</h2>
+          <span style={{ color: "var(--muted)", overflowWrap: "anywhere" }}>{user.email}</span>
+          <span className="sa-chips">
+            {user.is_email_verified
+              ? <span className="sa-chip good"><MaterialIcon name="verified" />Email verified</span>
+              : <span className="sa-chip warn">Email not verified</span>}
+            {member && <span className="sa-chip">Member since {member}</span>}
+          </span>
+          <span className="sa-btn-row" style={{ marginTop: 4 }}>
+            <button type="button" className="sa-btn sm" onClick={() => photoRef.current?.click()}><MaterialIcon name="photo_camera" />Change photo</button>
+            <input ref={photoRef} className="sa-sr" type="file" accept="image/png,image/jpeg,image/webp" aria-label="Upload a profile photo" onChange={(e) => { uploadPhoto(e.target.files?.[0]); e.target.value = ""; }} />
+            {avatarUrl && <button type="button" className="sa-btn sm" onClick={removePhoto}>Remove</button>}
+          </span>
+        </div>
+      </div>
+
+      <form className="sa-panel" onSubmit={saveDetails} noValidate>
+        <h2><MaterialIcon name="badge" />Personal details</h2>
+        <div className="sa-form-row">
+          {field("name", "Full name", input("name"))}
+          {field("phone", "Phone or WhatsApp", input("phone", "tel"), "Optional")}
+        </div>
+        {field("email", "Email address", input("email", "email"), "Changing your email sends a code to the new address. The old one stays active until you verify it.")}
+
+        {user.pending_email && (
+          <>
+            <div className="sa-notice warn">
+              <MaterialIcon name="mark_email_unread" />
+              <span>We sent a 6-digit code to <b>{user.pending_email}</b>. Enter it to confirm the new address.</span>
             </div>
-            <button
-              type="button"
-              className="profile-avatar-edit"
-              onClick={handleImageClick}
-              aria-label="Edit profile image"
-            >
-              <MdEdit size={18} />
-            </button>
-          </div>
-          <h2>{name || "Your Profile"}</h2>
-          <p>{email || "Add your email address"}</p>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="profile-file-input"
-            onChange={handleFileChange}
-          />
-        </aside>
-
-        <main className="profile-card profile-form-card">
-          <div className="profile-form-heading">
-            <div className="profile-form-title">
-              <span>
-                <MdPerson size={21} />
-              </span>
-              <div>
-                <h2>Personal Information</h2>
-                <p>Changes here update your dashboard profile immediately.</p>
-              </div>
+            <div className="sa-otp">
+              <input className={`sa-input${errors.code ? " invalid" : ""}`} inputMode="numeric" maxLength={6} placeholder="000000" aria-label="Verification code" value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
+              <button type="button" className="sa-btn primary sm" disabled={busy === "code"} onClick={confirmEmail}>Verify</button>
+              <button type="button" className="sa-btn sm" onClick={resendCode}>Resend code</button>
+              <button type="button" className="sa-btn sm" onClick={cancelEmail}>Cancel change</button>
             </div>
-            <button
-              type="button"
-              className={`profile-form-edit ${isEditing ? "is-active" : ""}`}
-              onClick={() => setIsEditing((value) => !value)}
-              aria-label={isEditing ? "Cancel editing profile" : "Edit profile"}
-            >
-              <MdEdit size={18} />
-            </button>
-          </div>
+            {errors.code && <span className="sa-err" role="alert">{errors.code}</span>}
+          </>
+        )}
 
-          {message.text && (
-            <div className={`profile-message ${message.type === "error" ? "is-error" : "is-success"}`}>
-              {message.text}
+        {!isAdminLike && (
+          <>
+            <h2 style={{ marginTop: 8 }}><MaterialIcon name="school" />Study details</h2>
+            <div className="sa-form-row">
+              {field("university", "University", select("university", signup.universities))}
+              {field("faculty", "Faculty", select("faculty", signup.faculties))}
             </div>
-          )}
+            <div className="sa-form-row">
+              {field("programme", "Programme", input("programme"))}
+              {field("year", "Year of study", select("year", signup.year_levels))}
+            </div>
+          </>
+        )}
+        <div><button type="submit" className="sa-btn primary" disabled={busy === "details"}>Save changes</button></div>
+      </form>
 
-          <form onSubmit={handleUpdate} className="profile-form">
-            <label>
-              <span>Full Name</span>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Enter your full name"
-                readOnly={!isEditing}
-                required
-              />
-            </label>
+      <form className="sa-panel" onSubmit={changePassword} noValidate>
+        <h2><MaterialIcon name="lock" />Password</h2>
+        {!user.has_password && <div className="sa-notice"><MaterialIcon name="key" /><span>You signed in with Google, so you have no password yet. Set one to also sign in with your email.</span></div>}
+        {user.has_password && field("current", "Current password", <input id="pf-current" className={`sa-input${errors.current ? " invalid" : ""}`} type="password" autoComplete="current-password" value={pw.current} onChange={(e) => setPw({ ...pw, current: e.target.value })} />)}
+        {!user.has_password && errors.current && <span className="sa-err" role="alert">{errors.current}</span>}
+        <div className="sa-form-row">
+          {field("newpw", "New password", <input id="pf-newpw" className={`sa-input${errors.newpw ? " invalid" : ""}`} type="password" autoComplete="new-password" value={pw.next} onChange={(e) => setPw({ ...pw, next: e.target.value })} />, "At least 8 characters with a letter and a number.")}
+          {field("again", "Confirm new password", <input id="pf-again" className={`sa-input${errors.again ? " invalid" : ""}`} type="password" autoComplete="new-password" value={pw.again} onChange={(e) => setPw({ ...pw, again: e.target.value })} />)}
+        </div>
+        <div><button type="submit" className="sa-btn" disabled={busy === "password"}>{user.has_password ? "Update password" : "Set password"}</button></div>
+      </form>
 
-            <label>
-              <span>Email Address</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                readOnly={!isEditing}
-                required
-              />
-            </label>
+      <div className="sa-panel">
+        <h2><MaterialIcon name="logout" />Session</h2>
+        <p style={{ color: "var(--muted)", margin: 0 }}>Sign out of this device.</p>
+        <div><button type="button" className="sa-btn" onClick={() => { clearSession(); window.location.replace("/sign-in"); }}>Sign out</button></div>
+      </div>
 
-            <label>
-              <span>{hasPassword ? "Change Password" : "Set Account Password"}</span>
-              <div className="profile-password-field">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder={hasPassword ? "Leave blank to keep current password" : "Enter new password for email login"}
-                  readOnly={!isEditing}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((value) => !value)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                  disabled={!isEditing}
-                >
-                  {showPassword ? (
-                    <MdVisibilityOff size={21} />
-                  ) : (
-                    <MdVisibility size={21} />
-                  )}
-                </button>
-              </div>
-              {!hasPassword && (
-                <small style={{ color: "#009ffd", display: "block", marginTop: "0.4rem", fontSize: "0.82rem", lineHeight: "1.4" }}>
-                  💡 You logged in with Google. You can set a password here to sign in with email in the future.
-                </small>
-              )}
-            </label>
-
-            <button type="submit" className="profile-save-button" disabled={!isEditing}>
-              <MdSave size={19} />
-              Save Changes
-            </button>
-          </form>
-        </main>
-      </section>
+      {toast && <div className="sa-toast" role="status">{toast}</div>}
     </div>
   );
 }

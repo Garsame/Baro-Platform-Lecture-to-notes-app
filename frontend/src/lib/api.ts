@@ -19,6 +19,7 @@ export interface AuthenticatedUser {
   year_of_study?: string | null;
   phone?: string | null;
   pending_email?: string | null;
+  created_at?: string | null;
 }
 
 export class ApiError extends Error {
