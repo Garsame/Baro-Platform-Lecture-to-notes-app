@@ -18,6 +18,8 @@ logger = logging.getLogger("somali_notes.api")
 # NOTE: For production, use Alembic. Let's create all tables as a fallback for simple local dev.
 from app.core.database import engine, Base
 Base.metadata.create_all(bind=engine)
+from app.core.schema_guard import ensure_columns
+ensure_columns(engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME, openapi_url=f"{settings.API_V1_STR}/openapi.json"
