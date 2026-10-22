@@ -1,3 +1,65 @@
+/* Redesign tokens (from the BaroPlatform prototype). Light is the default;
+   dark applies via [data-theme="dark"], which the root layout sets before paint. */
+:root {
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --surface-2: #eef1f8;
+  --surface-3: #e4e8f3;
+  --line: #dde2ee;
+  --line-strong: #c5cce0;
+  --fg: #11152c;
+  --muted: #5a6283;
+  --faint: #8890ad;
+  --brand-raw: #2a2a72;
+  --accent-raw: #009ffd;
+  --brand: var(--brand-raw);
+  --accent: var(--accent-raw);
+  --brand-soft: color-mix(in oklab, var(--brand-raw) 9%, var(--surface));
+  --accent-soft: color-mix(in oklab, var(--accent-raw) 12%, var(--surface));
+  --on-brand: #ffffff;
+  --good: #12805c;
+  --good-soft: #e3f5ee;
+  --warn: #9a5800;
+  --warn-soft: #fbefdc;
+  --bad: #c2353b;
+  --bad-soft: #fbe6e7;
+  --rule: rgba(42, 42, 114, 0.07);
+  --shadow: 0 1px 2px rgba(17, 21, 44, 0.06), 0 12px 32px rgba(17, 21, 44, 0.08);
+  --shadow-lg: 0 24px 60px rgba(17, 21, 44, 0.16);
+
+  --display: "Google Sans Flex", "Google Sans", "Product Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --body: var(--font-inter), "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono: var(--font-mono), "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  --r-sm: 8px;
+  --r: 14px;
+  --r-lg: 22px;
+}
+:root[data-theme="dark"] {
+  --bg: #0b0e1c;
+  --surface: #121629;
+  --surface-2: #181d34;
+  --surface-3: #212743;
+  --line: #262d4b;
+  --line-strong: #353e63;
+  --fg: #eef1fb;
+  --muted: #a3abc8;
+  --faint: #7a83a6;
+  --brand: color-mix(in oklab, var(--brand-raw) 40%, #ffffff);
+  --accent: color-mix(in oklab, var(--accent-raw) 85%, #ffffff);
+  --brand-soft: color-mix(in oklab, var(--brand-raw) 30%, var(--surface));
+  --accent-soft: color-mix(in oklab, var(--accent-raw) 16%, var(--surface));
+  --good: #3fcf9b;
+  --good-soft: #10302a;
+  --warn: #f2b45c;
+  --warn-soft: #362812;
+  --bad: #ff8086;
+  --bad-soft: #3a1a20;
+  --rule: rgba(160, 175, 230, 0.06);
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 12px 32px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.5);
+}
+
 /* Global variables for vibrant design and dark mode */
 :root {
   --primary-color: #2a2a72;
@@ -16,7 +78,8 @@
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-inter), "Inter", "Segoe UI", sans-serif;
+  font-family: var(--display);
+  letter-spacing: -0.01em;
 }
 
 @media (prefers-color-scheme: dark) {

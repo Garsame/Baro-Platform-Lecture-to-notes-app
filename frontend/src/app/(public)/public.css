@@ -1,38 +1,28 @@
 :root {
-  --public-bg: #ffffff;
-  --public-soft: #f5f8ff;
-  --public-surface: #ffffff;
-  --public-text: #0f172a;
-  --public-muted: #64748b;
-  --public-border: #e2e8f0;
-  --public-primary: #2a2a72;
-  --public-accent: #009ffd;
-  --public-accent-soft: #e6f5ff;
-  --public-danger: #ef4444;
-  --public-success: #10b981;
-  --public-ring: rgba(0, 159, 253, 0.25);
-  --public-shadow: 0 20px 40px -15px rgba(42, 42, 114, 0.08), 0 0 0 1px rgba(42, 42, 114, 0.05);
-  --public-soft-shadow: 0 10px 30px -10px rgba(42, 42, 114, 0.05);
-  --public-radius: 24px;
-  --public-radius-lg: 32px;
-  --public-radius-sm: 12px;
+  --public-bg: var(--bg);
+  --public-soft: var(--surface-2);
+  --public-surface: var(--surface);
+  --public-text: var(--fg);
+  --public-muted: var(--muted);
+  --public-border: var(--line);
+  --public-primary: var(--brand-raw);
+  --public-accent: var(--accent-raw);
+  --public-accent-soft: var(--accent-soft);
+  --public-danger: var(--bad);
+  --public-success: var(--good);
+  --public-ring: color-mix(in oklab, var(--accent-raw) 40%, transparent);
+  --public-shadow: var(--shadow);
+  --public-soft-shadow: 0 10px 30px -10px rgba(17, 21, 44, 0.08);
+  --public-radius: var(--r-lg);
+  --public-radius-lg: 28px;
+  --public-radius-sm: var(--r-sm);
   --public-radius-full: 9999px;
-  --public-font: var(--font-inter), "Inter", "Segoe UI", system-ui, sans-serif;
-  --public-font-title: var(--font-outfit), "Outfit", "Google Sans", sans-serif;
+  --public-font: var(--body);
+  --public-font-title: var(--display);
 }
 
 :root[data-theme="dark"] {
-  --public-bg: #0b0f19;
-  --public-soft: #121826;
-  --public-surface: #0e1321;
-  --public-text: #f8fafc;
-  --public-muted: #94a3b8;
-  --public-border: rgba(255, 255, 255, 0.08);
-  --public-primary: #009ffd;
-  --public-accent: #009ffd;
-  --public-accent-soft: rgba(0, 159, 253, 0.12);
-  --public-ring: rgba(0, 159, 253, 0.35);
-  --public-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  --public-primary: var(--accent);
   --public-soft-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.4);
 }
 
@@ -119,16 +109,16 @@
   top: 0;
   z-index: 1000;
   border-bottom: 1px solid var(--public-border);
-  background: rgba(255, 255, 255, 0.96);
-  backdrop-filter: blur(18px);
+  background: color-mix(in oklab, var(--bg) 86%, transparent);
+  backdrop-filter: saturate(1.4) blur(14px);
 }
 
 :root[data-theme="dark"] .public-header {
-  background: rgba(2, 6, 23, 0.94);
+  background: color-mix(in oklab, var(--bg) 86%, transparent);
 }
 
 .header-container {
-  min-height: 88px;
+  min-height: 70px;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
