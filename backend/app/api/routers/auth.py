@@ -18,7 +18,8 @@ from app.models.user import RoleEnum
 from app.schemas.user import UserCreate, User
 from app.schemas.token import Token
 from app.services.auth_service import AuthService
-from app.api.dependencies import get_current_user
+from app.api.dependencies import get_current_user, reuseable_oauth2
+from app.models.user import User as DBUser
 
 router = APIRouter()
 logger = logging.getLogger("somali_notes.auth")
@@ -182,9 +183,27 @@ def create_new_admin(
     *,
     db: Session = Depends(get_db),
     user_in: UserCreate,
+    token: Optional[str] = Depends(reuseable_oauth2),
 ) -> Any:
-    """Create new administrator account."""
+    """Create a new administrator account.
+
+    Open only while no administrator exists yet (first run). After that, only a
+    signed-in administrator can add another one.
+    """
     logger.info("Admin signup attempt for email=%s", user_in.email)
+    has_admin = db.query(DBUser).filter(DBUser.role == RoleEnum.admin).first() is not None
+    if has_admin:
+        caller = None
+        if token:
+            try:
+                caller = get_current_user(db=db, token=token)
+            except HTTPException:
+                caller = None
+        if not caller or caller.role != RoleEnum.admin:
+            raise HTTPException(
+                status_code=403,
+                detail="Administrator accounts can only be created by a signed-in administrator. Ask an existing admin, or use manage_admin.py on the server.",
+            )
     if len(user_in.password) < 8:
         raise HTTPException(
             status_code=400,

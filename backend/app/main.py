@@ -52,6 +52,10 @@ class PollingFilter(logging.Filter):
 
 logging.getLogger("uvicorn.access").addFilter(PollingFilter())
 
+from app.core.rate_limit import rate_limit_middleware, security_headers_middleware
+app.middleware("http")(rate_limit_middleware)
+app.middleware("http")(security_headers_middleware)
+
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     started = time.perf_counter()
@@ -89,7 +93,10 @@ from fastapi.staticfiles import StaticFiles
 
 os.makedirs("uploads/profiles", exist_ok=True)
 os.makedirs("uploads/site", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# Only public assets are served directly. Lecture audio and generated speech stay
+# private and are streamed through authorised endpoints instead.
+app.mount("/uploads/site", StaticFiles(directory="uploads/site"), name="uploads-site")
+app.mount("/uploads/profiles", StaticFiles(directory="uploads/profiles"), name="uploads-profiles")
 
 @app.get("/")
 def read_root():

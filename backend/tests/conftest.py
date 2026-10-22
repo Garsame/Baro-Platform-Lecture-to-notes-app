@@ -17,6 +17,13 @@ from app.services import site_asset_service
 
 
 @pytest.fixture(autouse=True)
+def _reset_rate_limits():
+    from app.core import rate_limit
+    rate_limit.reset()
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _db(tmp_path, monkeypatch):
     monkeypatch.setattr(site_asset_service, "SITE_UPLOAD_DIR", tmp_path / "site")
     Base.metadata.drop_all(bind=engine)
