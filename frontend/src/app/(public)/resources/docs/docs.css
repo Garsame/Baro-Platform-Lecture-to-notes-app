@@ -1,0 +1,29 @@
+/* Documentation: GitHub Docs pattern with Mona Sans, from the prototype. */
+.docs { font-family: var(--docs); display: grid; grid-template-columns: 230px minmax(0, 1fr) 190px; gap: 36px; padding-block: 36px 72px; }
+.public-layout .docs h1, .public-layout .docs h2, .public-layout .docs h3 { font-family: var(--docs); }
+.docs-side { display: grid; gap: 2px; align-content: start; position: sticky; top: 84px; }
+.docs-side-item { display: grid; gap: 2px; }
+.docs-side .grp { font-size: 0.74rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--faint); padding: 14px 10px 6px; font-weight: 600; }
+.docs-side a { padding: 7px 10px; border-radius: 8px; color: var(--muted); font-size: 0.9rem; text-decoration: none; }
+.docs-side a[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.docs-side a:hover { color: var(--fg); }
+.docs-side a[aria-current="page"]:hover { color: var(--accent); }
+.docs-article { min-width: 0; display: grid; gap: 16px; align-content: start; max-width: 70ch; }
+.public-layout .docs-article h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; }
+.public-layout .docs-article h2 { font-size: 1.3rem; font-weight: 600; margin-top: 10px; scroll-margin-top: 90px; }
+.docs-article ol, .docs-article ul { margin: 0; padding-left: 22px; display: grid; gap: 6px; }
+.docs-article .callout { border: 1px solid var(--line); border-left: 3px solid var(--accent-raw); background: var(--surface); border-radius: 10px; padding: 12px 14px; font-size: 0.92rem; }
+.docs-article code { font-family: var(--mono); font-size: 0.85em; background: var(--surface-2); padding: 1px 6px; border-radius: 6px; }
+.docs-pager { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-top: 24px; border-top: 1px solid var(--line); padding-top: 16px; }
+.docs-pager .public-btn { min-height: 34px; padding: 0 13px; font-size: 0.86rem; }
+.docs-toc { position: sticky; top: 84px; align-self: start; display: grid; gap: 6px; font-size: 0.84rem; }
+.docs-toc b { font-size: 0.78rem; color: var(--faint); text-transform: uppercase; letter-spacing: 0.08em; }
+.docs-toc span, .docs-toc a { color: var(--muted); text-decoration: none; }
+.docs-toc a:hover { color: var(--accent); }
+@media (max-width: 1100px) { .docs { grid-template-columns: 200px minmax(0, 1fr); } .docs-toc { display: none; } }
+@media (max-width: 900px) {
+  .docs { grid-template-columns: minmax(0, 1fr); }
+  .docs-side { position: static; display: flex; flex-wrap: wrap; gap: 4px; }
+  .docs-side-item { display: contents; }
+  .docs-side .grp { width: 100%; padding: 6px 4px; }
+}

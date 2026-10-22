@@ -358,6 +358,75 @@ class ResearchSettings(BaseModel):
         return check_asset_url(value) or ""
 
 
+STATE_CATEGORIES = ("Speech recognition", "Language models", "Education", "Somali context")
+
+
+class StateEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    year: str = Field(pattern=r"^\d{4}$")
+    title: str = Field(min_length=3, max_length=200)
+    authors: str = Field(default="", max_length=200)
+    venue: str = Field(default="", max_length=120)
+    url: str = Field(default="", max_length=300)
+    category: str
+    summary: str = Field(default="", max_length=400)
+    relation: str = Field(default="", max_length=240)
+
+    @field_validator("url")
+    @classmethod
+    def _url(cls, value: str) -> str:
+        return _social(value)
+
+    @field_validator("category")
+    @classmethod
+    def _category(cls, value: str) -> str:
+        if value not in STATE_CATEGORIES:
+            raise ValueError("Choose one of: " + ", ".join(STATE_CATEGORIES))
+        return value
+
+
+class StateSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    title: str = Field(min_length=3, max_length=60)
+    intro: str = Field(default="", max_length=320)
+    now_text: str = Field(default="", max_length=600)
+    contribution: str = Field(default="", max_length=600)  # one point per line
+    entries: list[StateEntry] = Field(default_factory=list, max_length=40)
+
+
+class DocsPage(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    group: str = Field(min_length=1, max_length=40)
+    title: str = Field(min_length=1, max_length=60)
+    body: str = Field(default="", max_length=3000)
+
+
+class DocsSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    pages: list[DocsPage] = Field(default_factory=list, max_length=30)
+
+
+class ReleaseEntry(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    version: str = Field(min_length=1, max_length=12)
+    date: str = Field(default="", max_length=20)
+    status: str = Field(pattern=r"^(Released|Planned)$")
+    title: str = Field(min_length=1, max_length=80)
+    notes: str = Field(default="", max_length=800)  # one note per line
+
+
+class ReleasesSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    intro: str = Field(default="", max_length=240)
+    entries: list[ReleaseEntry] = Field(default_factory=list, max_length=40)
+
+
 class TestimonialSubmit(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 

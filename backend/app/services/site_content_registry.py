@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel
 
-from app.schemas.site_content import AboutSettings, BrandingSettings, ContactSettings, EmailSettings, ResearchSettings, HomeSettings, NavigationSettings, SeoSettings, TeamSettings
+from app.schemas.site_content import AboutSettings, BrandingSettings, ContactSettings, DocsSettings, EmailSettings, ReleasesSettings, ResearchSettings, StateSettings, HomeSettings, NavigationSettings, SeoSettings, TeamSettings
 
 
 @dataclass(frozen=True)
@@ -43,10 +43,10 @@ NAVIGATION_DEFAULT = {
         {"label": "Intro video", "description": "Watch one lecture become a study pack", "href": "/#intro-video", "icon": "play_circle", "enabled": True},
     ],
     "resources_links": [
-        {"label": "Documentation", "description": "How to use every feature", "href": "/resources/docs", "icon": "menu_book", "enabled": False},
-        {"label": "Releases", "description": "What changed and what is next", "href": "/resources/releases", "icon": "new_releases", "enabled": False},
+        {"label": "Documentation", "description": "How to use every feature", "href": "/resources/docs", "icon": "menu_book", "enabled": True},
+        {"label": "Releases", "description": "What changed and what is next", "href": "/resources/releases", "icon": "new_releases", "enabled": True},
         {"label": "Research and findings", "description": "Abstract, stages and results", "href": "/resources/research", "icon": "science", "enabled": True},
-        {"label": "State of research", "description": "Published work and our contribution", "href": "/resources/state-of-research", "icon": "travel_explore", "enabled": False},
+        {"label": "State of research", "description": "Published work and our contribution", "href": "/resources/state-of-research", "icon": "travel_explore", "enabled": True},
     ],
     "cta_label": "Get started",
     "footer_tagline_a": "Learn it",
@@ -84,13 +84,13 @@ HOME_DEFAULT = {
     "journey_cards": [
         {"tab": "By step", "label": "Add · about a minute", "title": "Paste a YouTube link or upload a file, and processing starts.", "icon": "add_link", "link_label": "Add a lecture", "href": "/sign-up"},
         {"tab": "By step", "label": "Process · a few minutes", "title": "Speech is transcribed and Somali notes are written for you.", "icon": "graphic_eq", "link_label": "See the pipeline", "href": "/about"},
-        {"tab": "By step", "label": "Revise · any time", "title": "Read, listen, take the quiz and chat with the lecture.", "icon": "auto_stories", "link_label": "Get started", "href": "/sign-up"},
-        {"tab": "By lecture source", "label": "YouTube", "title": "Public lecture videos, using captions when the video has them.", "icon": "smart_display", "link_label": "Add a link", "href": "/sign-up"},
-        {"tab": "By lecture source", "label": "Recorded class", "title": "Audio or video you recorded, uploaded from your phone or laptop.", "icon": "mic", "link_label": "Upload a file", "href": "/sign-up"},
+        {"tab": "By step", "label": "Revise · any time", "title": "Read, listen, take the quiz and chat with the lecture.", "icon": "auto_stories", "link_label": "Read about the notes", "href": "/resources/docs/read-your-somali-notes"},
+        {"tab": "By lecture source", "label": "YouTube", "title": "Public lecture videos, using captions when the video has them.", "icon": "smart_display", "link_label": "How to add a link", "href": "/resources/docs/add-your-first-lecture"},
+        {"tab": "By lecture source", "label": "Recorded class", "title": "Audio or video you recorded, uploaded from your phone or laptop.", "icon": "mic", "link_label": "How to upload", "href": "/resources/docs/add-your-first-lecture"},
         {"tab": "By lecture source", "label": "Long lectures", "title": "Recordings over an hour are split into chunks so nothing is skipped.", "icon": "timer", "link_label": "See how it works", "href": "/about"},
-        {"tab": "By study goal", "label": "Exam revision", "title": "Key points and a quiz show what you remember and what you missed.", "icon": "quiz", "link_label": "Get started", "href": "/sign-up"},
-        {"tab": "By study goal", "label": "Understanding", "title": "Detailed Somali notes and key terms explain the hard parts.", "icon": "lightbulb", "link_label": "See how it works", "href": "/about"},
-        {"tab": "By study goal", "label": "Asking questions", "title": "The lecture chat answers from the transcript, like a tutor.", "icon": "forum", "link_label": "Get started", "href": "/sign-up"},
+        {"tab": "By study goal", "label": "Exam revision", "title": "Key points and a quiz show what you remember and what you missed.", "icon": "quiz", "link_label": "About quizzes", "href": "/resources/docs/take-the-quiz"},
+        {"tab": "By study goal", "label": "Understanding", "title": "Detailed Somali notes and key terms explain the hard parts.", "icon": "lightbulb", "link_label": "About the notes", "href": "/resources/docs/read-your-somali-notes"},
+        {"tab": "By study goal", "label": "Asking questions", "title": "The lecture chat answers from the transcript, like a tutor.", "icon": "forum", "link_label": "About the chat", "href": "/resources/docs/ask-the-lecture-chat"},
     ],
     "show_note_preview": True,
     "note_title": "What you get from one lecture",
@@ -202,6 +202,44 @@ RESEARCH_DEFAULT = {
     "thesis_file": "BaroPlatform-thesis.pdf",
 }
 
+STATE_DEFAULT = {
+    "title": "Where the research stands",
+    "intro": "Speech recognition and large language models now reach hundreds of languages, but Somali remains a low-resource language with little lecture-style training data. This page tracks the published work BaroPlatform builds on.",
+    "now_text": "Multilingual speech models such as Whisper and MMS include Somali, and multilingual language models can write Somali text. Published work on turning university lectures into Somali study material is still scarce, and accuracy on long, noisy lecture audio is rarely measured.",
+    "contribution": "One pipeline from lecture video to Somali notes, quiz and chat\nUses general-purpose models with no Somali-specific fine-tuning\nA user evaluation with Somali-speaking students, including where the output falls short\nAn admin portal that makes AI processing failures visible",
+    "entries": [
+        {"year": "2023", "title": "Robust Speech Recognition via Large-Scale Weak Supervision", "authors": "A. Radford, J. W. Kim, T. Xu, G. Brockman, C. McLeavey, I. Sutskever", "venue": "ICML 2023", "url": "https://arxiv.org/abs/2212.04356", "category": "Speech recognition", "summary": "Introduces Whisper, a speech recognition model trained on 680,000 hours of multilingual audio that transcribes many languages without task-specific fine-tuning.", "relation": "BaroPlatform uses Whisper to transcribe lecture audio."},
+        {"year": "2024", "title": "Scaling Speech Technology to 1,000+ Languages", "authors": "V. Pratap et al.", "venue": "Journal of Machine Learning Research", "url": "https://arxiv.org/abs/2305.13516", "category": "Speech recognition", "summary": "Meta's Massively Multilingual Speech project extends speech recognition and synthesis to more than 1,100 languages.", "relation": "Shows how far low-resource language coverage has come, and where accuracy still lags."},
+        {"year": "2022", "title": "FLEURS: Few-shot Learning Evaluation of Universal Representations of Speech", "authors": "A. Conneau et al.", "venue": "IEEE SLT 2022", "url": "https://arxiv.org/abs/2205.12446", "category": "Speech recognition", "summary": "A speech benchmark of read sentences in 102 languages for comparing multilingual models.", "relation": "Includes read Somali speech; spontaneous lecture audio remains far less studied."},
+        {"year": "2024", "title": "LLMs for Low Resource Languages in Multilingual, Multimodal and Dialectal Settings", "authors": "F. Alam, S. A. Chowdhury, S. Boughorbel, M. Hasanain", "venue": "EACL 2024 (tutorial)", "url": "", "category": "Language models", "summary": "Surveys how large language models perform, and how they can be adapted, for low-resource and dialectal languages.", "relation": "Supports using general-purpose LLMs to write Somali notes."},
+        {"year": "2024", "title": "Multistage Fine-tuning Strategies for Automatic Speech Recognition in Low-resource Languages", "authors": "L. G. Pillai, K. Manohar, B. K. Raju, E. Sherly", "venue": "arXiv:2411.04573", "url": "https://arxiv.org/abs/2411.04573", "category": "Speech recognition", "summary": "Studies staged fine-tuning approaches that improve speech recognition for a low-resource language.", "relation": "Points to fine-tuning as the next step for Somali accuracy."},
+        {"year": "1989", "title": "Perceived Usefulness, Perceived Ease of Use, and User Acceptance of Information Technology", "authors": "F. D. Davis", "venue": "MIS Quarterly, 13(3)", "url": "", "category": "Education", "summary": "Defines the Technology Acceptance Model, which explains adoption through perceived usefulness and ease of use.", "relation": "The BaroPlatform questionnaire measured both constructs."},
+    ],
+}
+
+DOCS_DEFAULT = {
+    "pages": [
+        {"group": "Getting started", "title": "Create your account", "body": "Sign up with your email or a Google account. We send a six-digit code to confirm your email address.\n\n1. Open BaroPlatform and choose Get started.\n2. Enter your name, email and a password of at least 8 characters.\n3. Type the code from your email to verify the account.\n\n> Codes expire after 15 minutes. You can request a new one from the notification bell."},
+        {"group": "Getting started", "title": "Add your first lecture", "body": "You can add a lecture in two ways.\n\n- Paste a public YouTube link.\n- Upload an audio or video file from your device.\n\nChoose New lecture, add the source and a title, then press Start processing. You can follow each stage live, and leave the page while it runs.\n\n## What makes a good source\n\nClear audio matters more than video quality. A lecturer close to the microphone gives the best transcript."},
+        {"group": "Studying", "title": "Read your Somali notes", "body": "Every finished lecture opens on the Notes tab. It has four parts:\n\n- Soo koobid: a short summary.\n- Qodobbada muhiimka ah: the key points.\n- Faahfaahin: detailed notes by topic.\n- Ereybixin: key terms with Somali explanations.\n\nThe Transcript tab keeps the original text for checking anything in the notes."},
+        {"group": "Studying", "title": "Take the quiz", "body": "Each lecture has a multiple-choice quiz built from its notes. Pick an answer to see immediately whether it is right, then check your score at the end.\n\n> Quiz results count toward the Quizzes completed number on the home page."},
+        {"group": "Studying", "title": "Ask the lecture chat", "body": "Open the Chat tab and ask in Somali or English. The assistant answers from that lecture's transcript and remembers the conversation.\n\nTry questions like `Sharax primary key` or `Isku soo koob casharka`."},
+        {"group": "Studying", "title": "Listen to your notes", "body": "On the Listen tab, choose a voice (Ubax or Muuse) and play the notes aloud. Audio is generated once and saved, so the second play starts instantly."},
+        {"group": "Account", "title": "Downloads and privacy", "body": "Download any set of notes as a PDF from the Notes tab.\n\nYour lectures, notes and chats are visible only to you. Administrators see processing status to fix failures, and can remove a lecture on request."},
+    ],
+}
+
+RELEASES_DEFAULT = {
+    "intro": "Release history reconstructed from the platform's database migrations. Version numbers are proposals for the admin to confirm.",
+    "entries": [
+        {"version": "v2.0", "date": "Planned", "status": "Planned", "title": "Redesigned public site, managed from the admin", "notes": "New home, about, resources and contact pages\nAll public text, branding and contact settings editable in the admin portal\nTestimonials submitted by users and approved by the admin"},
+        {"version": "v1.3", "date": "2026-06-24", "status": "Released", "title": "Reply to messages by email", "notes": "Admins reply to contact messages from the portal\nReplies are emailed to the sender and tracked as replied"},
+        {"version": "v1.2", "date": "2026-06-15", "status": "Released", "title": "Verified accounts", "notes": "Email verification with one-time codes\nProfile pictures\nSign-in lockout after repeated failed attempts"},
+        {"version": "v1.1", "date": "2026-04-18", "status": "Released", "title": "Lecture chat and cancel", "notes": "Ask questions in a chat that remembers the conversation\nCancel a lecture while it is still processing"},
+        {"version": "v1.0", "date": "Before April 2026", "status": "Released", "title": "First release", "notes": "YouTube and upload processing into Somali notes\nStudent dashboard, quizzes and admin monitoring"},
+    ],
+}
+
 SECTIONS: dict[str, SectionSpec] = {
     "branding": SectionSpec("branding", "Branding", BrandingSettings, BRANDING_DEFAULT),
     "seo": SectionSpec("seo", "Search and sharing", SeoSettings, SEO_DEFAULT),
@@ -210,6 +248,9 @@ SECTIONS: dict[str, SectionSpec] = {
     "about": SectionSpec("about", "About page", AboutSettings, ABOUT_DEFAULT),
     "team": SectionSpec("team", "Team", TeamSettings, TEAM_DEFAULT),
     "research": SectionSpec("research", "Research and findings", ResearchSettings, RESEARCH_DEFAULT),
+    "state": SectionSpec("state", "State of research", StateSettings, STATE_DEFAULT),
+    "docs": SectionSpec("docs", "Documentation", DocsSettings, DOCS_DEFAULT),
+    "releases": SectionSpec("releases", "Releases", ReleasesSettings, RELEASES_DEFAULT),
     "contact": SectionSpec("contact", "Contact page", ContactSettings, CONTACT_DEFAULT),
     "email": SectionSpec("email", "Email settings", EmailSettings, EMAIL_DEFAULT, public=False),
 }

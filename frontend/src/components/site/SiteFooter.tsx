@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { FaFacebookF, FaGithub, FaLinkedinIn, FaWhatsapp, FaXTwitter, FaYoutube } from "react-icons/fa6";
 import type { IconType } from "react-icons";
+import { docSlugs } from "@/lib/site-content";
 import BrandLogo from "./BrandLogo";
 import MaterialIcon from "./MaterialIcon";
 import { useBranding, useSiteContent } from "./SiteContentProvider";
@@ -17,7 +18,8 @@ const SOCIALS: { key: "social_facebook" | "social_x" | "social_linkedin" | "soci
 
 export default function SiteFooter() {
   const branding = useBranding();
-  const { navigation, contact } = useSiteContent().sections;
+  const { navigation, contact, docs } = useSiteContent().sections;
+  const privacySlug = docSlugs(docs.pages).find((s) => s === "downloads-and-privacy");
   const about = navigation.about_links.filter((l) => l.enabled);
   const resources = navigation.resources_links.filter((l) => l.enabled);
   const socials = SOCIALS.filter((s) => navigation[s.key]);
@@ -77,7 +79,11 @@ export default function SiteFooter() {
         </div>
         <div className="footer-legal">
           <span>© {new Date().getFullYear()} {branding.site_name}. All rights reserved. {branding.footer_note}</span>
-          <nav aria-label="Legal"><Link href="/contact">Support</Link></nav>
+          <nav aria-label="Legal">
+            {privacySlug && <Link href={`/resources/docs/${privacySlug}`}>Privacy</Link>}
+            {privacySlug && <Link href={`/resources/docs/${privacySlug}`}>Terms</Link>}
+            <Link href="/contact">Support</Link>
+          </nav>
         </div>
       </div>
     </footer>

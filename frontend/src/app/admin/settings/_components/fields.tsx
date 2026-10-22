@@ -460,3 +460,102 @@ export function ResearchResultsField({ errors, value, onChange }: { errors: Reco
     />
   );
 }
+
+function SelectBox({ label, value, options, onChange }: { label: string; value: string; options: string[]; onChange: (v: string) => void }) {
+  const id = useId();
+  return (
+    <div className="sc-field">
+      <label htmlFor={id}>{label}</label>
+      <select id={id} className="sc-input" value={value} onChange={(e) => onChange(e.target.value)}>
+        {options.map((o) => <option key={o}>{o}</option>)}
+      </select>
+    </div>
+  );
+}
+
+export type StateRow = { year: string; title: string; authors: string; venue: string; url: string; category: string; summary: string; relation: string };
+
+export function StateEntriesField({ errors, value, categories, onChange }: { errors: Record<string, string>; value: StateRow[]; categories: string[]; onChange: (v: StateRow[]) => void }) {
+  return (
+    <ObjectList
+      label="Published work"
+      help="Shown newest first. Each entry can link to the paper."
+      items={value}
+      max={40}
+      onChange={onChange}
+      addLabel="Add entry"
+      newItem={{ year: String(new Date().getFullYear()), title: "New entry", authors: "", venue: "", url: "", category: categories[0], summary: "", relation: "" }}
+      renderItem={(en, i, up) => {
+        const err = (f: string) => errors[`entries.${i}.${f}`];
+        return (
+          <>
+            <TextField label="Title" value={en.title} max={200} error={err("title")} onChange={(v) => up({ title: v })} />
+            <TextField label="Authors" value={en.authors} max={200} error={err("authors")} onChange={(v) => up({ authors: v })} />
+            <div className="sc-list-row">
+              <TextField label="Year" value={en.year} max={4} error={err("year")} onChange={(v) => up({ year: v })} />
+              <TextField label="Venue" value={en.venue} max={120} error={err("venue")} onChange={(v) => up({ venue: v })} />
+            </div>
+            <TextField label="Link" help="Full https:// link, or leave empty." value={en.url} max={300} error={err("url")} onChange={(v) => up({ url: v })} />
+            <SelectBox label="Category" value={en.category} options={categories} onChange={(v) => up({ category: v })} />
+            <TextArea label="Summary" value={en.summary} max={400} rows={3} error={err("summary")} onChange={(v) => up({ summary: v })} />
+            <TextArea label="How it relates to BaroPlatform" value={en.relation} max={240} rows={2} error={err("relation")} onChange={(v) => up({ relation: v })} />
+          </>
+        );
+      }}
+    />
+  );
+}
+
+export type DocRow = { group: string; title: string; body: string };
+
+export function DocsPagesField({ errors, value, onChange }: { errors: Record<string, string>; value: DocRow[]; onChange: (v: DocRow[]) => void }) {
+  return (
+    <ObjectList
+      label="Pages"
+      help="Pages appear in this order, grouped by sidebar group. The web address comes from the title."
+      items={value}
+      max={30}
+      onChange={onChange}
+      addLabel="Add page"
+      newItem={{ group: "Getting started", title: "New page", body: "" }}
+      renderItem={(pg, i, up) => (
+        <>
+          <div className="sc-list-row">
+            <TextField label="Sidebar group" value={pg.group} max={40} error={errors[`pages.${i}.group`]} onChange={(v) => up({ group: v })} />
+            <TextField label="Title" value={pg.title} max={60} error={errors[`pages.${i}.title`]} onChange={(v) => up({ title: v })} />
+          </div>
+          <TextArea label="Content" value={pg.body} max={3000} rows={8} error={errors[`pages.${i}.body`]} help="Blank line between paragraphs. Start lines with - for bullets, 1. for steps, > for a callout, ## for a heading." onChange={(v) => up({ body: v })} />
+        </>
+      )}
+    />
+  );
+}
+
+export type ReleaseRow = { version: string; date: string; status: "Released" | "Planned"; title: string; notes: string };
+
+export function ReleasesField({ errors, value, onChange }: { errors: Record<string, string>; value: ReleaseRow[]; onChange: (v: ReleaseRow[]) => void }) {
+  return (
+    <ObjectList
+      label="Releases (newest first)"
+      items={value}
+      max={40}
+      onChange={onChange}
+      addLabel="Add release"
+      newItem={{ version: "v0.0", date: "", status: "Released", title: "New release", notes: "" }}
+      renderItem={(r, i, up) => {
+        const err = (f: string) => errors[`entries.${i}.${f}`];
+        return (
+          <>
+            <div className="sc-list-row">
+              <TextField label="Version" value={r.version} max={12} error={err("version")} onChange={(v) => up({ version: v })} />
+              <TextField label="Date" value={r.date} max={20} error={err("date")} onChange={(v) => up({ date: v })} />
+            </div>
+            <SelectBox label="Status" value={r.status} options={["Released", "Planned"]} onChange={(v) => up({ status: v as ReleaseRow["status"] })} />
+            <TextField label="Title" value={r.title} max={80} error={err("title")} onChange={(v) => up({ title: v })} />
+            <TextArea label="Notes (one per line)" value={r.notes} max={800} rows={4} error={err("notes")} onChange={(v) => up({ notes: v })} />
+          </>
+        );
+      }}
+    />
+  );
+}

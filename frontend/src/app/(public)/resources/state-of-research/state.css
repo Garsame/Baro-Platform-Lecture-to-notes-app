@@ -1,0 +1,24 @@
+/* State of research, from the prototype. */
+.state-hero { padding-block: clamp(44px, 7vw, 88px) 0; }
+.public-layout .state-hero h1 { font-family: var(--serif); font-size: clamp(2.1rem, 4.6vw, 3.5rem); font-weight: 600; letter-spacing: -0.02em; line-height: 1.1; margin-top: 10px; }
+.state-split { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 40px; align-items: start; padding-block: 36px 72px; }
+.state-split .callout { border: 1px solid var(--line); border-left: 3px solid var(--accent-raw); background: var(--surface); border-radius: 10px; padding: 12px 14px; font-size: 0.92rem; margin-bottom: 24px; }
+.filter-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.filter-row button { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; font-size: 0.84rem; font-weight: 600; color: var(--muted); cursor: pointer; }
+.filter-row button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.entry { display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 18px; padding-block: 20px; border-top: 1px solid var(--line); }
+.entry .yr { font-family: var(--mono); font-size: 1.1rem; font-weight: 600; color: var(--muted); }
+.public-layout .entry h3 { font-family: var(--serif); font-size: 1.18rem; font-weight: 600; }
+.entry h3 a { color: var(--fg); text-decoration: none; }
+.entry h3 a:hover { color: var(--accent); }
+.entry .src { font-size: 0.85rem; color: var(--muted); margin-top: 2px; }
+.entry p { margin-top: 8px; color: var(--fg); font-size: 0.95rem; }
+.entry .rel { margin-top: 8px; font-size: 0.9rem; color: var(--muted); }
+.entry .rel b { color: var(--accent); font-weight: 600; }
+.contribution { position: sticky; top: 84px; background: var(--brand-raw); color: #ffffff; border-radius: var(--r-lg); padding: 24px; display: grid; gap: 12px; }
+.public-layout .contribution h3 { color: #ffffff; font-size: 1.2rem; }
+.contribution ul { margin: 0; padding-left: 18px; display: grid; gap: 8px; color: rgba(255, 255, 255, 0.85); font-size: 0.92rem; }
+.contribution .home-eyebrow { color: #9fd8ff; }
+.contribution-btn { background: #ffffff; color: #11152c; border-color: #ffffff; justify-self: start; min-height: 34px; padding: 0 13px; font-size: 0.86rem; }
+@media (max-width: 900px) { .state-split { grid-template-columns: minmax(0, 1fr); } .contribution { position: static; } .entry { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.state-hero .home-lede { max-width: 40em; }

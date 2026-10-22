@@ -13,16 +13,14 @@ const ACTIVE: Record<string, string> = {
   navigation: "Header dropdowns, header button, footer text and social links.",
   about: "The project story and every pipeline stage, start to finish.",
   team: "Writers and supervisor shown on the About page: photos, roles, bios, links and order.",
+  state: "Published work, where the field stands, and BaroPlatform's contribution.",
+  docs: "Help pages for students, grouped in the sidebar.",
+  releases: "Version history shown on the Releases page.",
   research: "Abstract, research stages, evaluation results, paper and thesis file.",
   contact: "Contact page text, details and form topics.",
   email: "Team inbox and the confirmation email sent to every sender. Not shown publicly.",
   home: "Hero, live numbers, how-it-works cards, sample notes, testimonials and FAQ.",
 };
-
-const UPCOMING = [
-  { label: "State of research", phase: 7 },
-  { label: "Documentation and releases", phase: 7 },
-];
 
 export default function SiteContentHubPage() {
   const [sections, setSections] = useState<SectionInfo[] | null>(null);
@@ -50,12 +48,6 @@ export default function SiteContentHubPage() {
             <p>{ACTIVE[s.key]}</p>
             <small>{s.updated_at ? `Updated ${new Date(s.updated_at).toLocaleString()}` : "Not changed yet"}</small>
           </Link>
-        ))}
-        {UPCOMING.map((u) => (
-          <div key={u.label} className="sc-card disabled" aria-disabled="true">
-            <div className="sc-card-head"><strong>{u.label}</strong><span className="sc-badge">Phase {u.phase}</span></div>
-            <p>Added in Phase {u.phase}.</p>
-          </div>
         ))}
       </div>
     </div>

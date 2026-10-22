@@ -236,3 +236,18 @@ def test_pdf_upload_for_thesis(admin_client):
     assert ok.status_code == 201 and ok.json()["url"].endswith(".pdf")
     bad = admin_client.post("/api/v1/admin/site/assets", data={"kind": "document"}, files={"file": ("thesis.pdf", b"not a pdf", "application/pdf")})
     assert bad.status_code == 400
+
+
+def test_state_docs_releases_defaults_and_validation(admin_client):
+    sec = admin_client.get("/api/v1/site/content").json()["sections"]
+    assert len(sec["state"]["entries"]) == 6 and len(sec["docs"]["pages"]) == 7 and len(sec["releases"]["entries"]) == 5
+    assert all(l["enabled"] for l in sec["navigation"]["resources_links"])
+    bad = {**sec["state"], "entries": [{**sec["state"]["entries"][0], "year": "20x3"}]}
+    res = admin_client.put("/api/v1/admin/site/sections/state", json={"value": bad})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "entries.0.year"
+    bad = {**sec["state"], "entries": [{**sec["state"]["entries"][0], "category": "Cooking"}]}
+    res = admin_client.put("/api/v1/admin/site/sections/state", json={"value": bad})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "entries.0.category"
+    bad = {**sec["releases"], "entries": [{**sec["releases"]["entries"][0], "status": "Maybe"}]}
+    res = admin_client.put("/api/v1/admin/site/sections/releases", json={"value": bad})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "entries.0.status"

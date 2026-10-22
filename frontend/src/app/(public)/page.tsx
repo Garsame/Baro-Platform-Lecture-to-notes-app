@@ -122,7 +122,7 @@ export default async function HomePage() {
         </section>
       )}
 
-      <JourneyBand titleA={h.journey_title_a} titleB={h.journey_title_b} cards={h.journey_cards} />
+      <JourneyBand titleA={h.journey_title_a} titleB={h.journey_title_b} cards={h.journey_cards} showDocs={content.sections.navigation.resources_links.some((l) => l.enabled && l.href === "/resources/docs")} />
 
       {h.show_note_preview && (
         <section className="home-section home-note-band">

@@ -7,7 +7,7 @@ import type { JourneyCard } from "@/lib/site-content";
 
 const GLOWS = ["var(--accent-raw)", "#7c5cff", "#16b99a"];
 
-export default function JourneyBand({ titleA, titleB, cards }: { titleA: string; titleB: string; cards: JourneyCard[] }) {
+export default function JourneyBand({ titleA, titleB, cards, showDocs }: { titleA: string; titleB: string; cards: JourneyCard[]; showDocs: boolean }) {
   const tabs = Array.from(new Set(cards.map((c) => c.tab)));
   const [active, setActive] = useState(0);
   if (tabs.length === 0) return null;
@@ -37,6 +37,7 @@ export default function JourneyBand({ titleA, titleB, cards }: { titleA: string;
           ))}
         </div>
         <div className="gh-more">
+          {showDocs && <Link href="/resources/docs">Read the documentation <MaterialIcon name="arrow_forward" size={18} /></Link>}
           <Link href="/about">See the full pipeline <MaterialIcon name="arrow_forward" size={18} /></Link>
         </div>
       </div>
