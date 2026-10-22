@@ -29,6 +29,8 @@
 
   --display: "Google Sans Flex", "Google Sans", "Product Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --body: var(--font-inter), "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --docs: "Mona Sans", var(--font-inter), "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
   --mono: var(--font-mono), "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
   --r-sm: 8px;

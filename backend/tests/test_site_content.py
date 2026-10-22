@@ -218,3 +218,21 @@ def test_contact_email_escapes_input_and_links_to_production(monkeypatch):
     payload = msg.get_payload()[0].get_payload(decode=True).decode()
     assert "<script>" not in payload and "&lt;script&gt;" in payload
     assert "localhost" not in payload and "/admin/messages" in payload
+
+
+def test_research_defaults_and_validation(admin_client):
+    r = admin_client.get("/api/v1/site/content").json()["sections"]["research"]
+    assert r["participants"] == "7" and len(r["stages"]) == 6 and len(r["results"]) == 5
+    bad = {**r, "results": [{"label": "Usability", "value": "6.2"}]}
+    res = admin_client.put("/api/v1/admin/site/sections/research", json={"value": bad})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "results.0.value"
+    bad = {**r, "thesis_url": "ftp://x/y.pdf"}
+    res = admin_client.put("/api/v1/admin/site/sections/research", json={"value": bad})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "thesis_url"
+
+
+def test_pdf_upload_for_thesis(admin_client):
+    ok = admin_client.post("/api/v1/admin/site/assets", data={"kind": "document"}, files={"file": ("thesis.pdf", b"%PDF-1.4 test", "application/pdf")})
+    assert ok.status_code == 201 and ok.json()["url"].endswith(".pdf")
+    bad = admin_client.post("/api/v1/admin/site/assets", data={"kind": "document"}, files={"file": ("thesis.pdf", b"not a pdf", "application/pdf")})
+    assert bad.status_code == 400

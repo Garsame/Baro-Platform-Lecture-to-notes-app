@@ -373,3 +373,89 @@ export function MemberListField({ fieldKey, errors, value, onChange }: { fieldKe
     />
   );
 }
+
+export function FileField({ label, help, error, value, onChange }: BaseProps & { value: string; onChange: (v: string) => void }) {
+  const id = useId();
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  async function upload(file: File) {
+    setUploading(true);
+    setUploadError(null);
+    const form = new FormData();
+    form.append("file", file);
+    form.append("kind", "document");
+    try {
+      const res = await fetch(apiUrl("/api/v1/admin/site/assets"), { method: "POST", headers: authHeaders(), body: form });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(typeof body.detail === "string" ? body.detail : "Upload failed.");
+      }
+      onChange(((await res.json()) as Asset).url);
+    } catch (e) {
+      setUploadError(e instanceof Error ? e.message : "Upload failed.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <FieldFrame id={id} label={label} help={help} error={error ?? uploadError ?? undefined}>
+      <div className="sc-image-actions">
+        <label className="sc-btn small">
+          {uploading ? "Uploading…" : value ? "Replace PDF" : "Upload PDF"}
+          <input id={id} type="file" hidden disabled={uploading} accept=".pdf,application/pdf" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
+        </label>
+        {value && <a className="sc-btn small" href={resolveAssetUrl(value) ?? "#"} target="_blank" rel="noopener noreferrer">View current file</a>}
+        {value && <button type="button" className="sc-btn small" onClick={() => onChange("")}>Remove</button>}
+      </div>
+      <span className="sc-help">{value ? "A file is attached. The Download button shows on the Research page." : "No file attached. The Download button is hidden until you upload one."}</span>
+    </FieldFrame>
+  );
+}
+
+export type StageRow = { when: string; name: string; text: string };
+
+export function ResearchStagesField({ errors, value, onChange }: { errors: Record<string, string>; value: StageRow[]; onChange: (v: StageRow[]) => void }) {
+  return (
+    <ObjectList
+      label="Research stages"
+      items={value}
+      max={10}
+      onChange={onChange}
+      addLabel="Add stage"
+      newItem={{ when: "", name: "New stage", text: "" }}
+      renderItem={(st, i, up) => (
+        <>
+          <div className="sc-list-row">
+            <TextField label="When" value={st.when} max={30} error={errors[`stages.${i}.when`]} onChange={(v) => up({ when: v })} />
+            <TextField label="Name" value={st.name} max={50} error={errors[`stages.${i}.name`]} onChange={(v) => up({ name: v })} />
+          </div>
+          <TextArea label="Description" value={st.text} max={200} rows={2} error={errors[`stages.${i}.text`]} onChange={(v) => up({ text: v })} />
+        </>
+      )}
+    />
+  );
+}
+
+export type ResultRow = { label: string; value: string };
+
+export function ResearchResultsField({ errors, value, onChange }: { errors: Record<string, string>; value: ResultRow[]; onChange: (v: ResultRow[]) => void }) {
+  return (
+    <ObjectList
+      label="Evaluation results (out of 5)"
+      help="The lowest score is highlighted on the page as the main area for future work."
+      items={value}
+      max={10}
+      onChange={onChange}
+      addLabel="Add result"
+      newItem={{ label: "New measure", value: "4.00" }}
+      renderItem={(r, i, up) => (
+        <div className="sc-list-row">
+          <TextField label="Measure" value={r.label} max={40} error={errors[`results.${i}.label`]} onChange={(v) => up({ label: v })} />
+          <TextField label="Score" value={r.value} max={5} error={errors[`results.${i}.value`]} onChange={(v) => up({ value: v })} />
+        </div>
+      )}
+    />
+  );
+}

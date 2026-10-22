@@ -304,6 +304,57 @@ class EmailSettings(BaseModel):
         return _optional_email(value)
 
 
+class ResearchStage(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    when: str = Field(default="", max_length=30)
+    name: str = Field(min_length=1, max_length=50)
+    text: str = Field(default="", max_length=200)
+
+
+class ResearchResult(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    label: str = Field(min_length=1, max_length=40)
+    value: str = Field(min_length=1, max_length=5)
+
+    @field_validator("value")
+    @classmethod
+    def _score(cls, v: str) -> str:
+        try:
+            n = float(v)
+        except ValueError:
+            raise ValueError("Enter a number between 0 and 5, for example 4.57")
+        if not 0 <= n <= 5:
+            raise ValueError("The score must be between 0 and 5")
+        return v
+
+
+class ResearchSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    title: str = Field(min_length=4, max_length=160)
+    subtitle: str = Field(default="", max_length=120)
+    authors: str = Field(default="", max_length=200)
+    supervisor: str = Field(default="", max_length=80)
+    abstract: str = Field(min_length=20, max_length=1400)
+    stages: list[ResearchStage] = Field(default_factory=list, max_length=10)
+    results: list[ResearchResult] = Field(default_factory=list, max_length=10)
+    participants: str = Field(default="", max_length=6)
+    questions: str = Field(default="", max_length=6)
+    success_rate: str = Field(default="", max_length=8)
+    avg_time: str = Field(default="", max_length=10)
+    paper_venue: str = Field(default="", max_length=140)
+    paper_detail: str = Field(default="", max_length=220)
+    thesis_url: str = Field(default="", max_length=500)
+    thesis_file: str = Field(default="", max_length=80)
+
+    @field_validator("thesis_url")
+    @classmethod
+    def _thesis(cls, value: str) -> str:
+        return check_asset_url(value) or ""
+
+
 class TestimonialSubmit(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 

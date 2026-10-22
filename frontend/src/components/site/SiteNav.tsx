@@ -9,16 +9,12 @@ import type { NavLink } from "@/lib/site-content";
 
 type Props = { signedIn: boolean; onNavigate?: () => void };
 
-function isCurrent(pathname: string, links: NavLink[]) {
-  return links.some((l) => l.href.split("#")[0] === pathname);
-}
-
-function Panel({ id, tagline, overview, links, onNavigate }: { id: string; tagline: string; overview?: string; links: NavLink[]; onNavigate: () => void }) {
+function Panel({ id, tagline, overview, links, onNavigate }: { id: string; tagline: string; overview: string; links: NavLink[]; onNavigate: () => void }) {
   return (
     <div className="nav-panel" id={id} role="menu">
       <div className="nav-panel-lead">
         <p>{tagline}</p>
-        {overview && <Link href={overview} onClick={onNavigate}>See overview →</Link>}
+        <Link href={overview} onClick={onNavigate}>See overview →</Link>
       </div>
       <div className="nav-panel-links">
         {links.map((l) => (
@@ -74,7 +70,7 @@ export default function SiteNav({ signedIn, onNavigate }: Props) {
     },
   });
 
-  const group = (id: string, label: string, links: NavLink[], tagline: string) => {
+  const group = (id: string, label: string, links: NavLink[], tagline: string, overview: string, active: boolean) => {
     if (links.length === 0) return null;
     const open = openId === id;
     return (
@@ -84,13 +80,13 @@ export default function SiteNav({ signedIn, onNavigate }: Props) {
           className="nav-link"
           aria-expanded={open}
           aria-controls={id}
-          aria-current={isCurrent(pathname, links) ? "page" : undefined}
+          aria-current={active ? "page" : undefined}
           onClick={() => setOpenId(open ? null : id)}
         >
           {label} <span className="caret"><MaterialIcon name="expand_more" /></span>
         </button>
         <div className={open ? "nav-panel-wrap open" : "nav-panel-wrap"}>
-          <Panel id={id} tagline={tagline} overview={links[0]?.href} links={links} onNavigate={handleNavigate} />
+          <Panel id={id} tagline={tagline} overview={overview} links={links} onNavigate={handleNavigate} />
         </div>
       </div>
     );
@@ -105,8 +101,8 @@ export default function SiteNav({ signedIn, onNavigate }: Props) {
   return (
     <nav ref={navRef} id="public-navigation" className="main-nav" aria-label="Main">
       {plain("/", "Home")}
-      {group("panel-about", "About", about, navigation.about_tagline)}
-      {group("panel-resources", "Resources", resources, navigation.resources_tagline)}
+      {group("panel-about", "About", about, navigation.about_tagline, "/about", pathname === "/about")}
+      {group("panel-resources", "Resources", resources, navigation.resources_tagline, "/resources", pathname.startsWith("/resources"))}
       {plain("/contact", "Contact")}
       {signedIn && plain("/dashboard", "Dashboard")}
     </nav>

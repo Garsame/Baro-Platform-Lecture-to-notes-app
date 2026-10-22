@@ -5,6 +5,7 @@ import { useParams } from "next/navigation";
 import BrandingEditor from "../_components/BrandingEditor";
 import ContactEditor from "../_components/ContactEditor";
 import EmailEditor from "../_components/EmailEditor";
+import ResearchEditor from "../_components/ResearchEditor";
 import AboutEditor from "../_components/AboutEditor";
 import HomeEditor from "../_components/HomeEditor";
 import NavigationEditor from "../_components/NavigationEditor";
@@ -21,6 +22,7 @@ export default function SectionEditorPage() {
   if (section === "about") return <AboutEditor />;
   if (section === "team") return <TeamEditor />;
   if (section === "contact") return <ContactEditor />;
+  if (section === "research") return <ResearchEditor />;
   if (section === "email") return <EmailEditor />;
   return (
     <div className="sc-editor">

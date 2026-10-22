@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel
 
-from app.schemas.site_content import AboutSettings, BrandingSettings, ContactSettings, EmailSettings, HomeSettings, NavigationSettings, SeoSettings, TeamSettings
+from app.schemas.site_content import AboutSettings, BrandingSettings, ContactSettings, EmailSettings, ResearchSettings, HomeSettings, NavigationSettings, SeoSettings, TeamSettings
 
 
 @dataclass(frozen=True)
@@ -45,7 +45,7 @@ NAVIGATION_DEFAULT = {
     "resources_links": [
         {"label": "Documentation", "description": "How to use every feature", "href": "/resources/docs", "icon": "menu_book", "enabled": False},
         {"label": "Releases", "description": "What changed and what is next", "href": "/resources/releases", "icon": "new_releases", "enabled": False},
-        {"label": "Research and findings", "description": "Abstract, stages and results", "href": "/resources/research", "icon": "science", "enabled": False},
+        {"label": "Research and findings", "description": "Abstract, stages and results", "href": "/resources/research", "icon": "science", "enabled": True},
         {"label": "State of research", "description": "Published work and our contribution", "href": "/resources/state-of-research", "icon": "travel_explore", "enabled": False},
     ],
     "cta_label": "Get started",
@@ -166,6 +166,38 @@ EMAIL_DEFAULT = {
     "auto_reply_body": "Hi {name},\n\nThanks for contacting BaroPlatform. We received your message about \"{topic}\" and will reply by email as soon as we can.\n\nThe BaroPlatform team",
 }
 
+RESEARCH_DEFAULT = {
+    "title": "A Unified AI Framework for Somali Lecture Transcription, Translation, and Note Generation",
+    "subtitle": "Final-year Bachelor of Computer Science thesis · Hormuud University · 2025–2026",
+    "authors": "Abdirahim Mohamud Iftin, Mohamed Abdi Mire, Faaiza Daahir Dhaqane, Hafso Hersi Omar",
+    "supervisor": "Dr. Yusuf Abas Mohamed",
+    "abstract": "Somali-speaking university students increasingly learn from recorded lectures, most of them delivered in English, yet no tool turns those lectures into study material in Somali. This research designed, built and evaluated BaroPlatform, a web platform that accepts a YouTube link or an uploaded recording, transcribes the speech, and uses a large language model to generate structured Somali notes, quizzes and a lecture-aware chatbot, with an admin portal that monitors processing. The system was built with Next.js, FastAPI and PostgreSQL, using OpenAI Whisper for transcription and Google Gemini for note generation. An evaluation with seven Somali-speaking students rated usability at 4.57 out of 5 and time saved at 5.00 out of 5, while the naturalness of the Somali output, at 3.71, was identified as the main area to improve.",
+    "stages": [
+        {"when": "Stage 1", "name": "Problem and objectives", "text": "Defined the gap: no tool produces Somali study notes from lecture videos."},
+        {"when": "Stage 2", "name": "Literature review", "text": "Reviewed speech recognition, LLM note generation, AI in education and Somali digital learning."},
+        {"when": "Stage 3", "name": "System design", "text": "Designed the processing pipeline, a 12-table database, and the student and admin interfaces."},
+        {"when": "Stage 4", "name": "Implementation", "text": "Built the platform with Next.js, FastAPI and PostgreSQL and deployed it online."},
+        {"when": "Stage 5", "name": "Evaluation", "text": "Seven Somali-speaking students answered a 40-question questionnaire in seven sections."},
+        {"when": "Stage 6", "name": "Dissemination", "text": "Presented at HUMC 2026 in Mogadishu on 18–19 July 2026."},
+    ],
+    "results": [
+        {"label": "Time saved", "value": "5.00"},
+        {"label": "Usability", "value": "4.57"},
+        {"label": "Overall rating", "value": "4.29"},
+        {"label": "Note quality", "value": "4.04"},
+        {"label": "Somali naturalness", "value": "3.71"},
+    ],
+    "participants": "7",
+    "questions": "40",
+    "success_rate": "66.7%",
+    "avg_time": "2m 43s",
+    "paper_venue": "HUMC 2026 · Hormuud University International Hybrid Multidisciplinary Conference",
+    "paper_detail": "18–19 July 2026 · Jazeera Palace Hotel, Mogadishu · Theme: Transforming Somalia's Education in the Era of Artificial Intelligence",
+    # The thesis PDF is uploaded in the admin; until then the download button is hidden.
+    "thesis_url": "",
+    "thesis_file": "BaroPlatform-thesis.pdf",
+}
+
 SECTIONS: dict[str, SectionSpec] = {
     "branding": SectionSpec("branding", "Branding", BrandingSettings, BRANDING_DEFAULT),
     "seo": SectionSpec("seo", "Search and sharing", SeoSettings, SEO_DEFAULT),
@@ -173,6 +205,7 @@ SECTIONS: dict[str, SectionSpec] = {
     "home": SectionSpec("home", "Home page", HomeSettings, HOME_DEFAULT),
     "about": SectionSpec("about", "About page", AboutSettings, ABOUT_DEFAULT),
     "team": SectionSpec("team", "Team", TeamSettings, TEAM_DEFAULT),
+    "research": SectionSpec("research", "Research and findings", ResearchSettings, RESEARCH_DEFAULT),
     "contact": SectionSpec("contact", "Contact page", ContactSettings, CONTACT_DEFAULT),
     "email": SectionSpec("email", "Email settings", EmailSettings, EMAIL_DEFAULT, public=False),
 }
