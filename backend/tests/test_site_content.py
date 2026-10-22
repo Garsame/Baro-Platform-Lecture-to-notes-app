@@ -142,3 +142,16 @@ def test_review_flow(admin_client):
     assert admin_client.get("/api/v1/site/testimonials").json() == []
     assert admin_client.delete(f"/api/v1/admin/site/testimonials/{item['id']}").status_code == 204
     app.dependency_overrides.pop(get_current_active_user, None)
+
+
+def test_about_and_team_defaults_and_validation(admin_client):
+    sections = admin_client.get("/api/v1/site/content").json()["sections"]
+    assert len(sections["about"]["stages"]) == 8
+    assert sections["team"]["members"][0]["level"] == "supervisor"
+    assert len(sections["team"]["members"]) == 5
+    team = {**sections["team"], "members": [{**sections["team"]["members"][0], "linkedin": "linkedin.com/in/x"}]}
+    res = admin_client.put("/api/v1/admin/site/sections/team", json={"value": team})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "members.0.linkedin"
+    about = {**sections["about"], "stages": [{**sections["about"]["stages"][0], "tech": ["x" * 41]}]}
+    res = admin_client.put("/api/v1/admin/site/sections/about", json={"value": about})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "stages.0.tech"

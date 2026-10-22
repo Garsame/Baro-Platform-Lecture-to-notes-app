@@ -11,12 +11,12 @@ const ACTIVE: Record<string, string> = {
   branding: "Logos, favicon, colours, site name and tagline.",
   seo: "Page title, description, keywords and the social share image.",
   navigation: "Header dropdowns, header button, footer text and social links.",
+  about: "The project story and every pipeline stage, start to finish.",
+  team: "Writers and supervisor shown on the About page: photos, roles, bios, links and order.",
   home: "Hero, live numbers, how-it-works cards, sample notes, testimonials and FAQ.",
 };
 
 const UPCOMING = [
-  { label: "About page", phase: 4 },
-  { label: "Team on the About page", phase: 4 },
   { label: "Contact page and email", phase: 5 },
   { label: "Research and findings", phase: 6 },
   { label: "State of research", phase: 7 },

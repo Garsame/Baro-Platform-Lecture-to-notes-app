@@ -109,3 +109,7 @@ a.sc-card:hover { border-color: var(--primary-color); }
 .sc-home-mock .h span { color: var(--primary-color); }
 .sc-home-mock.dark { background: #0d1022; color: #e9ecf8; }
 .sc-home-mock.dark span { color: #8d96b8; }
+
+.sc-member-mock { grid-template-columns: 44px minmax(0, 1fr); align-items: center; }
+.sc-avatar-mock { width: 44px; height: 44px; border-radius: 50%; overflow: hidden; display: grid; place-items: center; background: var(--border); font-weight: 700; }
+.sc-avatar-mock img { width: 100%; height: 100%; object-fit: cover; }

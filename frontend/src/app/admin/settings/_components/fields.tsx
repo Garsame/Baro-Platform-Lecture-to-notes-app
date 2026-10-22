@@ -305,3 +305,71 @@ export function FaqListField({ fieldKey, errors, value, onChange }: { fieldKey: 
     />
   );
 }
+
+export type StageEntry = { name: string; code: string; title: string; text: string; tech: string[]; image_url: string | null };
+
+export function StageListField({ fieldKey, errors, value, onChange }: { fieldKey: string; errors: Record<string, string>; value: StageEntry[]; onChange: (v: StageEntry[]) => void }) {
+  return (
+    <ObjectList
+      label="Pipeline stages"
+      help="Each stage is shown as its own section, in this order. Add a screenshot to replace the built-in illustration."
+      items={value}
+      max={12}
+      onChange={onChange}
+      addLabel="Add stage"
+      newItem={{ name: "New", code: "", title: "New stage", text: "Describe what happens in this stage.", tech: [], image_url: null }}
+      renderItem={(st, i, up) => {
+        const err = (f: string) => errors[`${fieldKey}.${i}.${f}`];
+        return (
+          <>
+            <div className="sc-list-row">
+              <TextField label="Short name" value={st.name} max={14} error={err("name")} onChange={(v) => up({ name: v })} />
+              <TextField label="System stage name" help="Matches the job stage shown to admins. Separate several with ·" value={st.code} max={60} error={err("code")} onChange={(v) => up({ code: v })} />
+            </div>
+            <TextField label="Title" value={st.title} max={50} error={err("title")} onChange={(v) => up({ title: v })} />
+            <TextArea label="Description" value={st.text} max={320} rows={3} error={err("text")} onChange={(v) => up({ text: v })} />
+            <TagsField label="Technology" value={st.tech} max={6} error={err("tech")} onChange={(v) => up({ tech: v })} />
+            <ImageField label="Screenshot (optional)" kind="image" value={st.image_url ?? ""} error={err("image_url")} onChange={(v) => up({ image_url: v || null })} />
+          </>
+        );
+      }}
+    />
+  );
+}
+
+export type MemberEntry = { name: string; role: string; level: "supervisor" | "member"; bio: string; photo_url: string; linkedin: string; github: string };
+
+export function MemberListField({ fieldKey, errors, value, onChange }: { fieldKey: string; errors: Record<string, string>; value: MemberEntry[]; onChange: (v: MemberEntry[]) => void }) {
+  return (
+    <ObjectList
+      label="People"
+      help="Supervisors are shown first in a larger card; members follow in this order."
+      items={value}
+      max={12}
+      onChange={onChange}
+      addLabel="Add person"
+      newItem={{ name: "New person", role: "Researcher and developer", level: "member", bio: "", photo_url: "", linkedin: "", github: "" }}
+      renderItem={(m, i, up) => {
+        const err = (f: string) => errors[`${fieldKey}.${i}.${f}`];
+        return (
+          <>
+            <div className="sc-list-row">
+              <TextField label="Name" value={m.name} max={60} error={err("name")} onChange={(v) => up({ name: v })} />
+              <TextField label="Role" value={m.role} max={80} error={err("role")} onChange={(v) => up({ role: v })} />
+            </div>
+            <label className="sc-field">Level
+              <select className="sc-input" value={m.level} onChange={(e) => up({ level: e.target.value as MemberEntry["level"] })}>
+                <option value="member">Member</option>
+                <option value="supervisor">Supervisor (featured)</option>
+              </select>
+            </label>
+            <TextArea label="Short bio" value={m.bio} max={300} rows={3} error={err("bio")} onChange={(v) => up({ bio: v })} />
+            <ImageField label="Photo" kind="image" value={m.photo_url} error={err("photo_url")} help="Square photos look best. Without one, initials are shown." onChange={(v) => up({ photo_url: v })} />
+            <TextField label="LinkedIn link" help="Full https:// link, or leave empty." value={m.linkedin} max={300} error={err("linkedin")} onChange={(v) => up({ linkedin: v })} />
+            <TextField label="GitHub link" help="Full https:// link, or leave empty." value={m.github} max={300} error={err("github")} onChange={(v) => up({ github: v })} />
+          </>
+        );
+      }}
+    />
+  );
+}

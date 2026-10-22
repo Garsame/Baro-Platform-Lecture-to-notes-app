@@ -1,0 +1,46 @@
+/* About page: stacked pipeline showcases and the team, from the redesign prototype. */
+.about-page .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.about-hero { padding-block: clamp(44px, 7vw, 88px) clamp(28px, 4vw, 48px); }
+.public-layout .about-hero h1 { font-size: clamp(2.1rem, 4.6vw, 3.5rem); font-weight: 650; letter-spacing: -0.03em; max-width: 18em; line-height: 1.08; }
+.stage-index { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 26px; }
+.stage-index a { border: 1px solid var(--line); background: var(--surface); padding: 6px 12px; border-radius: 999px; color: var(--fg); font-size: 0.84rem; font-family: var(--display); font-weight: 500; text-decoration: none; }
+.stage-index a:hover { border-color: var(--accent); }
+
+.showcase { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: clamp(24px, 5vw, 64px); align-items: center; padding-block: clamp(36px, 6vw, 72px); border-top: 1px solid var(--line); scroll-margin-top: 90px; }
+.showcase:nth-of-type(even) .sc-media { order: -1; }
+.sc-text { display: grid; gap: 14px; align-content: start; }
+.stage-no { font-family: var(--mono); font-size: 0.8rem; color: var(--accent); }
+.public-layout .sc-text h3 { font-size: clamp(1.6rem, 3vw, 2.3rem); font-weight: 600; letter-spacing: -0.02em; }
+.sc-text p { color: var(--muted); font-size: 1.02rem; }
+.tech-row { display: flex; gap: 6px; flex-wrap: wrap; }
+.tech-row .home-chip { background: var(--surface); border: 1px solid var(--line); color: var(--fg); font-weight: 500; font-family: var(--mono); font-size: 0.74rem; }
+.sc-media { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow); padding: 18px; min-height: 250px; display: grid; align-content: center; min-width: 0; overflow: hidden; }
+.stage-image { width: 100%; height: auto; border-radius: 12px; display: block; }
+.stage-mock { display: grid; gap: 14px; }
+.stage-log { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); display: grid; gap: 6px; background: var(--surface-2); border-radius: 12px; padding: 14px; overflow-x: auto; }
+.stage-log b { color: var(--good); font-weight: 600; }
+.stage-tech { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.team-supervisors { display: grid; gap: 14px; margin-bottom: 14px; }
+.team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.member { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 22px; display: grid; gap: 14px; align-content: start; }
+.member.featured { grid-template-columns: 112px minmax(0, 1fr); align-items: center; padding: 26px; border-color: var(--line-strong); }
+.member-avatar { width: 64px; height: 64px; border-radius: 50%; display: grid; place-items: center; overflow: hidden; background: var(--brand-soft); color: var(--brand); font-family: var(--display); font-weight: 700; font-size: 1.2rem; }
+.member.featured .member-avatar { width: 112px; height: 112px; font-size: 2rem; }
+.member-avatar img { width: 100%; height: 100%; object-fit: cover; }
+.member-body { display: grid; gap: 6px; min-width: 0; }
+.public-layout .member-body h3 { font-size: 1.1rem; font-weight: 600; }
+.member-role { color: var(--accent); font-family: var(--display); font-weight: 600; font-size: 0.86rem; }
+.member-body p { color: var(--muted); font-size: 0.92rem; }
+.member-links { display: flex; gap: 8px; margin-top: 4px; }
+.member-links a { width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; color: var(--fg); font-size: 14px; }
+.member-links a:hover { border-color: var(--brand); color: var(--accent); }
+
+@media (max-width: 900px) {
+  .showcase { grid-template-columns: minmax(0, 1fr); }
+  .showcase:nth-of-type(even) .sc-media { order: 0; }
+}
+@media (max-width: 620px) {
+  .member.featured { grid-template-columns: minmax(0, 1fr); }
+  .member.featured .member-avatar { width: 84px; height: 84px; font-size: 1.5rem; }
+}

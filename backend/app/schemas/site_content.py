@@ -184,6 +184,73 @@ class HomeSettings(BaseModel):
         return cleaned
 
 
+class StageItem(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    name: str = Field(min_length=1, max_length=14)
+    code: str = Field(default="", max_length=60)
+    title: str = Field(min_length=1, max_length=50)
+    text: str = Field(min_length=1, max_length=320)
+    tech: list[str] = Field(default_factory=list, max_length=6)
+    image_url: str | None = Field(default=None, max_length=500)
+
+    @field_validator("tech")
+    @classmethod
+    def _tech(cls, value: list[str]) -> list[str]:
+        cleaned = [t.strip() for t in value if t.strip()]
+        if any(len(t) > 40 for t in cleaned):
+            raise ValueError("Each technology name must be 40 characters or fewer")
+        return cleaned
+
+    @field_validator("image_url")
+    @classmethod
+    def _image(cls, value: str | None) -> str | None:
+        return check_asset_url(value or None)
+
+
+class AboutSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    headline: str = Field(min_length=4, max_length=90)
+    intro: str = Field(min_length=10, max_length=300)
+    mission_title: str = Field(min_length=1, max_length=40)
+    mission: str = Field(min_length=10, max_length=400)
+    stages_title: str = Field(min_length=1, max_length=60)
+    stages: list[StageItem] = Field(default_factory=list, max_length=12)
+    cta_title: str = Field(min_length=1, max_length=60)
+    cta_text: str = Field(default="", max_length=200)
+
+
+class TeamMember(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    name: str = Field(min_length=2, max_length=60)
+    role: str = Field(min_length=1, max_length=80)
+    level: str = Field(default="member", pattern=r"^(supervisor|member)$")
+    bio: str = Field(default="", max_length=300)
+    photo_url: str = Field(default="", max_length=500)
+    linkedin: str = Field(default="", max_length=300)
+    github: str = Field(default="", max_length=300)
+
+    @field_validator("photo_url")
+    @classmethod
+    def _photo(cls, value: str) -> str:
+        return check_asset_url(value) or ""
+
+    @field_validator("linkedin", "github")
+    @classmethod
+    def _links(cls, value: str) -> str:
+        return _social(value)
+
+
+class TeamSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    title: str = Field(min_length=1, max_length=60)
+    intro: str = Field(default="", max_length=300)
+    members: list[TeamMember] = Field(default_factory=list, max_length=12)
+
+
 class TestimonialSubmit(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 

@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel
 
-from app.schemas.site_content import BrandingSettings, HomeSettings, NavigationSettings, SeoSettings
+from app.schemas.site_content import AboutSettings, BrandingSettings, HomeSettings, NavigationSettings, SeoSettings, TeamSettings
 
 
 @dataclass(frozen=True)
@@ -39,7 +39,7 @@ NAVIGATION_DEFAULT = {
     # Links to pages that do not exist yet start disabled; enable them when the page ships.
     "about_links": [
         {"label": "How it works", "description": "The stages from video to notes", "href": "/about", "icon": "account_tree", "enabled": True},
-        {"label": "Team", "description": "The writers and supervisor behind BaroPlatform", "href": "/about#team", "icon": "groups", "enabled": False},
+        {"label": "Team", "description": "The writers and supervisor behind BaroPlatform", "href": "/about#team", "icon": "groups", "enabled": True},
         {"label": "Intro video", "description": "Watch one lecture become a study pack", "href": "/#intro-video", "icon": "play_circle", "enabled": False},
     ],
     "resources_links": [
@@ -114,11 +114,45 @@ HOME_DEFAULT = {
     "cta_text": "Create your account and convert your next recorded lecture into structured Somali notes, a transcript, and study tools.",
 }
 
+ABOUT_DEFAULT = {
+    "headline": "From a lecture video to Somali study notes, step by step",
+    "intro": "BaroPlatform was built at Hormuud University to help Somali-speaking students learn from recorded lectures. This is exactly what happens between pressing Submit and opening your notes.",
+    "mission_title": "Why we built it",
+    "mission": "Most university lectures available online are in English, and long recordings are hard to revise from. Students spend hours pausing, translating and rewriting. BaroPlatform automates that work so the time goes into learning.",
+    "stages_title": "The pipeline, stage by stage",
+    "stages": [
+        {"name": "Submit", "code": "validating_input", "title": "Bring any lecture", "text": "Paste a public YouTube link or upload an audio or video file. The platform checks the link or file before anything else runs.", "tech": ["YouTube links", "Audio and video uploads"], "image_url": None},
+        {"name": "Prepare", "code": "preparing_media · extracting_audio · preparing_audio", "title": "Extract and split the audio", "text": "The video is downloaded, the audio track is extracted, and long recordings are split into chunks of about eight minutes so each one transcribes reliably.", "tech": ["yt-dlp", "FFmpeg"], "image_url": None},
+        {"name": "Transcribe", "code": "transcribing", "title": "Turn speech into text", "text": "Each chunk is transcribed by an AI speech model, then the pieces are joined back in order.", "tech": ["Google Gemini", "OpenAI Whisper (fallback)"], "image_url": None},
+        {"name": "Clean", "code": "cleaning_transcript", "title": "Tidy the transcript", "text": "Repeated fragments are removed and the text is formatted into readable paragraphs.", "tech": ["Transcript cleaning"], "image_url": None},
+        {"name": "Write", "code": "generating_notes", "title": "Write the Somali notes", "text": "A large language model reads the transcript and writes a summary, key points, detailed notes and key terms in Somali. Long transcripts are handled in sections so nothing is skipped.", "tech": ["Google Gemini"], "image_url": None},
+        {"name": "Check", "code": "lecture analysis", "title": "Classify and check quality", "text": "The lecture is labelled with its subject area and the notes get a confidence score, which the admin team uses to spot weak results.", "tech": ["Subject label", "Confidence score"], "image_url": None},
+        {"name": "Study", "code": "quiz · chat · audio", "title": "Build your study tools", "text": "A quiz is generated from the notes, the lecture chat answers from the transcript, and the notes can be read aloud in a Somali neural voice.", "tech": ["Quiz generation", "Google Gemini chat", "Azure Somali voices"], "image_url": None},
+        {"name": "Save", "code": "saving_results · completed", "title": "Saved to your library", "text": "Everything is saved to your account, so the lecture, notes, quiz and chat history are there whenever you come back.", "tech": ["PostgreSQL", "FastAPI"], "image_url": None},
+    ],
+    "cta_title": "Your next lecture, in Somali notes",
+    "cta_text": "Create an account and turn your next recorded lecture into notes, a quiz and a study chat.",
+}
+
+TEAM_DEFAULT = {
+    "title": "The team behind BaroPlatform",
+    "intro": "BaroPlatform was designed, built and evaluated by four final-year Computer Science students at Hormuud University, under faculty supervision.",
+    "members": [
+        {"name": "Dr. Yusuf Abas Mohamed", "role": "Research supervisor", "level": "supervisor", "bio": "Faculty of Computer Science and Information Technology, Hormuud University. Supervised the research and is corresponding author of the HUMC 2026 paper.", "photo_url": "", "linkedin": "", "github": ""},
+        {"name": "Abdirahim Mohamud Iftin", "role": "Researcher and developer", "level": "member", "bio": "Final-year Bachelor of Computer Science student at Hormuud University and co-author of the BaroPlatform thesis.", "photo_url": "", "linkedin": "", "github": ""},
+        {"name": "Mohamed Abdi Mire", "role": "Researcher and developer", "level": "member", "bio": "Final-year Bachelor of Computer Science student at Hormuud University and co-author of the BaroPlatform thesis.", "photo_url": "", "linkedin": "", "github": ""},
+        {"name": "Faaiza Daahir Dhaqane", "role": "Researcher and developer", "level": "member", "bio": "Final-year Bachelor of Computer Science student at Hormuud University and co-author of the BaroPlatform thesis.", "photo_url": "", "linkedin": "", "github": ""},
+        {"name": "Hafso Hersi Omar", "role": "Researcher and developer", "level": "member", "bio": "Final-year Bachelor of Computer Science student at Hormuud University and co-author of the BaroPlatform thesis.", "photo_url": "", "linkedin": "", "github": ""},
+    ],
+}
+
 SECTIONS: dict[str, SectionSpec] = {
     "branding": SectionSpec("branding", "Branding", BrandingSettings, BRANDING_DEFAULT),
     "seo": SectionSpec("seo", "Search and sharing", SeoSettings, SEO_DEFAULT),
     "navigation": SectionSpec("navigation", "Navigation and footer", NavigationSettings, NAVIGATION_DEFAULT),
     "home": SectionSpec("home", "Home page", HomeSettings, HOME_DEFAULT),
+    "about": SectionSpec("about", "About page", AboutSettings, ABOUT_DEFAULT),
+    "team": SectionSpec("team", "Team", TeamSettings, TEAM_DEFAULT),
 }
 
 # Fail fast at import if a default does not satisfy its own schema.

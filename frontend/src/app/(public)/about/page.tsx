@@ -1,193 +1,141 @@
-"use client";
-
-import React from "react";
 import Link from "next/link";
-import {
-  MdAutoFixHigh,
-  MdLibraryBooks,
-  MdOutlineVideoSettings,
-  MdSearch,
-  MdSmartToy,
-  MdTextSnippet,
-  MdTranslate,
-} from "react-icons/md";
+import { FaGithub, FaLinkedinIn } from "react-icons/fa6";
+import MaterialIcon from "@/components/site/MaterialIcon";
+import { resolveAssetUrl, type StageItem, type TeamMember } from "@/lib/site-content";
+import { getSiteContent } from "@/lib/site-content.server";
+import "../home.css";
+import "./about.css";
 
-const principles = [
-  {
-    icon: MdTranslate,
-    title: "Somali-first clarity",
-    description:
-      "The platform prioritizes readable Somali explanations so students can review difficult lectures with more confidence.",
-  },
-  {
-    icon: MdSearch,
-    title: "Searchable memory",
-    description:
-      "Recorded lessons become reusable resources instead of one-time videos buried in a folder or playlist.",
-  },
-  {
-    icon: MdSmartToy,
-    title: "AI that supports study",
-    description:
-      "Transcription, notes, quizzes, and chat work together around the lecture instead of acting as separate tools.",
-  },
-];
+const initials = (name: string) =>
+  name.replace(/^Dr\.?\s+/i, "").split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join("");
 
-const stages = [
-  { icon: MdOutlineVideoSettings, title: "Prepare media" },
-  { icon: MdTextSnippet, title: "Create transcript" },
-  { icon: MdAutoFixHigh, title: "Generate notes" },
-  { icon: MdLibraryBooks, title: "Save study pack" },
-];
-
-const systemAreas = [
-  {
-    icon: MdLibraryBooks,
-    title: "Learner workspace",
-    description:
-      "A personal, organized hub where you can store all your lecture recordings, generated notes, and study packages.",
-  },
-  {
-    icon: MdSmartToy,
-    title: "Interactive AI Chat",
-    description:
-      "Ask questions directly to your lecture slides or transcript, summarize key concepts, and clarify difficult parts instantly.",
-  },
-  {
-    icon: MdTranslate,
-    title: "Smart Somali translation",
-    description:
-      "Struggling with technical terms? Translate complex academic terminology into clear, contextual Somali explanations.",
-  },
-  {
-    icon: MdAutoFixHigh,
-    title: "Auto-generated quizzes",
-    description:
-      "Test your memory with automatically created multiple-choice questions and active recall flashcards.",
-  },
-];
-
-export default function AboutPage() {
+function StageMedia({ stage }: { stage: StageItem }) {
+  const image = resolveAssetUrl(stage.image_url);
+  if (image) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img className="stage-image" src={image} alt={`${stage.title}: ${stage.name} stage`} />;
+  }
+  const steps = stage.code.split("·").map((c) => c.trim()).filter(Boolean);
   return (
-    <div className="about-page">
-      {/* Section 1: Centered Hero */}
-      <section className="public-section page-hero reveal-up">
-        <div className="public-container about-hero-container">
-          <div className="section-heading center">
-            <span className="section-eyebrow">About BaroPlatform</span>
-            <h1 style={{ maxWidth: "780px" }}>Designed for students who study from lectures.</h1>
-            <p style={{ maxWidth: "600px", marginInline: "auto" }}>
-              BaroPlatform turns long lecture media into Somali study material that
-              can be searched, reviewed, questioned, and reused.
-            </p>
-            <div className="section-actions" style={{ justifyContent: "center" }}>
-              <Link href="/sign-up" className="public-btn public-btn-primary">
-                Create Account
-              </Link>
-              <Link href="/contact" className="public-btn public-btn-ghost">
-                Talk to Us
-              </Link>
-            </div>
+    <div className="stage-mock" aria-hidden="true">
+      {steps.length > 0 && (
+        <div className="stage-log">
+          {steps.map((c) => <span key={c}><b>✓</b> {c}</span>)}
+        </div>
+      )}
+      {stage.tech.length > 0 && (
+        <div className="stage-tech">{stage.tech.map((t) => <span className="home-chip" key={t}>{t}</span>)}</div>
+      )}
+    </div>
+  );
+}
+
+function Member({ m, featured }: { m: TeamMember; featured?: boolean }) {
+  const photo = resolveAssetUrl(m.photo_url);
+  return (
+    <article className={`member${featured ? " featured" : ""}`}>
+      <span className="member-avatar">
+        {photo ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={photo} alt={m.name} />
+        ) : (
+          initials(m.name)
+        )}
+      </span>
+      <div className="member-body">
+        <h3>{m.name}</h3>
+        <span className="member-role">{m.role}</span>
+        {m.bio && <p>{m.bio}</p>}
+        {(m.linkedin || m.github) && (
+          <div className="member-links">
+            {m.linkedin && <a href={m.linkedin} target="_blank" rel="noopener noreferrer" aria-label={`${m.name} on LinkedIn`}><FaLinkedinIn aria-hidden="true" /></a>}
+            {m.github && <a href={m.github} target="_blank" rel="noopener noreferrer" aria-label={`${m.name} on GitHub`}><FaGithub aria-hidden="true" /></a>}
+          </div>
+        )}
+      </div>
+    </article>
+  );
+}
+
+export default async function AboutPage() {
+  const { sections } = await getSiteContent();
+  const a = sections.about;
+  const t = sections.team;
+  const supervisors = t.members.filter((m) => m.level === "supervisor");
+  const members = t.members.filter((m) => m.level !== "supervisor");
+
+  return (
+    <div className="home-page about-page">
+      <section className="about-hero">
+        <div className="home-wrap">
+          <h1>{a.headline}</h1>
+          <p className="home-lede">{a.intro}</p>
+          {a.stages.length > 0 && (
+            <nav className="stage-index" aria-label="Pipeline stages">
+              {a.stages.map((s, i) => <a key={s.name} href={`#stage-${i + 1}`}>{String(i + 1).padStart(2, "0")} {s.name}</a>)}
+              {t.members.length > 0 && <a href="#team">Team</a>}
+            </nav>
+          )}
+        </div>
+      </section>
+
+      <section className="home-section-tight about-mission">
+        <div className="home-wrap">
+          <div className="home-section-head">
+            <span className="home-eyebrow">Our mission</span>
+            <h2>{a.mission_title}</h2>
+            <p>{a.mission}</p>
           </div>
         </div>
       </section>
 
-      {/* Section 2: Principles Card Grid with Numbers */}
-      <section className="public-section public-section-soft">
-        <div className="public-container section-stack">
-          <div className="section-heading center reveal-up">
-            <span className="section-eyebrow">Why it matters</span>
-            <h2>Recorded learning should be easier to return to.</h2>
-            <p>
-              The system reduces the work of replaying, pausing, translating,
-              rewriting, and reorganizing lecture content by creating a
-              structured learning pack.
-            </p>
-          </div>
-
-          <div className="principles-grid">
-            {principles.map((item, idx) => {
-              const Icon = item.icon;
-              return (
-                <article className={`principle-card reveal-up delay-${idx + 1}`} key={item.title}>
-                  <span className="principle-card-icon">
-                    <Icon />
-                  </span>
-                  <div>
-                    <span className="principle-number">PRINCIPLE 0{idx + 1}</span>
-                    <h3>{item.title}</h3>
-                  </div>
-                  <p>{item.description}</p>
-                </article>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
-      {/* Section 3: Horizontal Pipeline Node Roadmap */}
-      <section className="public-section">
-        <div className="public-container section-stack">
-          <div className="section-heading center reveal-up">
-            <span className="section-eyebrow">How it works</span>
-            <h2>A practical AI pipeline behind a simple learner experience.</h2>
-            <p>
-              The public pages stay lightweight, while the application tracks
-              lecture sources, processing stages, generated content, and the
-              student workspace behind the scenes.
-            </p>
-          </div>
-
-          <div className="pipeline-roadmap">
-            {stages.map((stage, index) => {
-              const Icon = stage.icon;
-              return (
-                <div className={`pipeline-node reveal-up delay-${index + 1}`} key={stage.title}>
-                  <span className="pipeline-node-num">STAGE 0{index + 1}</span>
-                  <article className="pipeline-card">
-                    <Icon aria-hidden="true" />
-                    <h3>{stage.title}</h3>
-                    <p>
-                      The lecture is analyzed, processed, and structured before transitioning to the next active node.
-                    </p>
-                  </article>
+      {a.stages.length > 0 && (
+        <section aria-labelledby="stages-title">
+          <div className="home-wrap">
+            <h2 id="stages-title" className="sr-only">{a.stages_title}</h2>
+            {a.stages.map((s, i) => (
+              <div className="showcase" id={`stage-${i + 1}`} key={`${s.name}-${i}`}>
+                <div className="sc-text">
+                  <span className="stage-no">Stage {String(i + 1).padStart(2, "0")} · {s.name}</span>
+                  <h3>{s.title}</h3>
+                  <p>{s.text}</p>
+                  {s.tech.length > 0 && <div className="tech-row">{s.tech.map((x) => <span className="home-chip" key={x}>{x}</span>)}</div>}
                 </div>
-              );
-            })}
+                <div className="sc-media"><StageMedia stage={s} /></div>
+              </div>
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Section 4: System Areas side-icon List Card Layout */}
-      <section className="public-section public-section-soft">
-        <div className="public-container about-features-layout">
-          <div className="about-features-hero reveal-left">
-            <span className="section-eyebrow">Inside the platform</span>
-            <h2>More than a transcript generator.</h2>
-            <p>
-              BaroPlatform is a complete study workspace designed to automate the heavy lifting of lecture revision, letting you focus on actual learning.
-            </p>
-            <div className="features-hero-card">
-              <h3>Somali-First Learning</h3>
-              <p>Everything is customized for Somali classrooms, helping you understand global curriculum in your local language.</p>
+      {t.members.length > 0 && (
+        <section className="home-section about-team" id="team">
+          <div className="home-wrap">
+            <div className="home-section-head">
+              <span className="home-eyebrow">Team</span>
+              <h2>{t.title}</h2>
+              {t.intro && <p>{t.intro}</p>}
             </div>
+            {supervisors.length > 0 && <div className="team-supervisors">{supervisors.map((m) => <Member key={m.name} m={m} featured />)}</div>}
+            {members.length > 0 && <div className="team-grid">{members.map((m) => <Member key={m.name} m={m} />)}</div>}
           </div>
+        </section>
+      )}
 
-          <div className="about-features-list reveal-right">
-            {systemAreas.map((item, idx) => {
-              const Icon = item.icon;
-              return (
-                <article className="about-feature-item" key={item.title}>
-                  <div className="about-feature-icon">
-                    <Icon aria-hidden="true" />
-                  </div>
-                  <div className="about-feature-info">
-                    <h3>{item.title}</h3>
-                    <p>{item.description}</p>
-                  </div>
-                </article>
-              );
-            })}
+      <section className="home-section-tight">
+        <div className="home-wrap">
+          <div className="home-cta">
+            <div>
+              <h2>{a.cta_title}</h2>
+              {a.cta_text && <p>{a.cta_text}</p>}
+            </div>
+            <div className="home-cta-actions">
+              <Link href="/sign-up" className="public-btn public-btn-white">
+                {sections.navigation.cta_label}
+                <MaterialIcon name="arrow_forward" size={18} />
+              </Link>
+              <Link href="/contact" className="public-btn public-btn-ghost">Contact us</Link>
+            </div>
           </div>
         </div>
       </section>
