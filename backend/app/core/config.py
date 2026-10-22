@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     YOUTUBE_MAX_DURATION_MINUTES: int = 0
     YOUTUBE_COOKIES_FROM_BROWSER: str = ""
     YOUTUBE_COOKIE_FILE: str = ""
+    YOUTUBE_PROXY: str = ""  # optional, e.g. http://user:pass@host:port, for servers YouTube blocks
     TRANSCRIPTION_CHUNK_SECONDS: int = 8 * 60
     TRANSCRIPTION_MIN_CHUNK_SECONDS: int = 2 * 60
     TRANSCRIPTION_MAX_RETRIES: int = 3

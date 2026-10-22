@@ -89,10 +89,19 @@ class YouTubeService:
         lowered = message.lower()
 
         if any(marker in lowered for marker in self.BOT_CHALLENGE_MARKERS):
+            has_cookies = bool(
+                (self.settings.YOUTUBE_COOKIE_FILE or "").strip()
+                or (self.settings.YOUTUBE_COOKIES_FROM_BROWSER or "").strip()
+            )
+            if has_cookies:
+                return RuntimeError(
+                    f"YouTube blocked the {action} request even with the saved cookies, so they have probably expired. "
+                    "Export fresh YouTube cookies into the file set in YOUTUBE_COOKIE_FILE and retry. "
+                    "You can also download the video yourself and use the Upload option."
+                )
             return RuntimeError(
-                f"YouTube blocked the {action} request with a bot check. "
-                "Set YOUTUBE_COOKIES_FROM_BROWSER or YOUTUBE_COOKIE_FILE in backend/.env, "
-                "restart the backend, and retry the lecture."
+                f"YouTube blocked the {action} request because it came from a server address. "
+                "Upload the video or audio file instead, or ask the administrator to set YOUTUBE_COOKIE_FILE in backend/.env."
             )
 
         return RuntimeError(message)
@@ -101,7 +110,7 @@ class YouTubeService:
         ydl_opts: dict[str, Any] = {
             "quiet": True,
             "socket_timeout": 30,
-            "proxy": "",
+            "proxy": (self.settings.YOUTUBE_PROXY or "").strip(),
             "noplaylist": True,
         }
 
