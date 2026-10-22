@@ -111,6 +111,120 @@ class NavigationSettings(BaseModel):
         return _social(value)
 
 
+class JourneyCard(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    tab: str = Field(min_length=1, max_length=24)
+    label: str = Field(min_length=1, max_length=32)
+    title: str = Field(min_length=1, max_length=90)
+    icon: str = Field(default="school", pattern=r"^[a-z0-9_]{1,40}$")
+    link_label: str = Field(min_length=1, max_length=30)
+    href: str = Field(min_length=1, max_length=300)
+
+    @field_validator("href")
+    @classmethod
+    def _href(cls, value: str) -> str:
+        return check_link(value)
+
+
+class FaqItem(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    q: str = Field(min_length=3, max_length=120)
+    a: str = Field(min_length=3, max_length=600)
+
+
+class HomeSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    badge_label: str = Field(default="", max_length=14)
+    badge_text: str = Field(default="", max_length=60)
+    headline: str = Field(min_length=4, max_length=50)
+    headline_accent: str = Field(default="", max_length=40)
+    subheadline: str = Field(min_length=10, max_length=240)
+    primary_cta: str = Field(min_length=1, max_length=24)
+    secondary_cta: str = Field(min_length=1, max_length=28)
+    hero_points: list[str] = Field(default_factory=list, max_length=5)
+
+    stats_title: str = Field(min_length=1, max_length=60)
+    stats_intro: str = Field(default="", max_length=160)
+    stat_lectures: bool = True
+    stat_students: bool = True
+    stat_hours: bool = True
+    stat_notes: bool = True
+    stat_quizzes: bool = True
+    stat_time: bool = True
+    stat_success: bool = False
+
+    journey_title_a: str = Field(min_length=1, max_length=70)
+    journey_title_b: str = Field(default="", max_length=80)
+    journey_cards: list[JourneyCard] = Field(default_factory=list, max_length=15)
+
+    show_note_preview: bool = True
+    note_title: str = Field(min_length=1, max_length=60)
+    note_intro: str = Field(default="", max_length=200)
+    note_points: list[str] = Field(default_factory=list, max_length=8)
+
+    show_testimonials: bool = True
+    testimonials_title: str = Field(min_length=1, max_length=60)
+    testimonials_intro: str = Field(default="", max_length=160)
+
+    faq_title: str = Field(min_length=1, max_length=60)
+    faqs: list[FaqItem] = Field(default_factory=list, max_length=12)
+
+    cta_title: str = Field(min_length=1, max_length=60)
+    cta_text: str = Field(default="", max_length=200)
+
+    @field_validator("hero_points", "note_points")
+    @classmethod
+    def _points(cls, value: list[str]) -> list[str]:
+        cleaned = [v.strip() for v in value if v.strip()]
+        if any(len(v) > 100 for v in cleaned):
+            raise ValueError("Each point must be 100 characters or fewer")
+        return cleaned
+
+
+class TestimonialSubmit(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    text: str = Field(min_length=20, max_length=500)
+    rating: int = Field(ge=1, le=5)
+    role: str = Field(default="", max_length=80)
+
+
+class TestimonialAdminIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    kind: str = Field(default="review", pattern=r"^(review|figure)$")
+    name: str = Field(min_length=1, max_length=120)
+    role: str = Field(default="", max_length=120)
+    text: str = Field(min_length=3, max_length=500)
+    rating: int | None = Field(default=None, ge=1, le=5)
+    big: str | None = Field(default=None, max_length=40)
+    source: str | None = Field(default=None, max_length=100)
+    status: str = Field(default="approved", pattern=r"^(pending|approved|hidden)$")
+
+
+class TestimonialOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    kind: str
+    origin: str
+    name: str
+    role: str
+    text: str
+    rating: int | None = None
+    big: str | None = None
+    source: str | None = None
+    status: str
+    sort_order: int
+
+
+class ReorderIn(BaseModel):
+    ids: list[int]
+
+
 class SectionUpdate(BaseModel):
     value: dict
 

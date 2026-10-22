@@ -98,3 +98,47 @@ def test_navigation_defaults_and_validation(admin_client):
     bad = {**nav, "about_links": [{**nav["about_links"][0], "href": "javascript:alert(1)"}]}
     res = admin_client.put("/api/v1/admin/site/sections/navigation", json={"value": bad})
     assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "about_links.0.href"
+
+
+def test_home_defaults_valid_and_validation(admin_client):
+    home = admin_client.get("/api/v1/site/content").json()["sections"]["home"]
+    assert home["headline"] == "Turn any lecture into"
+    assert len(home["journey_cards"]) == 9
+    bad = {**home, "faqs": [{"q": "ok?", "a": ""}]}
+    res = admin_client.put("/api/v1/admin/site/sections/home", json={"value": bad})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "faqs.0.a"
+
+
+def test_public_stats_are_aggregates(client):
+    res = client.get("/api/v1/site/stats")
+    assert res.status_code == 200
+    data = res.json()
+    assert set(data) == {"lectures", "students", "hours", "notes", "quizzes", "avg_seconds", "success_rate"}
+    assert data["students"] == 1  # the seeded regular user; admins are not counted
+
+
+def test_review_flow(admin_client):
+    from app.api.dependencies import get_current_active_user
+    from app.main import app
+
+    def regular():
+        db = SessionLocal()
+        try:
+            return db.query(User).filter(User.email == "user@example.com").first()
+        finally:
+            db.close()
+
+    app.dependency_overrides[get_current_active_user] = regular
+    body = {"text": "This turned my two hour lecture into notes I could revise from.", "rating": 5, "role": "Year 2"}
+    assert admin_client.post("/api/v1/site/testimonials", json=body).status_code == 201
+    assert admin_client.post("/api/v1/site/testimonials", json=body).status_code == 409
+    assert admin_client.get("/api/v1/site/testimonials").json() == []  # pending is not public
+    r = admin_client.get("/api/v1/admin/site/testimonials?status=pending")
+    item = r.json()[0]
+    put = {"kind": "review", "name": item["name"], "role": item["role"], "text": item["text"], "rating": 5, "status": "approved"}
+    assert admin_client.put(f"/api/v1/admin/site/testimonials/{item['id']}", json=put).status_code == 200
+    assert len(admin_client.get("/api/v1/site/testimonials").json()) == 1
+    admin_client.put(f"/api/v1/admin/site/testimonials/{item['id']}", json={**put, "status": "hidden"})
+    assert admin_client.get("/api/v1/site/testimonials").json() == []
+    assert admin_client.delete(f"/api/v1/admin/site/testimonials/{item['id']}").status_code == 204
+    app.dependency_overrides.pop(get_current_active_user, None)

@@ -1,281 +1,176 @@
-"use client";
-
 import Link from "next/link";
-import { useState } from "react";
-import {
-  MdArrowForward,
-  MdAutoFixHigh,
-  MdCheckCircle,
-  MdCloudUpload,
-  MdAdd,
-  MdRemove,
-  MdLibraryBooks,
-  MdOutlineChat,
-  MdQuiz,
-  MdSpeed,
-  MdTranslate,
-  MdWarning,
-} from "react-icons/md";
-import "./landing.css";
+import MaterialIcon from "@/components/site/MaterialIcon";
+import type { PublicStats, Testimonial } from "@/lib/site-content";
+import { getApprovedTestimonials, getPublicStats, getSiteContent } from "@/lib/site-content.server";
+import JourneyBand from "./_home/JourneyBand";
+import NoteCard from "./_home/NoteCard";
+import ReviewForm from "./_home/ReviewForm";
+import TransformCard from "./_home/TransformCard";
+import "./home.css";
 
-const stats = [
-  { value: "4", label: "Study outputs" },
-  { value: "2", label: "Ways to add a lecture" },
-  { value: "Somali", label: "First design" },
-];
+const num = (n: number) => n.toLocaleString("en-US");
+const duration = (secs: number) => `${Math.floor(secs / 60)}m ${String(Math.round(secs % 60)).padStart(2, "0")}s`;
 
-const productHighlights = [
-  {
-    icon: MdCloudUpload,
-    title: "Upload or paste link",
-    description:
-      "Start with any lecture recording or YouTube video, keeping it connected to your workspace.",
-  },
-  {
-    icon: MdTranslate,
-    title: "Somali-first AI",
-    description:
-      "Get clear Somali transcripts, summaries, and revision notes tailored for local education.",
-  },
-  {
-    icon: MdQuiz,
-    title: "Practice built in",
-    description:
-      "Turn passive video watching into active revision with automatically generated quizzes.",
-  },
-];
+function statTiles(stats: PublicStats, s: Record<string, boolean>) {
+  const defs: [string, string, string, string][] = [
+    ["stat_lectures", num(stats.lectures), "Lectures processed", "YouTube videos and uploads"],
+    ["stat_students", num(stats.students), "Students learning", "Registered accounts"],
+    ["stat_hours", num(stats.hours), "Hours of lecture converted", "Audio transcribed end to end"],
+    ["stat_notes", num(stats.notes), "Somali notes written", "Summaries, key points and terms"],
+    ["stat_quizzes", num(stats.quizzes), "Quizzes completed", "Self-tests taken by students"],
+    ["stat_time", duration(stats.avg_seconds), "Average processing time", "From submit to finished notes"],
+    ["stat_success", `${stats.success_rate}%`, "Pipeline success rate", "Completed versus failed jobs"],
+  ];
+  return defs.filter(([k]) => s[k]);
+}
 
-const studyOutputs = [
-  { icon: MdTranslate, title: "Somali Notes", label: "Structured revision guides" },
-  { icon: MdQuiz, title: "Interactive Quizzes", label: "Recall and self-test checks" },
-  { icon: MdOutlineChat, title: "AI Study Assistant", label: "Ask follow-up questions" },
-  { icon: MdSpeed, title: "Searchable Transcript", label: "Scan key words quickly" },
-];
+function Quote({ t }: { t: Testimonial }) {
+  if (t.kind === "figure") {
+    return (
+      <figure className="quote figure">
+        <div>
+          {t.source && <span className="home-eyebrow">{t.source}</span>}
+          <div className="big">{t.big}</div>
+          <b>{t.name}</b>
+        </div>
+        <blockquote>{t.text}</blockquote>
+        {t.role && <figcaption className="home-muted">{t.role}</figcaption>}
+      </figure>
+    );
+  }
+  const rating = t.rating ?? 0;
+  return (
+    <figure className="quote">
+      <div className="quote-main">
+        {rating > 0 && <span className="stars" aria-label={`${rating} out of 5`}>{"★".repeat(rating)}{"☆".repeat(5 - rating)}</span>}
+        <blockquote>{t.text}</blockquote>
+      </div>
+      <figcaption className="who">
+        <span className="home-avatar">{t.name.slice(0, 1).toUpperCase()}</span>
+        <span><b>{t.name}</b>{t.role}</span>
+      </figcaption>
+    </figure>
+  );
+}
 
-const workflow = [
-  {
-    title: "Submit media",
-    description: "Upload your audio/video recorded lesson or paste a YouTube lecture link.",
-  },
-  {
-    title: "Extract & transcribe",
-    description: "Our AI processes the speech, transcribing it in high fidelity.",
-  },
-  {
-    title: "Generate study guides",
-    description: "The system writes structured Somali notes, key summaries, and self-tests.",
-  },
-  {
-    title: "Interactive review",
-    description: "Access your package, take generated quizzes, and chat with the lecture.",
-  },
-];
-
-
-
-const faqs = [
-  {
-    question: "How accurate is the Somali speech transcription?",
-    answer: "BaroPlatform uses general-purpose AI speech and language models to transcribe lectures and write Somali notes. Accuracy depends on audio quality and how clearly the lecturer speaks; clear recordings give the best results.",
-  },
-  {
-    question: "Can I paste YouTube links directly?",
-    answer: "Yes! Simply paste any public YouTube lecture link, and BaroPlatform will automatically fetch, extract the audio, transcribe the speech, and write your study notes.",
-  },
-  {
-    question: "How does the AI interactive chat work?",
-    answer: "Once a lecture is transcribed, you can click 'Chat' to ask follow-up questions. The AI references the exact transcript details, acting as a virtual tutor that is fully aware of the lesson content.",
-  },
-  {
-    question: "Can I download my notes and quizzes?",
-    answer: "Yes. Generated notes can be downloaded as a PDF for printing or offline revision.",
-  },
-];
-
-
-
-export default function LandingPage() {
-  const [activeFaq, setActiveFaq] = useState<number | null>(null);
-
-  const toggleFaq = (index: number) => {
-    setActiveFaq(activeFaq === index ? null : index);
-  };
+export default async function HomePage() {
+  const [content, stats, testimonials] = await Promise.all([getSiteContent(), getPublicStats(), getApprovedTestimonials()]);
+  const h = content.sections.home;
+  const tiles = stats ? statTiles(stats, h as unknown as Record<string, boolean>) : [];
 
   return (
-    <div className="landing-page">
-      {/* Hero Section */}
-      <section className="landing-hero">
-        <div className="public-container hero-container">
-          <div className="hero-content">
-            <div className="hero-badge-wrap">
-              <span className="hero-badge-new">New</span>
-              <span className="hero-badge-text">Somali-First AI Lecture Platform</span>
-            </div>
-            <h1 className="hero-title">
-              Turn long lectures into organized Somali study material.
-            </h1>
-            <p className="hero-description">
-              BaroPlatform converts recorded lessons into searchable transcripts, summaries,
-              structured study notes, quizzes, and chat support so you can revise with ease.
-            </p>
-            <div className="hero-actions">
+    <div className="home-page">
+      <section className="home-hero">
+        <div className="home-wrap home-hero-grid">
+          <div>
+            {h.badge_text && (
+              <span className="home-badge">{h.badge_label && <b>{h.badge_label}</b>}{h.badge_text}</span>
+            )}
+            <h1>{h.headline} {h.headline_accent && <em>{h.headline_accent}</em>}</h1>
+            <p className="home-lede">{h.subheadline}</p>
+            <div className="home-hero-actions">
               <Link href="/sign-up" className="public-btn public-btn-primary">
-                Get Started
-                <MdArrowForward aria-hidden="true" />
+                {h.primary_cta}
+                <MaterialIcon name="arrow_forward" size={18} />
               </Link>
-              <Link href="/about" className="public-btn public-btn-ghost">
-                See How It Works
-              </Link>
+              <Link href="/about" className="public-btn public-btn-ghost">{h.secondary_cta}</Link>
             </div>
+            {h.hero_points.length > 0 && (
+              <div className="home-meta">
+                {h.hero_points.map((p) => (
+                  <span key={p}><MaterialIcon name="check" size={16} />{p}</span>
+                ))}
+              </div>
+            )}
+          </div>
+          <TransformCard />
+        </div>
+      </section>
 
-            <div className="hero-stats">
-              {stats.map((stat, idx) => (
-                <div className="hero-stat-item" key={idx}>
-                  <h3>{stat.value}</h3>
-                  <p>{stat.label}</p>
+      {tiles.length > 0 && (
+        <section className="home-section">
+          <div className="home-wrap">
+            <div className="home-section-head">
+              <span className="home-eyebrow">Live numbers</span>
+              <h2>{h.stats_title}</h2>
+              {h.stats_intro && <p>{h.stats_intro}</p>}
+            </div>
+            <div className="stats-grid">
+              {tiles.map(([k, v, l, c]) => (
+                <div className="stat" key={k}>
+                  <span className="v">{v}</span>
+                  <span className="l">{l}</span>
+                  <span className="c">{c}</span>
                 </div>
               ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
+      <JourneyBand titleA={h.journey_title_a} titleB={h.journey_title_b} cards={h.journey_cards} />
 
-
-      {/* Features Section */}
-      <section className="features-section">
-        <div className="public-container">
-          <div className="section-header-centered">
-            <span className="section-eyebrow">Features</span>
-            <h2 className="section-title">One unified platform to manage your studies</h2>
-            <p className="section-subtitle">
-              Stop rewatching long videos. Get straight to the key ideas with our suite of Somali study tools.
-            </p>
-          </div>
-
-          <div className="features-grid">
-            {productHighlights.map((feat, idx) => {
-              const Icon = feat.icon;
-              return (
-                <div className={`feature-card reveal-up delay-${(idx % 4) + 1}`} key={idx}>
-                  <div className="feature-card-icon">
-                    <Icon />
-                  </div>
-                  <h3>{feat.title}</h3>
-                  <p>{feat.description}</p>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Splitted Feature Sections */}
-          <div className="feature-split-layout">
-            <div className="split-side-content reveal-left">
-              <span className="section-eyebrow">Smart Outputs</span>
-              <h2>Every processed lecture becomes a personalized revision workspace</h2>
-              <p>
-                Browse generated Somali notes, scan key transcription terms, take practice quizzes, and ask questions - all within a single unified view.
-              </p>
-              <div className="split-action-link">
-                <Link href="/sign-up" className="public-btn public-btn-primary">
-                  Create Account
-                  <MdArrowForward />
-                </Link>
-              </div>
+      {h.show_note_preview && (
+        <section className="home-section home-note-band">
+          <div className="home-wrap home-note-split">
+            <div className="home-note-text">
+              <span className="home-eyebrow">Sample study pack</span>
+              <h2>{h.note_title}</h2>
+              {h.note_intro && <p>{h.note_intro}</p>}
+              <ul className="home-checklist">{h.note_points.map((p) => <li key={p}>{p}</li>)}</ul>
+              <div><Link href="/sign-up" className="public-btn public-btn-ghost">{h.primary_cta}</Link></div>
             </div>
-            <div className="split-side-cards reveal-right">
-              {studyOutputs.map((item, idx) => {
-                const Icon = item.icon;
-                return (
-                  <div className="study-output-card" key={idx}>
-                    <div className="study-output-icon">
-                      <Icon />
-                    </div>
-                    <div className="study-output-info">
-                      <h3>{item.title}</h3>
-                      <p>{item.label}</p>
-                    </div>
-                  </div>
-                );
-              })}
+            <NoteCard />
+          </div>
+        </section>
+      )}
+
+      {h.show_testimonials && (
+        <section className="home-section">
+          <div className="home-wrap">
+            <div className="home-row-between">
+              <div className="home-section-head" style={{ margin: 0 }}>
+                <span className="home-eyebrow">Testimonials</span>
+                <h2>{h.testimonials_title}</h2>
+                {h.testimonials_intro && <p>{h.testimonials_intro}</p>}
+              </div>
+              <ReviewForm />
+            </div>
+            {testimonials.length > 0 ? (
+              <div className="quote-grid">{testimonials.map((t) => <Quote key={t.id} t={t} />)}</div>
+            ) : (
+              <p className="home-muted">No reviews yet. Be the first to write one.</p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {h.faqs.length > 0 && (
+        <section className="home-section">
+          <div className="home-narrow">
+            <div className="home-section-head center">
+              <span className="home-eyebrow">FAQ</span>
+              <h2>{h.faq_title}</h2>
+            </div>
+            <div className="home-faq">
+              {h.faqs.map((f) => (
+                <details key={f.q}><summary>{f.q}</summary><p>{f.a}</p></details>
+              ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Workflow Section */}
-      <section className="workflow-section">
-        <div className="public-container">
-          <div className="section-header-centered">
-            <span className="section-eyebrow">Workflow</span>
-            <h2 className="section-title">From recording to revision in four simple steps</h2>
-            <p className="section-subtitle">
-              BaroPlatform automates the heavy processing, saving you hours of manual note-taking and revision prep.
-            </p>
-          </div>
-
-          <div className="workflow-grid-horizontal">
-            {workflow.map((step, idx) => (
-              <div className={`workflow-step-card reveal-up delay-${(idx % 4) + 1}`} key={idx}>
-                <div className="workflow-step-num">0{idx + 1}</div>
-                <h3>{step.title}</h3>
-                <p>{step.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-
-
-      {/* FAQ Section */}
-      <section className="faq-section">
-        <div className="public-container">
-          <div className="section-header-centered">
-            <span className="section-eyebrow">FAQ</span>
-            <h2 className="section-title">Everything you need to know</h2>
-            <p className="section-subtitle">
-              Quick answers to common questions about our transcription, AI study packs, and how the platform works.
-            </p>
-          </div>
-
-          <div className="faq-accordion">
-            {faqs.map((faq, idx) => (
-              <div className={`faq-item ${activeFaq === idx ? "active" : ""}`} key={idx} onClick={() => toggleFaq(idx)}>
-                <button className="faq-trigger" type="button" aria-expanded={activeFaq === idx}>
-                  <span>{faq.question}</span>
-                  {activeFaq === idx
-                    ? <MdRemove className="accordion-chevron" />
-                    : <MdAdd className="accordion-chevron" />}
-                </button>
-                <div className="faq-content">
-                  <div className="faq-content-inner">
-                    <p>{faq.answer}</p>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Footer Banner */}
-      <section className="cta-banner-section">
-        <div className="public-container">
-          <div className="cta-banner-card reveal-scale">
-            <div className="cta-banner-content">
-              <h2>Smarter revision starts here.</h2>
-              <p>
-                Create your account and convert your next recorded lecture into structured Somali notes, transcript, and study tools.
-              </p>
+      <section className="home-section-tight">
+        <div className="home-wrap">
+          <div className="home-cta">
+            <div>
+              <h2>{h.cta_title}</h2>
+              {h.cta_text && <p>{h.cta_text}</p>}
             </div>
-            <div className="cta-banner-actions">
-              <Link href="/sign-up" className="public-btn public-btn-primary">
-                Get Started
-              </Link>
-              <Link href="/sign-in" className="public-btn public-btn-ghost">
-                Sign In
-              </Link>
+            <div className="home-cta-actions">
+              <Link href="/sign-up" className="public-btn public-btn-white">{h.primary_cta}</Link>
+              <Link href="/contact" className="public-btn public-btn-ghost">Contact us</Link>
             </div>
           </div>
         </div>

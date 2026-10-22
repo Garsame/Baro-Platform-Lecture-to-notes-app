@@ -210,3 +210,98 @@ export function LinkListField({ label, fieldKey, help, errors, value, max, onCha
     </fieldset>
   );
 }
+
+export function ToggleField({ label, help, value, onChange }: { label: string; help?: string; value: boolean; onChange: (v: boolean) => void }) {
+  return (
+    <div className="sc-field">
+      <label className="sc-switch"><input type="checkbox" checked={value} onChange={(e) => onChange(e.target.checked)} /> {label}</label>
+      {help && <span className="sc-help">{help}</span>}
+    </div>
+  );
+}
+
+type ListShellProps<T> = { label: string; help?: string; items: T[]; max: number; onChange: (v: T[]) => void; renderItem: (item: T, i: number, update: (patch: Partial<T>) => void) => React.ReactNode; newItem: T; addLabel: string };
+
+function ObjectList<T>({ label, help, items, max, onChange, renderItem, newItem, addLabel }: ListShellProps<T>) {
+  const move = (i: number, d: number) => {
+    const j = i + d;
+    if (j < 0 || j >= items.length) return;
+    const next = [...items];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  };
+  return (
+    <fieldset className="sc-list">
+      <legend>{label}</legend>
+      {help && <p className="sc-help">{help}</p>}
+      {items.map((item, i) => (
+        <div className="sc-list-item" key={i}>
+          {renderItem(item, i, (patch) => onChange(items.map((x, idx) => (idx === i ? { ...x, ...patch } : x))))}
+          <div className="sc-list-actions">
+            <span className="sc-help">#{i + 1}</span>
+            <span>
+              <button type="button" className="sc-btn small" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Move up">↑</button>{" "}
+              <button type="button" className="sc-btn small" onClick={() => move(i, 1)} disabled={i === items.length - 1} aria-label="Move down">↓</button>{" "}
+              <button type="button" className="sc-btn small" onClick={() => onChange(items.filter((_, idx) => idx !== i))}>Remove</button>
+            </span>
+          </div>
+        </div>
+      ))}
+      <button type="button" className="sc-btn small" disabled={items.length >= max} onClick={() => onChange([...items, newItem])}>{addLabel}</button>
+    </fieldset>
+  );
+}
+
+export type JourneyItem = { tab: string; label: string; title: string; icon: string; link_label: string; href: string };
+
+export function JourneyCardsField({ fieldKey, errors, value, onChange }: { fieldKey: string; errors: Record<string, string>; value: JourneyItem[]; onChange: (v: JourneyItem[]) => void }) {
+  return (
+    <ObjectList
+      label="How it works cards"
+      help="Cards with the same tab name are grouped under one button. Up to three cards per tab look best."
+      items={value}
+      max={15}
+      onChange={onChange}
+      addLabel="Add card"
+      newItem={{ tab: "By step", label: "New card", title: "Describe what this does in one line.", icon: "school", link_label: "Learn more", href: "/about" }}
+      renderItem={(c, i, up) => {
+        const err = (f: string) => errors[`${fieldKey}.${i}.${f}`];
+        return (
+          <>
+            <div className="sc-list-row">
+              <TextField label="Tab" value={c.tab} max={24} error={err("tab")} onChange={(v) => up({ tab: v })} />
+              <TextField label="Small label" value={c.label} max={32} error={err("label")} onChange={(v) => up({ label: v })} />
+            </div>
+            <TextArea label="One-line description" value={c.title} max={90} rows={2} error={err("title")} onChange={(v) => up({ title: v })} />
+            <div className="sc-list-row">
+              <TextField label="Icon name" help="A Google Material Symbols name." value={c.icon} max={40} error={err("icon")} onChange={(v) => up({ icon: v })} />
+              <TextField label="Link text" value={c.link_label} max={30} error={err("link_label")} onChange={(v) => up({ link_label: v })} />
+            </div>
+            <TextField label="Link" help="A path such as /about, or a full https:// link." value={c.href} max={300} error={err("href")} onChange={(v) => up({ href: v })} />
+          </>
+        );
+      }}
+    />
+  );
+}
+
+export type FaqEntry = { q: string; a: string };
+
+export function FaqListField({ fieldKey, errors, value, onChange }: { fieldKey: string; errors: Record<string, string>; value: FaqEntry[]; onChange: (v: FaqEntry[]) => void }) {
+  return (
+    <ObjectList
+      label="Questions and answers"
+      items={value}
+      max={12}
+      onChange={onChange}
+      addLabel="Add question"
+      newItem={{ q: "New question", a: "Write the answer here." }}
+      renderItem={(f, i, up) => (
+        <>
+          <TextField label="Question" value={f.q} max={120} error={errors[`${fieldKey}.${i}.q`]} onChange={(v) => up({ q: v })} />
+          <TextArea label="Answer" value={f.a} max={600} rows={4} error={errors[`${fieldKey}.${i}.a`]} onChange={(v) => up({ a: v })} />
+        </>
+      )}
+    />
+  );
+}

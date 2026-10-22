@@ -41,9 +41,78 @@ export type NavigationSettings = {
   social_youtube: string;
 };
 
+export type JourneyCard = {
+  tab: string;
+  label: string;
+  title: string;
+  icon: string;
+  link_label: string;
+  href: string;
+};
+
+export type FaqItem = { q: string; a: string };
+
+export type HomeSettings = {
+  badge_label: string;
+  badge_text: string;
+  headline: string;
+  headline_accent: string;
+  subheadline: string;
+  primary_cta: string;
+  secondary_cta: string;
+  hero_points: string[];
+  stats_title: string;
+  stats_intro: string;
+  stat_lectures: boolean;
+  stat_students: boolean;
+  stat_hours: boolean;
+  stat_notes: boolean;
+  stat_quizzes: boolean;
+  stat_time: boolean;
+  stat_success: boolean;
+  journey_title_a: string;
+  journey_title_b: string;
+  journey_cards: JourneyCard[];
+  show_note_preview: boolean;
+  note_title: string;
+  note_intro: string;
+  note_points: string[];
+  show_testimonials: boolean;
+  testimonials_title: string;
+  testimonials_intro: string;
+  faq_title: string;
+  faqs: FaqItem[];
+  cta_title: string;
+  cta_text: string;
+};
+
+export type PublicStats = {
+  lectures: number;
+  students: number;
+  hours: number;
+  notes: number;
+  quizzes: number;
+  avg_seconds: number;
+  success_rate: number;
+};
+
+export type Testimonial = {
+  id: number;
+  kind: "review" | "figure";
+  origin: string;
+  name: string;
+  role: string;
+  text: string;
+  rating: number | null;
+  big: string | null;
+  source: string | null;
+  status: "pending" | "approved" | "hidden";
+  sort_order: number;
+};
+
 export type SiteContent = {
   updated_at: string | null;
-  sections: { branding: BrandingSettings; seo: SeoSettings; navigation: NavigationSettings };
+  sections: { branding: BrandingSettings; seo: SeoSettings; navigation: NavigationSettings; home: HomeSettings };
 };
 
 // Must match BRANDING_DEFAULT, SEO_DEFAULT and NAVIGATION_DEFAULT in the backend registry.
@@ -93,6 +162,61 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       social_linkedin: "",
       social_github: "",
       social_youtube: "",
+    },
+    home: {
+      badge_label: "New",
+      badge_text: "Somali notes from any lecture video",
+      headline: "Turn any lecture into",
+      headline_accent: "Somali study notes.",
+      subheadline:
+        "Paste a YouTube link or upload a recording. BaroPlatform transcribes it, writes structured Somali notes, builds a quiz, and lets you ask the lecture questions.",
+      primary_cta: "Get started",
+      secondary_cta: "See how it works",
+      hero_points: ["YouTube links or uploads", "Notes written in Somali", "Quiz and lecture chat included"],
+      stats_title: "The work happening behind the scenes",
+      stats_intro: "These numbers come from the platform itself and update every time this page loads.",
+      stat_lectures: true,
+      stat_students: true,
+      stat_hours: true,
+      stat_notes: true,
+      stat_quizzes: true,
+      stat_time: true,
+      stat_success: false,
+      journey_title_a: "From one recording to a full revision pack,",
+      journey_title_b: "BaroPlatform fits every way you study.",
+      journey_cards: [
+        { tab: "By step", label: "Add · about a minute", title: "Paste a YouTube link or upload a file, and processing starts.", icon: "add_link", link_label: "Add a lecture", href: "/sign-up" },
+        { tab: "By step", label: "Process · a few minutes", title: "Speech is transcribed and Somali notes are written for you.", icon: "graphic_eq", link_label: "See the pipeline", href: "/about" },
+        { tab: "By step", label: "Revise · any time", title: "Read, listen, take the quiz and chat with the lecture.", icon: "auto_stories", link_label: "Get started", href: "/sign-up" },
+        { tab: "By lecture source", label: "YouTube", title: "Public lecture videos, using captions when the video has them.", icon: "smart_display", link_label: "Add a link", href: "/sign-up" },
+        { tab: "By lecture source", label: "Recorded class", title: "Audio or video you recorded, uploaded from your phone or laptop.", icon: "mic", link_label: "Upload a file", href: "/sign-up" },
+        { tab: "By lecture source", label: "Long lectures", title: "Recordings over an hour are split into chunks so nothing is skipped.", icon: "timer", link_label: "See how it works", href: "/about" },
+        { tab: "By study goal", label: "Exam revision", title: "Key points and a quiz show what you remember and what you missed.", icon: "quiz", link_label: "Get started", href: "/sign-up" },
+        { tab: "By study goal", label: "Understanding", title: "Detailed Somali notes and key terms explain the hard parts.", icon: "lightbulb", link_label: "See how it works", href: "/about" },
+        { tab: "By study goal", label: "Asking questions", title: "The lecture chat answers from the transcript, like a tutor.", icon: "forum", link_label: "Get started", href: "/sign-up" },
+      ],
+      show_note_preview: true,
+      note_title: "What you get from one lecture",
+      note_intro: "Every processed lecture becomes a study pack. This sample comes from an introductory databases lecture.",
+      note_points: [
+        "Summary and key points in Somali",
+        "Detailed notes organized by topic",
+        "Key terms with Somali explanations",
+        "A quiz to check what you remember",
+        "The notes read aloud in a Somali voice",
+      ],
+      show_testimonials: true,
+      testimonials_title: "What students say",
+      testimonials_intro: "Results from our student evaluation, and reviews from people who use BaroPlatform.",
+      faq_title: "Questions students ask",
+      faqs: [
+        { q: "How accurate is the Somali speech transcription?", a: "BaroPlatform uses general-purpose AI speech and language models to transcribe lectures and write Somali notes. Accuracy depends on audio quality and how clearly the lecturer speaks; clear recordings give the best results." },
+        { q: "Can I paste YouTube links directly?", a: "Yes. Paste any public YouTube lecture link, and BaroPlatform will fetch the audio, transcribe the speech, and write your study notes." },
+        { q: "How does the AI interactive chat work?", a: "Once a lecture is processed, open it and ask a question. The assistant answers from that lecture's transcript, like a tutor who attended the class." },
+        { q: "Can I download my notes and quizzes?", a: "Yes. Generated notes can be downloaded as a PDF for printing or offline revision." },
+      ],
+      cta_title: "Smarter revision starts here.",
+      cta_text: "Create your account and convert your next recorded lecture into structured Somali notes, a transcript, and study tools.",
     },
   },
 };

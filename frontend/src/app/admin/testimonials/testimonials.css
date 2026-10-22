@@ -1,0 +1,7 @@
+.tm-toolbar { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 1rem; }
+.tm-list { display: grid; gap: 0.9rem; }
+.tm-item p { color: var(--text-color); }
+.tm-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tm-big { font-size: 1.8rem; font-weight: 650; color: var(--primary-color); }
+.tm-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.tm-form { display: grid; gap: 0.8rem; }

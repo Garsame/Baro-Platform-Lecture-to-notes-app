@@ -1216,6 +1216,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <Link href="/admin/messages" className={`admin-nav-link ${pathname === '/admin/messages' ? 'active' : ''}`}>
               <MaterialIcon name="mail" filled={pathname === '/admin/messages'} size={21} /> User Messages
             </Link>
+            <Link href="/admin/testimonials" className={`admin-nav-link ${pathname === '/admin/testimonials' ? 'active' : ''}`}>
+              <MaterialIcon name="reviews" filled={pathname === '/admin/testimonials'} size={21} /> Testimonials
+            </Link>
             <Link href="/admin/settings" className={`admin-nav-link ${pathname.startsWith('/admin/settings') ? 'active' : ''}`}>
               <MaterialIcon name="web" filled={pathname.startsWith('/admin/settings')} size={21} /> Site Content
             </Link>

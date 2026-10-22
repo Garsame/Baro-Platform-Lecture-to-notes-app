@@ -11,4 +11,4 @@ from .quiz import Quiz, QuizAttempt
 from .contact_message import ContactMessage
 
 
-from .site_content import SiteSetting, SiteAsset
+from .site_content import SiteSetting, SiteAsset, Testimonial

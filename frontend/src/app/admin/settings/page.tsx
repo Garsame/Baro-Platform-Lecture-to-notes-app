@@ -11,10 +11,10 @@ const ACTIVE: Record<string, string> = {
   branding: "Logos, favicon, colours, site name and tagline.",
   seo: "Page title, description, keywords and the social share image.",
   navigation: "Header dropdowns, header button, footer text and social links.",
+  home: "Hero, live numbers, how-it-works cards, sample notes, testimonials and FAQ.",
 };
 
 const UPCOMING = [
-  { label: "Home page", phase: 3 },
   { label: "About page", phase: 4 },
   { label: "Team on the About page", phase: 4 },
   { label: "Contact page and email", phase: 5 },

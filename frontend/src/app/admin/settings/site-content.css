@@ -101,3 +101,11 @@ a.sc-card:hover { border-color: var(--primary-color); }
 .sc-footer-mock { padding: 16px; display: grid; gap: 6px; }
 .sc-footer-mock .big { font-size: 1.9rem; font-weight: 650; letter-spacing: -0.03em; }
 .sc-footer-mock .big span { color: var(--primary-color); }
+
+.sc-group { display: grid; gap: 1rem; padding: 1rem; border: 1px solid var(--border); border-radius: 12px; }
+.sc-group h2 { margin: 0; font-size: 1.05rem; }
+.sc-home-mock { padding: 16px; border-radius: 12px; border: 1px solid var(--border); background: var(--card-bg); display: grid; gap: 8px; }
+.sc-home-mock .h { font-size: 1.5rem; font-weight: 650; letter-spacing: -0.03em; }
+.sc-home-mock .h span { color: var(--primary-color); }
+.sc-home-mock.dark { background: #0d1022; color: #e9ecf8; }
+.sc-home-mock.dark span { color: #8d96b8; }

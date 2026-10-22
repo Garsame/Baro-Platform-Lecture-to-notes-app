@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, JSON, String
+from sqlalchemy import BigInteger, Column, DateTime, ForeignKey, Integer, JSON, String, Text
 
 from app.core.database import Base
 
@@ -27,3 +27,22 @@ class SiteAsset(Base):
     alt_text = Column(String(255), nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     uploaded_by_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+
+class Testimonial(Base):
+    __tablename__ = "testimonials"
+
+    id = Column(Integer, primary_key=True, index=True)
+    kind = Column(String(16), nullable=False, default="review")  # review | figure
+    origin = Column(String(16), nullable=False, default="admin")  # admin (questionnaire) | user
+    name = Column(String(120), nullable=False)
+    role = Column(String(120), nullable=False, default="")
+    text = Column(Text, nullable=False)
+    rating = Column(Integer, nullable=True)
+    big = Column(String(40), nullable=True)
+    source = Column(String(100), nullable=True)
+    status = Column(String(16), nullable=False, default="pending", index=True)  # pending | approved | hidden
+    sort_order = Column(Integer, nullable=False, default=0)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
