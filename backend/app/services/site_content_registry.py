@@ -22,7 +22,7 @@ BRANDING_DEFAULT = {
     "icon_url": "/baro-icon.png",
     "primary_color": "#2a2a72",
     "accent_color": "#009ffd",
-    "footer_note": "Built for focused lecture revision.",
+    "footer_note": "Built at Hormuud University for focused lecture revision.",
 }
 
 SEO_DEFAULT = {
@@ -40,7 +40,7 @@ NAVIGATION_DEFAULT = {
     "about_links": [
         {"label": "How it works", "description": "The stages from video to notes", "href": "/about", "icon": "account_tree", "enabled": True},
         {"label": "Team", "description": "The writers and supervisor behind BaroPlatform", "href": "/about#team", "icon": "groups", "enabled": True},
-        {"label": "Intro video", "description": "Watch one lecture become a study pack", "href": "/#intro-video", "icon": "play_circle", "enabled": False},
+        {"label": "Intro video", "description": "Watch one lecture become a study pack", "href": "/#intro-video", "icon": "play_circle", "enabled": True},
     ],
     "resources_links": [
         {"label": "Documentation", "description": "How to use every feature", "href": "/resources/docs", "icon": "menu_book", "enabled": False},
@@ -68,6 +68,8 @@ HOME_DEFAULT = {
     "primary_cta": "Get started",
     "secondary_cta": "See how it works",
     "hero_points": ["YouTube links or uploads", "Notes written in Somali", "Quiz and lecture chat included"],
+    "video_title": "See one lecture become a study pack",
+    "video_caption": "Intro video · storyboard preview",
     "stats_title": "The work happening behind the scenes",
     "stats_intro": "These numbers come from the platform itself and update every time this page loads.",
     "stat_lectures": True,
@@ -105,13 +107,15 @@ HOME_DEFAULT = {
     "testimonials_intro": "Results from our student evaluation, and reviews from people who use BaroPlatform.",
     "faq_title": "Questions students ask",
     "faqs": [
-        {"q": "How accurate is the Somali speech transcription?", "a": "BaroPlatform uses general-purpose AI speech and language models to transcribe lectures and write Somali notes. Accuracy depends on audio quality and how clearly the lecturer speaks; clear recordings give the best results."},
-        {"q": "Can I paste YouTube links directly?", "a": "Yes. Paste any public YouTube lecture link, and BaroPlatform will fetch the audio, transcribe the speech, and write your study notes."},
-        {"q": "How does the AI interactive chat work?", "a": "Once a lecture is processed, open it and ask a question. The assistant answers from that lecture's transcript, like a tutor who attended the class."},
-        {"q": "Can I download my notes and quizzes?", "a": "Yes. Generated notes can be downloaded as a PDF for printing or offline revision."},
+        {"q": "Which lectures can I use?", "a": "Any public YouTube lecture, or an audio or video file you upload. Clear audio gives the best results."},
+        {"q": "Is the transcription accurate?", "a": "BaroPlatform uses general-purpose AI speech and language models. Accuracy depends on audio quality and how clearly the lecturer speaks."},
+        {"q": "Are the notes really in Somali?", "a": "Yes. Notes, summaries, key points and quizzes are written in Somali. The original transcript stays available next to them."},
+        {"q": "How does the lecture chat work?", "a": "Open a lecture and ask a question. The assistant answers from that lecture's transcript, like a tutor who attended the class."},
+        {"q": "Can I download my notes?", "a": "Yes. Generated notes can be downloaded as a PDF for printing or offline revision."},
+        {"q": "How long does processing take?", "a": "Most lectures finish in a few minutes. The platform-wide average is shown in the numbers above."},
     ],
-    "cta_title": "Smarter revision starts here.",
-    "cta_text": "Create your account and convert your next recorded lecture into structured Somali notes, a transcript, and study tools.",
+    "cta_title": "Your next lecture, in Somali notes",
+    "cta_text": "Create an account and turn your next recorded lecture into notes, a quiz and a study chat.",
 }
 
 ABOUT_DEFAULT = {
@@ -154,7 +158,7 @@ CONTACT_DEFAULT = {
     "email": "",
     "phone": "",
     "whatsapp": "",
-    "hours": "",
+    "hours": "Saturday to Thursday, 8:00 to 17:00 (EAT)",
     "topics": ["Account and sign-in", "Lecture processing", "Notes and quizzes", "Using BaroPlatform in class", "Something else"],
 }
 

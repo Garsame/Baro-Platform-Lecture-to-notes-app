@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FaFacebookF, FaGithub, FaLinkedinIn, FaXTwitter, FaYoutube } from "react-icons/fa6";
+import { FaFacebookF, FaGithub, FaLinkedinIn, FaWhatsapp, FaXTwitter, FaYoutube } from "react-icons/fa6";
 import type { IconType } from "react-icons";
 import BrandLogo from "./BrandLogo";
 import MaterialIcon from "./MaterialIcon";
@@ -17,11 +17,12 @@ const SOCIALS: { key: "social_facebook" | "social_x" | "social_linkedin" | "soci
 
 export default function SiteFooter() {
   const branding = useBranding();
-  const { navigation } = useSiteContent().sections;
+  const { navigation, contact } = useSiteContent().sections;
   const about = navigation.about_links.filter((l) => l.enabled);
   const resources = navigation.resources_links.filter((l) => l.enabled);
   const socials = SOCIALS.filter((s) => navigation[s.key]);
 
+  const accountLink = { href: "/sign-up", label: "Create an account", icon: "person_add" };
   const linkItem = (l: { href: string; label: string; icon: string }) => (
     <Link key={`${l.href}-${l.label}`} href={l.href}>
       <MaterialIcon name={l.icon} />
@@ -50,10 +51,10 @@ export default function SiteFooter() {
               </div>
             )}
           </div>
-          {about.length > 0 && (
+          {(
             <div>
               <h2>About</h2>
-              <nav aria-label="About">{about.map(linkItem)}</nav>
+              <nav aria-label="About">{[...about, accountLink].map(linkItem)}</nav>
             </div>
           )}
           {resources.length > 0 && (
@@ -62,17 +63,21 @@ export default function SiteFooter() {
               <nav aria-label="Resources">{resources.map(linkItem)}</nav>
             </div>
           )}
-          <div>
-            <h2>Account</h2>
-            <nav aria-label="Account">
-              {linkItem({ href: "/sign-in", label: "Sign in", icon: "login" })}
-              {linkItem({ href: "/sign-up", label: "Create an account", icon: "person_add" })}
-              {linkItem({ href: "/contact", label: "Contact", icon: "mail" })}
-            </nav>
-          </div>
+          {(contact.email || contact.phone || contact.whatsapp || contact.hours) && (
+            <div>
+              <h2>Contact</h2>
+              <nav aria-label="Contact">
+                {contact.email && <a href={`mailto:${contact.email}`}><MaterialIcon name="mail" /><span>{contact.email}</span></a>}
+                {contact.phone && <a href={`tel:${contact.phone.replace(/[^\d+]/g, "")}`}><MaterialIcon name="call" /><span>{contact.phone}</span></a>}
+                {contact.whatsapp && <a href={`https://wa.me/${contact.whatsapp.replace(/[^\d]/g, "")}`} target="_blank" rel="noopener noreferrer"><FaWhatsapp aria-hidden="true" /><span>WhatsApp {contact.whatsapp}</span></a>}
+                {contact.hours && <span className="footer-hours"><MaterialIcon name="schedule" /><span>{contact.hours}</span></span>}
+              </nav>
+            </div>
+          )}
         </div>
         <div className="footer-legal">
           <span>© {new Date().getFullYear()} {branding.site_name}. All rights reserved. {branding.footer_note}</span>
+          <nav aria-label="Legal"><Link href="/contact">Support</Link></nav>
         </div>
       </div>
     </footer>

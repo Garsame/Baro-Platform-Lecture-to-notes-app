@@ -17,6 +17,7 @@ interface ContactMessageRecord {
   id: number;
   name: string;
   email: string;
+  phone?: string | null;
   topic: string;
   message: string;
   is_read: boolean;
@@ -449,7 +450,7 @@ export default function AdminMessagesPage() {
                               {msg.name}
                             </span>
                             <span style={{ color: "var(--text-muted)", fontSize: "0.82rem", fontWeight: "normal" }}>
-                              {msg.email}
+                              {msg.email}{msg.phone ? ` · ${msg.phone}` : ""}
                             </span>
                           </div>
                         </td>

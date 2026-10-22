@@ -58,6 +58,12 @@
 .footer-grid nav a:hover { color: var(--accent); }
 .footer-grid nav a .ms { font-size: 18px; color: var(--muted); }
 .footer-about p { color: var(--muted); font-size: 0.92rem; max-width: 30em; margin-top: 12px; }
+.footer-hours { display: inline-flex; align-items: flex-start; gap: 8px; color: var(--fg); font-size: 0.92rem; }
+.footer-hours .ms { font-size: 18px; color: var(--muted); }
+.footer-grid nav a svg { width: 18px; color: var(--muted); }
+.footer-legal nav { display: flex; gap: 16px; flex-wrap: wrap; }
+.footer-legal a { color: var(--muted); text-decoration: none; }
+.footer-legal a:hover { color: var(--accent); }
 .footer-socials { display: flex; gap: 8px; margin-top: 16px; flex-wrap: wrap; }
 .footer-socials a { width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; color: var(--fg); font-size: 15px; }
 .footer-socials a:hover { border-color: var(--brand); color: var(--accent); }

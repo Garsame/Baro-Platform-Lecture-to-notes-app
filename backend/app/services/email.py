@@ -78,7 +78,7 @@ def _one_line(value: str) -> str:
     return " ".join(str(value).split())
 
 
-def send_contact_message_email(name: str, email: str, topic: str, message: str, recipient: Optional[str] = None) -> bool:
+def send_contact_message_email(name: str, email: str, topic: str, message: str, recipient: Optional[str] = None, phone: Optional[str] = None) -> bool:
     """Notify the team inbox about a new contact message.
 
     `recipient` is the inbox set in the admin Email settings; when empty the
@@ -88,6 +88,12 @@ def send_contact_message_email(name: str, email: str, topic: str, message: str, 
     admin_url = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/admin/messages"
     # User input goes into HTML below, so escape it first.
     name, email, topic, message = (html.escape(v) for v in (name, email, topic, message))
+    phone_row = (
+        '<tr><td style="padding: 8px 0; font-weight: bold; color: #65728a;">Phone:</td>'
+        f'<td style="padding: 8px 0; color: #121a2d;">{html.escape(phone)}</td></tr>'
+        if phone
+        else ""
+    )
     
     current_year = datetime.utcnow().year
     body = f"""
@@ -109,6 +115,7 @@ def send_contact_message_email(name: str, email: str, topic: str, message: str, 
               <td style="padding: 8px 0; font-weight: bold; color: #65728a;">Sender Email:</td>
               <td style="padding: 8px 0; color: #121a2d;"><a href="mailto:{email}" style="color: #009ffd; text-decoration: none;">{email}</a></td>
             </tr>
+            {phone_row}
             <tr>
               <td style="padding: 8px 0; font-weight: bold; color: #65728a;">Topic:</td>
               <td style="padding: 8px 0; color: #121a2d; font-weight: 500;">{topic}</td>

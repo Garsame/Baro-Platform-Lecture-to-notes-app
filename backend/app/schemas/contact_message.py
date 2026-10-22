@@ -5,6 +5,7 @@ from typing import Optional
 class ContactMessageBase(BaseModel):
     name: str
     email: EmailStr
+    phone: Optional[str] = None
     topic: str
     message: str
 
@@ -13,6 +14,7 @@ class ContactMessageCreate(BaseModel):
 
     name: str = Field(min_length=2, max_length=120)
     email: EmailStr
+    phone: str = Field(default="", max_length=40)
     topic: str = Field(min_length=2, max_length=120)
     message: str = Field(min_length=10, max_length=2000)
 

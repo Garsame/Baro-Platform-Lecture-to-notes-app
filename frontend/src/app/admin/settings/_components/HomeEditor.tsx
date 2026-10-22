@@ -39,6 +39,10 @@ export default function HomeEditor() {
         <TextField label="Secondary button" value={d.secondary_cta} max={28} error={e.secondary_cta} onChange={(v) => set("secondary_cta", v)} />
         <TagsField label="Hero points" value={d.hero_points} max={5} error={e.hero_points} onChange={(v) => set("hero_points", v)} />
       </Group>
+      <Group title="Intro video">
+        <TextField label="Video section title" value={d.video_title} max={70} error={e.video_title} help="Leave empty to hide the video section." onChange={(v) => set("video_title", v)} />
+        <TextField label="Video caption" value={d.video_caption} max={60} error={e.video_caption} onChange={(v) => set("video_caption", v)} />
+      </Group>
       <Group title="Live numbers">
         <TextField label="Section title" value={d.stats_title} max={60} error={e.stats_title} onChange={(v) => set("stats_title", v)} />
         <TextArea label="Section intro" value={d.stats_intro} max={160} rows={2} error={e.stats_intro} onChange={(v) => set("stats_intro", v)} />

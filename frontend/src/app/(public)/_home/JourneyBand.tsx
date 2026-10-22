@@ -36,6 +36,9 @@ export default function JourneyBand({ titleA, titleB, cards }: { titleA: string;
             </Link>
           ))}
         </div>
+        <div className="gh-more">
+          <Link href="/about">See the full pipeline <MaterialIcon name="arrow_forward" size={18} /></Link>
+        </div>
       </div>
     </section>
   );

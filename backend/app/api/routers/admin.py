@@ -541,6 +541,7 @@ def get_all_contact_messages(
             "id": msg.id,
             "name": msg.name,
             "email": msg.email,
+            "phone": msg.phone,
             "topic": msg.topic,
             "message": msg.message,
             "is_read": msg.is_read,

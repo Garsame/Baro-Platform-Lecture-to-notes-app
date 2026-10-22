@@ -1,53 +1,49 @@
+import type { Metadata } from "next";
+import { FaWhatsapp } from "react-icons/fa6";
 import MaterialIcon from "@/components/site/MaterialIcon";
 import { getSiteContent } from "@/lib/site-content.server";
 import ContactForm from "./ContactForm";
+import CopyButton from "./CopyButton";
 import "../home.css";
 import "./contact.css";
+
+export const metadata: Metadata = { title: "Contact" };
 
 export default async function ContactPage() {
   const { sections } = await getSiteContent();
   const c = sections.contact;
-  const digits = c.whatsapp.replace(/[^\d]/g, "");
 
-  const details = [
-    c.contact_name && { icon: "person", label: "Contact", value: c.contact_name, href: null as string | null },
-    c.email && { icon: "mail", label: "Email", value: c.email, href: `mailto:${c.email}` },
-    c.phone && { icon: "call", label: "Phone", value: c.phone, href: `tel:${c.phone.replace(/[^\d+]/g, "")}` },
-    c.whatsapp && digits && { icon: "chat", label: "WhatsApp", value: c.whatsapp, href: `https://wa.me/${digits}` },
-    c.hours && { icon: "schedule", label: "Hours", value: c.hours, href: null },
-  ].filter(Boolean) as { icon: string; label: string; value: string; href: string | null }[];
+  const cards = [
+    c.contact_name && { icon: <MaterialIcon name="support_agent" size={22} />, k: "Contact", v: c.contact_name, copy: false },
+    c.email && { icon: <MaterialIcon name="mail" size={22} />, k: "Email", v: c.email, copy: true },
+    c.phone && { icon: <MaterialIcon name="call" size={22} />, k: "Phone", v: c.phone, copy: true },
+    c.whatsapp && { icon: <FaWhatsapp aria-hidden="true" />, k: "WhatsApp", v: c.whatsapp, copy: true },
+    c.hours && { icon: <MaterialIcon name="schedule" size={22} />, k: "Office hours", v: c.hours, copy: false },
+  ].filter(Boolean) as { icon: React.ReactNode; k: string; v: string; copy: boolean }[];
 
   return (
     <div className="home-page contact-page">
-      <section className="contact-hero">
+      <section className="contact-hero ruled">
         <div className="home-wrap">
           <span className="home-eyebrow">Contact</span>
           <h1>{c.headline}</h1>
           <p className="home-lede">{c.intro}</p>
         </div>
       </section>
-      <section className="home-section-tight">
-        <div className="home-wrap contact-grid">
-          {details.length > 0 && (
-            <aside className="contact-details" aria-label="Contact details">
-              {details.map((d) => (
-                <div className="contact-detail" key={d.label}>
-                  <span className="contact-detail-icon"><MaterialIcon name={d.icon} size={22} /></span>
-                  <div>
-                    <span className="contact-detail-label">{d.label}</span>
-                    {d.href ? (
-                      <a href={d.href} {...(d.href.startsWith("https://") ? { target: "_blank", rel: "noopener noreferrer" } : {})}>{d.value}</a>
-                    ) : (
-                      <span className="contact-detail-value">{d.value}</span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </aside>
-          )}
-          <div className="contact-card"><ContactForm topics={c.topics} /></div>
-        </div>
-      </section>
+      <div className="home-wrap contact-grid">
+        {cards.length > 0 && (
+          <div className="contact-cards">
+            {cards.map((card) => (
+              <div className="ccard" key={card.k}>
+                <span className="ic">{card.icon}</span>
+                <div><div className="k">{card.k}</div><div className="v">{card.v}</div></div>
+                {card.copy && <CopyButton text={card.v} />}
+              </div>
+            ))}
+          </div>
+        )}
+        <div className="form-card"><ContactForm topics={c.topics} /></div>
+      </div>
     </div>
   );
 }

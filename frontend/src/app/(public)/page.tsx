@@ -2,6 +2,7 @@ import Link from "next/link";
 import MaterialIcon from "@/components/site/MaterialIcon";
 import type { PublicStats, Testimonial } from "@/lib/site-content";
 import { getApprovedTestimonials, getPublicStats, getSiteContent } from "@/lib/site-content.server";
+import IntroVideo from "./_home/IntroVideo";
 import JourneyBand from "./_home/JourneyBand";
 import NoteCard from "./_home/NoteCard";
 import ReviewForm from "./_home/ReviewForm";
@@ -87,6 +88,18 @@ export default async function HomePage() {
         </div>
       </section>
 
+      {h.video_title && (
+        <section className="home-section-tight" id="intro-video">
+          <div className="home-wrap">
+            <div className="home-section-head">
+              <span className="home-eyebrow">Intro video</span>
+              <h2>{h.video_title}</h2>
+            </div>
+            <IntroVideo title={h.video_title} caption={h.video_caption} />
+          </div>
+        </section>
+      )}
+
       {tiles.length > 0 && (
         <section className="home-section">
           <div className="home-wrap">
@@ -104,6 +117,7 @@ export default async function HomePage() {
                 </div>
               ))}
             </div>
+            <div className="stats-foot"><span className="live" />Live from the platform, updated every time this page loads.</div>
           </div>
         </section>
       )}

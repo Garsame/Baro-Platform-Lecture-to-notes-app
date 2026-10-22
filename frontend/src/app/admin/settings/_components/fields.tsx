@@ -337,7 +337,7 @@ export function StageListField({ fieldKey, errors, value, onChange }: { fieldKey
   );
 }
 
-export type MemberEntry = { name: string; role: string; level: "supervisor" | "member"; bio: string; photo_url: string; linkedin: string; github: string };
+export type MemberEntry = { name: string; role: string; level: "supervisor" | "lead" | "member"; bio: string; photo_url: string; linkedin: string; github: string };
 
 export function MemberListField({ fieldKey, errors, value, onChange }: { fieldKey: string; errors: Record<string, string>; value: MemberEntry[]; onChange: (v: MemberEntry[]) => void }) {
   return (
@@ -360,6 +360,7 @@ export function MemberListField({ fieldKey, errors, value, onChange }: { fieldKe
             <label className="sc-field">Level
               <select className="sc-input" value={m.level} onChange={(e) => up({ level: e.target.value as MemberEntry["level"] })}>
                 <option value="member">Member</option>
+                <option value="lead">Lead</option>
                 <option value="supervisor">Supervisor (featured)</option>
               </select>
             </label>

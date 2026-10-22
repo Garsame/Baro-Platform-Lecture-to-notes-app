@@ -28,6 +28,7 @@ def create_contact_message(
         db_message = ContactMessage(
             name=message_in.name,
             email=message_in.email,
+            phone=message_in.phone or None,
             topic=message_in.topic,
             message=message_in.message,
         )
@@ -43,6 +44,7 @@ def create_contact_message(
                 email=db_message.email,
                 topic=db_message.topic,
                 message=db_message.message,
+                phone=db_message.phone,
                 recipient=email_settings["recipient_email"],
             )
             if email_settings["auto_reply_enabled"]:

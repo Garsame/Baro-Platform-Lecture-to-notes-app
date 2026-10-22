@@ -4,72 +4,91 @@ import { useState } from "react";
 import MaterialIcon from "@/components/site/MaterialIcon";
 import { apiUrl } from "@/lib/api";
 
+type Errors = Partial<Record<"name" | "email" | "message", string>>;
+
 export default function ContactForm({ topics }: { topics: string[] }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [topic, setTopic] = useState(topics[0] ?? "");
   const [message, setMessage] = useState("");
+  const [errors, setErrors] = useState<Errors>({});
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sentTo, setSentTo] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+  const [sent, setSent] = useState<{ name: string; email: string } | null>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
+    const next: Errors = {};
+    if (name.trim().length < 2) next.name = "Enter your name.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) next.email = "Enter an email address like name@example.com.";
+    if (message.trim().length < 10) next.message = "Write at least 10 characters so the team can help.";
+    setErrors(next);
+    setFormError(null);
+    if (Object.keys(next).length) return;
+
     setBusy(true);
-    setError(null);
     try {
       const res = await fetch(apiUrl("/api/v1/contact/"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, topic, message }),
+        body: JSON.stringify({ name, email, phone, topic: topic || "General", message }),
       });
-      if (res.status === 422) throw new Error("Please check your details. The message needs at least 10 characters.");
+      if (res.status === 422) throw new Error("Please check your details and try again.");
       if (!res.ok) throw new Error("We could not send your message. Please try again in a moment.");
-      setSentTo(email);
+      setSent({ name: name.trim(), email: email.trim() });
       setName("");
       setEmail("");
+      setPhone("");
       setMessage("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "An unexpected error occurred.");
+      setFormError(err instanceof Error ? err.message : "An unexpected error occurred.");
     } finally {
       setBusy(false);
     }
   }
 
-  if (sentTo) {
+  if (sent) {
     return (
-      <div className="contact-sent" role="status">
-        <span className="contact-sent-icon"><MaterialIcon name="mark_email_read" size={30} /></span>
-        <h2>Message sent</h2>
-        <p>Thank you. A confirmation is on its way to <b>{sentTo}</b>, and the team will reply by email.</p>
-        <button type="button" className="public-btn public-btn-ghost" onClick={() => setSentTo(null)}>Send another message</button>
+      <div className="success" role="status">
+        <span className="tick"><MaterialIcon name="check" size={28} /></span>
+        <h2>Message received</h2>
+        <p className="muted">Thanks, {sent.name}. The team replies by email to {sent.email}.</p>
+        <button type="button" className="public-btn public-btn-ghost" onClick={() => setSent(null)}>Send another message</button>
       </div>
     );
   }
 
+  const field = (id: string, label: string, control: React.ReactNode, err?: string) => (
+    <div className="field">
+      <label htmlFor={id}>{label}</label>
+      {control}
+      {err && <span className="err">{err}</span>}
+    </div>
+  );
+
   return (
-    <form className="contact-form" onSubmit={submit}>
-      <h2>Send a message</h2>
-      {error && <div className="contact-error" role="alert">{error}</div>}
-      <label>Full name
-        <input value={name} onChange={(e) => setName(e.target.value)} required minLength={2} maxLength={120} autoComplete="name" />
-      </label>
-      <label>Email address
-        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
-      </label>
-      <label>Topic
-        {topics.length > 0 ? (
-          <select value={topic} onChange={(e) => setTopic(e.target.value)} required>
-            {topics.map((t) => <option key={t} value={t}>{t}</option>)}
+    <form onSubmit={submit} noValidate className="contact-form">
+      <div>
+        <h2>Send a message</h2>
+        <p className="muted sub">Every field except phone is required.</p>
+      </div>
+      {formError && <div className="contact-error" role="alert">{formError}</div>}
+      <div className="form-row">
+        {field("ct-name", "Full name", <input id="ct-name" className={errors.name ? "invalid" : ""} value={name} onChange={(e) => setName(e.target.value)} autoComplete="name" maxLength={120} />, errors.name)}
+        {field("ct-email", "Email", <input id="ct-email" type="email" className={errors.email ? "invalid" : ""} value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" />, errors.email)}
+      </div>
+      <div className="form-row">
+        {field("ct-phone", "Phone or WhatsApp (optional)", <input id="ct-phone" value={phone} onChange={(e) => setPhone(e.target.value)} autoComplete="tel" maxLength={40} />)}
+        {field("ct-topic", "Topic", topics.length > 0 ? (
+          <select id="ct-topic" value={topic} onChange={(e) => setTopic(e.target.value)}>
+            {topics.map((t) => <option key={t}>{t}</option>)}
           </select>
         ) : (
-          <input value={topic} onChange={(e) => setTopic(e.target.value)} required minLength={2} maxLength={120} />
-        )}
-      </label>
-      <label>Message
-        <textarea rows={6} value={message} onChange={(e) => setMessage(e.target.value)} required minLength={10} maxLength={2000} />
-        <small>{message.length}/2000</small>
-      </label>
+          <input id="ct-topic" value={topic} onChange={(e) => setTopic(e.target.value)} maxLength={120} />
+        ))}
+      </div>
+      {field("ct-msg", "Message", <textarea id="ct-msg" className={errors.message ? "invalid" : ""} rows={6} maxLength={2000} value={message} onChange={(e) => setMessage(e.target.value)} />, errors.message)}
       <button type="submit" className="public-btn public-btn-primary" disabled={busy}>
         {busy ? "Sending…" : "Send message"}
         {!busy && <MaterialIcon name="arrow_forward" size={18} />}

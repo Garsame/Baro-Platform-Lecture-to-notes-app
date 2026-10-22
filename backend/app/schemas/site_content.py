@@ -148,6 +148,9 @@ class HomeSettings(BaseModel):
     secondary_cta: str = Field(min_length=1, max_length=28)
     hero_points: list[str] = Field(default_factory=list, max_length=5)
 
+    video_title: str = Field(default="", max_length=70)
+    video_caption: str = Field(default="", max_length=60)
+
     stats_title: str = Field(min_length=1, max_length=60)
     stats_intro: str = Field(default="", max_length=160)
     stat_lectures: bool = True
@@ -228,7 +231,7 @@ class TeamMember(BaseModel):
 
     name: str = Field(min_length=2, max_length=60)
     role: str = Field(min_length=1, max_length=80)
-    level: str = Field(default="member", pattern=r"^(supervisor|member)$")
+    level: str = Field(default="member", pattern=r"^(supervisor|lead|member)$")
     bio: str = Field(default="", max_length=300)
     photo_url: str = Field(default="", max_length=500)
     linkedin: str = Field(default="", max_length=300)
