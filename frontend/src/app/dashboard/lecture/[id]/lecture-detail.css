@@ -475,3 +475,78 @@
     padding-bottom: 6px;
   }
 }
+
+/* Prototype workspace header and tabs */
+.lecture-detail-hero {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "back back" "heading actions";
+  row-gap: 10px;
+}
+.lecture-detail-back {
+  grid-area: back;
+  width: auto;
+  height: auto;
+  background: transparent;
+  border: 0;
+  gap: 6px;
+  justify-self: start;
+  font-family: var(--display);
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--accent);
+}
+.lecture-detail-back:hover { background: transparent; color: var(--accent); transform: none; text-decoration: underline; }
+.lecture-detail-heading { grid-area: heading; }
+.lecture-detail-actions { grid-area: actions; }
+.lecture-detail-heading h1 {
+  font-family: var(--display);
+  font-size: clamp(1.4rem, 2.6vw, 1.9rem);
+  font-weight: 600;
+}
+.lecture-detail-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; }
+.lecture-chip {
+  display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 999px;
+  background: var(--surface-2); color: var(--muted); font-size: 0.78rem; font-weight: 600;
+}
+.lecture-detail-tabs {
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  box-shadow: none;
+  flex-wrap: nowrap;
+  gap: 2px;
+  overflow-x: auto;
+  padding: 0;
+}
+.lecture-detail-tabs button,
+.lecture-detail-tab-link {
+  flex: none;
+  min-height: 0;
+  padding: 10px 16px;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-family: var(--display);
+  font-weight: 600;
+  white-space: nowrap;
+  text-transform: none;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+.lecture-detail-tabs button:hover,
+.lecture-detail-tab-link:hover { color: var(--fg); }
+.lecture-detail-tabs button.is-active {
+  background: transparent;
+  border-color: transparent;
+  border-bottom-color: var(--accent-raw);
+  color: var(--accent);
+}
+.somali-notes-body { border-radius: 14px; }

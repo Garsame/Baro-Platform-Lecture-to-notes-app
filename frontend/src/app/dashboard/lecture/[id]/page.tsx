@@ -94,6 +94,21 @@ type TranscriptSegment = {
   text: string;
 };
 
+const CHAT_SUGGESTIONS = [
+  "Isku soo koob casharka",
+  "Sharax mawduuca ugu muhiimsan",
+  "Maxay yihiin erayada muhiimka ah?",
+  "Ii samee su'aalo layli ah",
+];
+
+const TAB_LABELS: Record<string, string> = {
+  overview: "Overview",
+  transcript: "Transcript",
+  "somali-notes": "Notes",
+  chatbot: "Chat",
+  "processing-log": "Processing log",
+};
+
 const tabs = [
   "overview",
   "transcript",
@@ -1798,8 +1813,8 @@ export default function LectureDetailPage({
     }
   };
 
-  const handleAskChatbot = async () => {
-    const trimmedDraft = chatDraft.trim();
+  const handleAskChatbot = async (override?: string) => {
+    const trimmedDraft = (override ?? chatDraft).trim();
     if (!trimmedDraft || chatSending) {
       return;
     }
@@ -2021,6 +2036,11 @@ export default function LectureDetailPage({
 
     return (
       <div className={rowClassName}>
+        {!isUser && (
+          <span className="lecture-chat-bot" aria-hidden="true">
+            <MdAutoAwesome size={18} />
+          </span>
+        )}
         <div className={groupClassName}>
           <span className="lecture-chat-label">{label}</span>
           <div className={bubbleClassName}>{content}</div>
@@ -2029,23 +2049,30 @@ export default function LectureDetailPage({
     );
   };
 
-  const renderWelcomeBubble = () =>
-    renderChatBubble({
-      label: "Assistant",
-      role: "assistant",
-      content: (
-        <div className="lecture-chat-markdown">
-          <p className="lecture-chat-markdown-paragraph">
-            Salaan! Waxaan kaa caawin karaa su&apos;aalaha ku saabsan
-            muhadaran. Weydii wax kasta oo ku saabsan qoraalka ama
-            xusuus-qorka Soomaaliga.
-          </p>
-          <p className="lecture-chat-markdown-paragraph lecture-chat-note">
-            Note: This chat is not saved and may occasionally make mistakes.
-          </p>
-        </div>
-      ),
-    });
+  const renderWelcomeBubble = () => (
+    <div className="lecture-chat-empty">
+      <span className="lecture-chat-empty-icon" aria-hidden="true">
+        <MdAutoAwesome size={26} />
+      </span>
+      <h3>Ask anything about this lecture</h3>
+      <p>
+        Answers come from this lecture&apos;s transcript and notes. Ask in
+        Somali or English.
+      </p>
+      <div className="lecture-chat-suggest">
+        {CHAT_SUGGESTIONS.map((text) => (
+          <button
+            key={text}
+            type="button"
+            disabled={!chatbotAvailable || chatSending}
+            onClick={() => void handleAskChatbot(text)}
+          >
+            {text}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 
   const renderTypingIndicator = () =>
     renderChatBubble({
@@ -2480,6 +2507,50 @@ export default function LectureDetailPage({
           transform: translateX(-4px);
         }
 
+        /* Prototype chat look: bot avatar, soft user bubble, rounded composer */
+        .chatbot-container {
+          background: var(--surface);
+          border-radius: 18px;
+          box-shadow: none;
+          height: calc(100vh - 370px);
+          min-height: 460px;
+        }
+        .messages-area { padding-top: 24px; }
+        .content-column { max-width: 720px; gap: 18px; }
+        .lecture-chat-row-assistant { gap: 12px; align-items: flex-start; }
+        .lecture-chat-bot {
+          width: 30px; height: 30px; border-radius: 50%; flex: none;
+          background: var(--surface-2); color: var(--accent);
+          display: grid; place-items: center;
+        }
+        .lecture-chat-label { display: none; }
+        .lecture-chat-bubble-user {
+          color: var(--fg);
+          background: var(--surface-2);
+          border-radius: 18px 18px 4px 18px;
+          padding: 10px 14px;
+          box-shadow: none;
+        }
+        .lecture-chat-input-box {
+          background: var(--surface) !important;
+          border: 1px solid var(--line-strong);
+          box-shadow: var(--shadow);
+          padding: 10px 56px 10px 16px;
+        }
+        .lecture-chat-send-button { background: var(--fg) !important; color: var(--bg) !important; right: 10px; bottom: 10px; width: 36px; height: 36px; }
+        :root[data-theme="dark"] .lecture-chat-send-button { background: var(--fg) !important; }
+        .input-bar { background: var(--surface); box-shadow: none; padding: 12px 0 16px; }
+        .lecture-chat-typing { background: transparent; border: 0; padding: 8px 0; }
+        .lecture-chat-typing span { background: var(--faint); }
+        .lecture-chat-empty { display: grid; gap: 14px; justify-items: center; text-align: center; padding-top: 28px; }
+        .lecture-chat-empty-icon { width: 52px; height: 52px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; }
+        .lecture-chat-empty h3 { margin: 0; font-size: 1.4rem; font-weight: 500; }
+        .lecture-chat-empty p { margin: 0; color: var(--muted); }
+        .lecture-chat-suggest { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; width: 100%; }
+        .lecture-chat-suggest button { text-align: left; border: 1px solid var(--line); background: var(--surface); border-radius: 14px; padding: 12px 14px; font: inherit; font-size: 0.9rem; color: var(--fg); cursor: pointer; }
+        .lecture-chat-suggest button:hover:not(:disabled) { border-color: var(--accent); }
+        .lecture-chat-suggest button:disabled { opacity: 0.5; cursor: not-allowed; }
+
         @media (max-width: 720px) {
           .chatbot-container {
             height: calc(100vh - 280px);
@@ -2498,10 +2569,9 @@ export default function LectureDetailPage({
             className="lecture-detail-back"
             aria-label="Back to Lectures"
           >
-            <MdArrowBack size={20} />
+            <MdArrowBack size={18} /> My lectures
           </Link>
           <div className="lecture-detail-heading">
-            <span className="lecture-detail-eyebrow">Lecture Workspace</span>
             {isEditingTitle ? (
               <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginTop: "0.25rem", marginBottom: "0.25rem" }}>
                 <input
@@ -2602,13 +2672,11 @@ export default function LectureDetailPage({
               </div>
             )}
             <div className="lecture-detail-meta">
-              <span>
-                Status: {" "}
-                <strong style={{ color: getAccentColor(lecture.status) }}>
-                  {lecture.status}
-                </strong>
+              <span className="lecture-chip">{lecture.source_type === "youtube" ? "YouTube" : "Upload"}</span>
+              <span className="lecture-chip" style={{ color: getAccentColor(lecture.status) }}>
+                {lecture.status.charAt(0).toUpperCase() + lecture.status.slice(1)}
               </span>
-              <span>Submitted: {formatDate(lecture.created_at)}</span>
+              <span className="lecture-chip">Added {formatDate(lecture.created_at)}</span>
             </div>
             {isProcessingLecture && (
               <div className="lecture-detail-connection">
@@ -2649,17 +2717,24 @@ export default function LectureDetailPage({
         )}
       </div>
 
-      <div className="lecture-detail-tabs">
+      <div className="lecture-detail-tabs" role="tablist">
         {tabs.map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
+            role="tab"
+            aria-selected={activeTab === tab}
             className={activeTab === tab ? "is-active" : ""}
           >
-            {tab.replace("-", " ")}
+            {TAB_LABELS[tab] ?? tab}
           </button>
         ))}
+        {lecture.status?.toLowerCase() === "completed" && (
+          <Link href={`/dashboard/quizzes/${lecture.id}`} className="lecture-detail-tab-link">
+            Quiz
+          </Link>
+        )}
       </div>
 
       <div
