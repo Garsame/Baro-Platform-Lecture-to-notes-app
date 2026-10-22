@@ -23,7 +23,10 @@ EXPECTED = {
         "pending_email_code": "VARCHAR(128)",
         "pending_email_expires_at": "TIMESTAMP",
         "pending_email_attempts": "INTEGER DEFAULT 0",
-    }
+    },
+    "contact_messages": {
+        "phone": "VARCHAR(40)",
+    },
 }
 
 
