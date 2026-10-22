@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import BrandingEditor from "../_components/BrandingEditor";
+import NavigationEditor from "../_components/NavigationEditor";
 import SeoEditor from "../_components/SeoEditor";
 import "../site-content.css";
 
@@ -10,6 +11,7 @@ export default function SectionEditorPage() {
   const { section } = useParams<{ section: string }>();
   if (section === "branding") return <BrandingEditor />;
   if (section === "seo") return <SeoEditor />;
+  if (section === "navigation") return <NavigationEditor />;
   return (
     <div className="sc-editor">
       <h1>This section is not available yet</h1>

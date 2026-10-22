@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import PublicHeader from "./PublicHeader";
 import BrandLogo from "@/components/site/BrandLogo";
 import { useBranding } from "@/components/site/SiteContentProvider";
+import SiteFooter from "@/components/site/SiteFooter";
 import "./public.css";
+import "@/components/site/site-chrome.css";
 
 export default function PublicLayout({
   children,
@@ -82,42 +83,7 @@ export default function PublicLayout({
 
       <PublicHeader />
       <main className="public-main">{children}</main>
-      <footer className="public-footer">
-        <div className="public-container footer-shell">
-          <div className="footer-brand">
-            <Link href="/" className="brand-lockup footer-logo">
-              <BrandLogo height={38} />
-            </Link>
-            <p>{branding.tagline}</p>
-          </div>
-
-          <div className="footer-column">
-            <h2>Pages</h2>
-            <Link href="/">Home</Link>
-            <Link href="/about">About</Link>
-            <Link href="/contact">Contact</Link>
-          </div>
-
-          <div className="footer-column">
-            <h2>Access</h2>
-            <Link href="/sign-in">Sign in</Link>
-            <Link href="/sign-up">Create account</Link>
-            <Link href="/dashboard">Dashboard</Link>
-          </div>
-
-          <div className="footer-column">
-            <h2>Platform</h2>
-            <span>Transcript generation</span>
-            <span>Somali study notes</span>
-            <span>Lecture quizzes</span>
-          </div>
-        </div>
-
-        <div className="public-container footer-bottom">
-          <p>© {new Date().getFullYear()} {branding.site_name}. All rights reserved.</p>
-          <p>{branding.footer_note}</p>
-        </div>
-      </footer>
+      <SiteFooter />
     </div>
   );
 }

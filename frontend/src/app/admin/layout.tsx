@@ -12,8 +12,9 @@ import {
 import { clearSession, getSessionToken } from "@/lib/session";
 import { useTheme } from "@/hooks/useTheme";
 import BrandLogo from '@/components/site/BrandLogo';
-import { MdWeb, MdDashboard, MdPeople, MdOutlineOndemandVideo, MdSettings, MdLogout, MdNotifications, MdLightMode, MdDarkMode, MdKeyboardArrowDown, MdEmail, MdMenu } from 'react-icons/md';
-import { FaCheckCircle, FaRocket, FaExclamationTriangle, FaTools } from 'react-icons/fa';
+import MaterialIcon from '@/components/site/MaterialIcon';
+import { MdSettings, MdLogout, MdNotifications, MdLightMode, MdDarkMode, MdKeyboardArrowDown, MdMenu } from 'react-icons/md';
+import { FaCheckCircle, FaRocket, FaExclamationTriangle } from 'react-icons/fa';
 
 interface SystemNotification {
   id: string;
@@ -1204,22 +1205,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
             <Link href="/admin/dashboard" className={`admin-nav-link ${pathname === '/admin/dashboard' ? 'active' : ''}`}>
-              <MdDashboard size={20} /> System Overview
+              <MaterialIcon name="dashboard" filled={pathname === '/admin/dashboard'} size={21} /> System Overview
             </Link>
             <Link href="/admin/users" className={`admin-nav-link ${pathname === '/admin/users' ? 'active' : ''}`}>
-              <MdPeople size={20} /> Manage Users
+              <MaterialIcon name="group" filled={pathname === '/admin/users'} size={21} /> Manage Users
             </Link>
             <Link href="/admin/lectures" className={`admin-nav-link ${pathname === '/admin/lectures' ? 'active' : ''}`}>
-              <MdOutlineOndemandVideo size={20} /> Lecture Oversight
+              <MaterialIcon name="video_library" filled={pathname === '/admin/lectures'} size={21} /> Lecture Oversight
             </Link>
             <Link href="/admin/messages" className={`admin-nav-link ${pathname === '/admin/messages' ? 'active' : ''}`}>
-              <MdEmail size={20} /> User Messages
+              <MaterialIcon name="mail" filled={pathname === '/admin/messages'} size={21} /> User Messages
             </Link>
             <Link href="/admin/settings" className={`admin-nav-link ${pathname.startsWith('/admin/settings') ? 'active' : ''}`}>
-              <MdWeb size={20} /> Site Content
+              <MaterialIcon name="web" filled={pathname.startsWith('/admin/settings')} size={21} /> Site Content
             </Link>
             <Link href="/admin/logs" className={`admin-nav-link ${pathname === '/admin/logs' ? 'active' : ''}`}>
-              <FaTools size={20} /> System Logs
+              <MaterialIcon name="terminal" filled={pathname === '/admin/logs'} size={21} /> System Logs
             </Link>
           </nav>
         </aside>

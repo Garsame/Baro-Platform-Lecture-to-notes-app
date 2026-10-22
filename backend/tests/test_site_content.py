@@ -86,3 +86,15 @@ def test_delete_asset_in_use_returns_409(admin_client):
     assert res.status_code == 409 and "branding" in res.json()["detail"]
     admin_client.post("/api/v1/admin/site/sections/branding/reset")
     assert admin_client.delete(f"/api/v1/admin/site/assets/{asset['id']}").status_code == 204
+
+
+def test_navigation_defaults_and_validation(admin_client):
+    nav = admin_client.get("/api/v1/site/content").json()["sections"]["navigation"]
+    assert nav["cta_label"] == "Get started"
+    assert nav["about_links"][0]["href"] == "/about"
+    bad = {**nav, "social_x": "x.com/me"}
+    res = admin_client.put("/api/v1/admin/site/sections/navigation", json={"value": bad})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "social_x"
+    bad = {**nav, "about_links": [{**nav["about_links"][0], "href": "javascript:alert(1)"}]}
+    res = admin_client.put("/api/v1/admin/site/sections/navigation", json={"value": bad})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "about_links.0.href"

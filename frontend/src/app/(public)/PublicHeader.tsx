@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { 
   MdArrowOutward, 
@@ -19,8 +18,9 @@ import {
 import ThemeToggle from "@/components/ThemeToggle";
 import { getSessionToken, clearSession } from "@/lib/session";
 import { fetchCurrentUser, apiUrl, authHeaders, type AuthenticatedUser } from "@/lib/api";
+import SiteNav from "@/components/site/SiteNav";
 import BrandLogo from "@/components/site/BrandLogo";
-import { useBranding } from "@/components/site/SiteContentProvider";
+import { useBranding, useSiteContent } from "@/components/site/SiteContentProvider";
 import OtpVerificationModal from "@/components/OtpVerificationModal";
 
 function resolveProfileImageUrl(profilePictureUrl?: string | null): string | null {
@@ -71,7 +71,7 @@ function getNotificationView(notification: any, siteName: string) {
 
 export default function PublicHeader() {
   const { site_name: siteName } = useBranding();
-  const pathname = usePathname();
+  const { cta_label: ctaLabel } = useSiteContent().sections.navigation;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -206,17 +206,6 @@ export default function PublicHeader() {
       setIsSendingVerification(false);
     }
   };
-
-  // Build navLinks dynamically
-  const navLinks = [
-    { href: "/", label: "Home" },
-    { href: "/about", label: "About" },
-    { href: "/contact", label: "Contact" },
-  ];
-
-  if (user) {
-    navLinks.push({ href: "/dashboard", label: "Dashboard" });
-  }
 
   const profileImageUrl = user ? resolveProfileImageUrl(user.profile_picture_url) : null;
   const getInitials = (name: string) => (name ? name.charAt(0).toUpperCase() : "U");
@@ -540,22 +529,7 @@ export default function PublicHeader() {
         </div>
 
         <div ref={mobileMenuRef} className="public-menu-content">
-          <nav
-            id="public-navigation"
-            className="public-nav"
-            aria-label="Public navigation"
-          >
-            {navLinks.map((link) => (
-              <Link
-                href={link.href}
-                key={link.href}
-                aria-current={pathname === link.href ? "page" : undefined}
-                onClick={closeMenu}
-              >
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+          <SiteNav signedIn={!!user} onNavigate={closeMenu} />
 
           <div className="header-actions" ref={dropdownRef}>
             <span className="desktop-theme-toggle">
@@ -732,6 +706,9 @@ export default function PublicHeader() {
                 >
                   <span>Sign In</span>
                   <MdArrowOutward className="auth-link-icon" aria-hidden="true" />
+                </Link>
+                <Link href="/sign-up" className="public-btn public-btn-primary header-cta" onClick={closeMenu}>
+                  {ctaLabel}
                 </Link>
               </>
             )}

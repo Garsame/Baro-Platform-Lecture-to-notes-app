@@ -391,3 +391,25 @@ textarea::placeholder {
 .animate-spin {
   animation: spin 1s linear infinite;
 }
+
+/* Google Material Symbols (rounded) for interface icons. */
+.ms {
+  font-family: "Material Symbols Rounded";
+  font-weight: normal;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+  letter-spacing: normal;
+  text-transform: none;
+  white-space: nowrap;
+  direction: ltr;
+  display: inline-block;
+  width: 1em;
+  overflow: hidden;
+  flex: none;
+  vertical-align: -0.2em;
+  font-feature-settings: "liga";
+  -webkit-font-smoothing: antialiased;
+  font-variation-settings: "FILL" 0, "opsz" 24;
+}
+.ms.fill { font-variation-settings: "FILL" 1, "opsz" 24; }

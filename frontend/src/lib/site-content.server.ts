@@ -14,6 +14,7 @@ export const getSiteContent = cache(async (): Promise<SiteContent> => {
       sections: {
         branding: { ...DEFAULT_SITE_CONTENT.sections.branding, ...data.sections?.branding },
         seo: { ...DEFAULT_SITE_CONTENT.sections.seo, ...data.sections?.seo },
+        navigation: { ...DEFAULT_SITE_CONTENT.sections.navigation, ...data.sections?.navigation },
       },
     };
   } catch (error) {

@@ -165,3 +165,48 @@ export function TagsField({ label, help, error, value, max, onChange }: BaseProp
     </FieldFrame>
   );
 }
+
+export function UrlField({ label, help, error, value, onChange }: BaseProps & { value: string; onChange: (v: string) => void }) {
+  return <TextField label={label} help={help ?? "Full https:// link. Leave empty to hide it."} error={error} value={value} max={300} onChange={onChange} />;
+}
+
+export type LinkItem = { label: string; description: string; href: string; icon: string; enabled: boolean };
+
+export function LinkListField({ label, fieldKey, help, errors, value, max, onChange }: { label: string; fieldKey: string; help?: string; errors: Record<string, string>; value: LinkItem[]; max: number; onChange: (v: LinkItem[]) => void }) {
+  const update = (i: number, patch: Partial<LinkItem>) => onChange(value.map((l, idx) => (idx === i ? { ...l, ...patch } : l)));
+  const move = (i: number, d: number) => {
+    const j = i + d;
+    if (j < 0 || j >= value.length) return;
+    const next = [...value];
+    [next[i], next[j]] = [next[j], next[i]];
+    onChange(next);
+  };
+  return (
+    <fieldset className="sc-list">
+      <legend>{label}</legend>
+      {help && <p className="sc-help">{help}</p>}
+      {value.map((l, i) => {
+        const err = (f: string) => errors[`${fieldKey}.${i}.${f}`];
+        return (
+          <div className="sc-list-item" key={i}>
+            <div className="sc-list-row">
+              <TextField label="Label" value={l.label} max={40} error={err("label")} onChange={(v) => update(i, { label: v })} />
+              <TextField label="Icon name" help="A Google Material Symbols name, such as menu_book." value={l.icon} max={40} error={err("icon")} onChange={(v) => update(i, { icon: v })} />
+            </div>
+            <TextField label="Description" value={l.description} max={80} error={err("description")} onChange={(v) => update(i, { description: v })} />
+            <TextField label="Link" help="A path such as /about, or a full https:// link." value={l.href} max={300} error={err("href")} onChange={(v) => update(i, { href: v })} />
+            <div className="sc-list-actions">
+              <label className="sc-switch"><input type="checkbox" checked={l.enabled} onChange={(e) => update(i, { enabled: e.target.checked })} /> Show in menus</label>
+              <span>
+                <button type="button" className="sc-btn small" onClick={() => move(i, -1)} disabled={i === 0} aria-label="Move up">↑</button>{" "}
+                <button type="button" className="sc-btn small" onClick={() => move(i, 1)} disabled={i === value.length - 1} aria-label="Move down">↓</button>{" "}
+                <button type="button" className="sc-btn small" onClick={() => onChange(value.filter((_, idx) => idx !== i))}>Remove</button>
+              </span>
+            </div>
+          </div>
+        );
+      })}
+      <button type="button" className="sc-btn small" disabled={value.length >= max} onClick={() => onChange([...value, { label: "New link", description: "", href: "/", icon: "link", enabled: true }])}>Add link</button>
+    </fieldset>
+  );
+}

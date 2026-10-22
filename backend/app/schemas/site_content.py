@@ -60,6 +60,57 @@ class SeoSettings(BaseModel):
         return check_asset_url(value)
 
 
+def check_link(value: str) -> str:
+    """Internal paths (/about, /about#team) or https links."""
+    if value.startswith("https://") or (value.startswith("/") and not value.startswith("//")):
+        return value
+    raise ValueError("Use a path starting with / or an https:// link")
+
+
+class NavLink(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    label: str = Field(min_length=1, max_length=40)
+    description: str = Field(default="", max_length=80)
+    href: str = Field(min_length=1, max_length=300)
+    icon: str = Field(default="link", pattern=r"^[a-z0-9_]{1,40}$")
+    enabled: bool = True
+
+    @field_validator("href")
+    @classmethod
+    def _href(cls, value: str) -> str:
+        return check_link(value)
+
+
+def _social(value: str) -> str:
+    if value == "" or value.startswith("https://"):
+        return value
+    raise ValueError("Use a full https:// link, or leave empty to hide it")
+
+
+class NavigationSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    about_tagline: str = Field(min_length=1, max_length=90)
+    resources_tagline: str = Field(min_length=1, max_length=90)
+    about_links: list[NavLink] = Field(default_factory=list, max_length=8)
+    resources_links: list[NavLink] = Field(default_factory=list, max_length=8)
+    cta_label: str = Field(min_length=1, max_length=24)
+    footer_tagline_a: str = Field(min_length=1, max_length=24)
+    footer_tagline_b: str = Field(default="", max_length=24)
+    footer_about: str = Field(min_length=10, max_length=220)
+    social_facebook: str = Field(default="", max_length=300)
+    social_x: str = Field(default="", max_length=300)
+    social_linkedin: str = Field(default="", max_length=300)
+    social_github: str = Field(default="", max_length=300)
+    social_youtube: str = Field(default="", max_length=300)
+
+    @field_validator("social_facebook", "social_x", "social_linkedin", "social_github", "social_youtube")
+    @classmethod
+    def _socials(cls, value: str) -> str:
+        return _social(value)
+
+
 class SectionUpdate(BaseModel):
     value: dict
 

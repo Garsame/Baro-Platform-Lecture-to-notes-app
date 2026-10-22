@@ -10,10 +10,10 @@ type SectionInfo = { key: string; label: string; is_default: boolean; updated_at
 const ACTIVE: Record<string, string> = {
   branding: "Logos, favicon, colours, site name and tagline.",
   seo: "Page title, description, keywords and the social share image.",
+  navigation: "Header dropdowns, header button, footer text and social links.",
 };
 
 const UPCOMING = [
-  { label: "Navigation and footer", phase: 2 },
   { label: "Home page", phase: 3 },
   { label: "About page", phase: 4 },
   { label: "Team on the About page", phase: 4 },

@@ -56,7 +56,18 @@ export default async function RootLayout({
   const content = await getSiteContent();
 
   return (
-    <html lang="en" className={`${jetbrainsMono.variable} ${inter.variable}`} suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${jetbrainsMono.variable} ${inter.variable}`}
+      style={
+        {
+          // Admin-chosen colours; globals.css derives every tint from these two.
+          "--brand-raw": content.sections.branding.primary_color,
+          "--accent-raw": content.sections.branding.accent_color,
+        } as React.CSSProperties
+      }
+      suppressHydrationWarning
+    >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -64,6 +75,10 @@ export default async function RootLayout({
         <link
           rel="stylesheet"
           href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&display=swap"
+        />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0..1,0&display=block"
         />
         <script
           id="theme-initializer"

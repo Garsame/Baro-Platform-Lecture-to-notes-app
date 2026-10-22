@@ -85,3 +85,19 @@ a.sc-card:hover { border-color: var(--primary-color); }
 .sc-share-body { display: grid; gap: 2px; padding: 10px 14px; }
 .sc-share-body small, .sc-share-body span { color: var(--text-muted); font-size: 0.82rem; }
 .sc-counters { display: flex; gap: 12px; flex-wrap: wrap; }
+
+.sc-list { border: 1px solid var(--border); border-radius: 10px; padding: 0.9rem; display: grid; gap: 0.9rem; margin: 0; }
+.sc-list legend { font-weight: 600; padding: 0 6px; }
+.sc-list-item { display: grid; gap: 0.7rem; padding: 0.8rem; border-radius: 8px; border: 1px solid var(--border); }
+.sc-list-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+.sc-list-actions { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sc-switch { display: inline-flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+.sc-nav-mock { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--card-bg); }
+.sc-nav-mock-bar { display: flex; gap: 14px; padding: 10px 14px; border-bottom: 1px solid var(--border); align-items: center; font-size: 0.9rem; }
+.sc-nav-mock-bar .cta { margin-left: auto; color: #fff; padding: 5px 12px; border-radius: 999px; background: var(--primary-color); }
+.sc-nav-mock-panel { display: grid; grid-template-columns: 1fr 1.4fr; }
+.sc-nav-mock-panel > div { padding: 14px; display: grid; gap: 8px; align-content: start; }
+.sc-nav-mock-panel > div:first-child { background: color-mix(in srgb, var(--border) 50%, transparent); }
+.sc-footer-mock { padding: 16px; display: grid; gap: 6px; }
+.sc-footer-mock .big { font-size: 1.9rem; font-weight: 650; letter-spacing: -0.03em; }
+.sc-footer-mock .big span { color: var(--primary-color); }
