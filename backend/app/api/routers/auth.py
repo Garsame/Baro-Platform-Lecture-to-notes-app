@@ -515,6 +515,11 @@ def _resolve_google_identity(token: str) -> tuple[str, str, Optional[str]]:
             status_code=400,
             detail="Could not retrieve email from Google credential token."
         )
+    if settings.GOOGLE_CLIENT_ID and google_data.get("aud") != settings.GOOGLE_CLIENT_ID:
+        logger.warning("Google token rejected: issued for another client")
+        raise HTTPException(status_code=400, detail="This Google credential was not issued for BaroPlatform.")
+    if str(google_data.get("email_verified", "true")).lower() != "true":
+        raise HTTPException(status_code=400, detail="Your Google email address is not verified.")
     email = google_data["email"]
     return email, google_data.get("name", email.split("@")[0]), google_data.get("picture", None)
 

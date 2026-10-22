@@ -47,6 +47,7 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: Optional[str] = None
     SMTP_FROM_NAME: str = "BaroPlatform"
 
+    GOOGLE_CLIENT_ID: str = ""  # when set, Google tokens must be issued for this client
     CORS_ORIGINS: str = ""  # extra allowed origins, comma separated
 
     def extra_cors_origins(self) -> list[str]:
