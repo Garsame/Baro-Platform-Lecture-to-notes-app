@@ -63,6 +63,9 @@ export type HomeSettings = {
   hero_points: string[];
   video_title: string;
   video_caption: string;
+  video_url: string;
+  video_poster_url: string;
+  video_youtube: string;
   stats_title: string;
   stats_intro: string;
   stat_lectures: boolean;
@@ -126,6 +129,7 @@ export type AboutSettings = {
   intro: string;
   mission_title: string;
   mission: string;
+  show_video: boolean;
   stages_title: string;
   stages: StageItem[];
   cta_title: string;
@@ -271,7 +275,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         {
           "label": "Intro video",
           "description": "Watch one lecture become a study pack",
-          "href": "/#intro-video",
+          "href": "/?play=intro",
           "icon": "play_circle",
           "enabled": true
         }
@@ -331,6 +335,9 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       ],
       "video_title": "See one lecture become a study pack",
       "video_caption": "Intro video · storyboard preview",
+      "video_url": "",
+      "video_poster_url": "",
+      "video_youtube": "",
       "stats_title": "The work happening behind the scenes",
       "stats_intro": "These numbers come from the platform itself and update every time this page loads.",
       "stat_lectures": true,
@@ -464,6 +471,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       "intro": "BaroPlatform was built at Hormuud University to help Somali-speaking students learn from recorded lectures. This is exactly what happens between pressing Submit and opening your notes.",
       "mission_title": "Why we built it",
       "mission": "Most university lectures available online are in English, and long recordings are hard to revise from. Students spend hours pausing, translating and rewriting. BaroPlatform automates that work so the time goes into learning.",
+      "show_video": true,
       "stages_title": "The pipeline, stage by stage",
       "stages": [
         {
@@ -864,4 +872,15 @@ export function docSlugs(pages: DocsPage[]): string[] {
     seen.set(base, n);
     return n === 1 ? base : `${base}-${n}`;
   });
+}
+
+/** Video id from a youtube.com or youtu.be link, or null when the link is not a recognizable YouTube video. */
+export function youtubeId(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const id = u.hostname === "youtu.be" ? u.pathname.slice(1) : u.searchParams.get("v") ?? u.pathname.match(/^\/(?:embed|shorts|live)\/([^/?]+)/)?.[1] ?? "";
+    return /^[\w-]{6,20}$/.test(id) ? id : null;
+  } catch {
+    return null;
+  }
 }

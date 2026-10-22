@@ -136,6 +136,21 @@ class FaqItem(BaseModel):
     a: str = Field(min_length=3, max_length=600)
 
 
+_YOUTUBE_HOSTS = {"youtube.com", "www.youtube.com", "m.youtube.com", "youtu.be"}
+
+
+def check_youtube_url(value: str) -> str:
+    """Empty, or an https link on a YouTube host (watch, share or embed form)."""
+    if value == "":
+        return value
+    from urllib.parse import urlparse
+
+    parsed = urlparse(value)
+    if parsed.scheme != "https" or parsed.hostname not in _YOUTUBE_HOSTS:
+        raise ValueError("Use a full https://youtube.com or https://youtu.be link, or leave empty")
+    return value
+
+
 class HomeSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -150,6 +165,9 @@ class HomeSettings(BaseModel):
 
     video_title: str = Field(default="", max_length=70)
     video_caption: str = Field(default="", max_length=60)
+    video_url: str = Field(default="", max_length=500)
+    video_poster_url: str = Field(default="", max_length=500)
+    video_youtube: str = Field(default="", max_length=300)
 
     stats_title: str = Field(min_length=1, max_length=60)
     stats_intro: str = Field(default="", max_length=160)
@@ -179,6 +197,16 @@ class HomeSettings(BaseModel):
 
     cta_title: str = Field(min_length=1, max_length=60)
     cta_text: str = Field(default="", max_length=200)
+
+    @field_validator("video_url", "video_poster_url")
+    @classmethod
+    def _video_assets(cls, value: str) -> str:
+        return check_asset_url(value) or ""
+
+    @field_validator("video_youtube")
+    @classmethod
+    def _video_youtube(cls, value: str) -> str:
+        return check_youtube_url(value)
 
     @field_validator("hero_points", "note_points")
     @classmethod
@@ -220,6 +248,7 @@ class AboutSettings(BaseModel):
     intro: str = Field(min_length=10, max_length=300)
     mission_title: str = Field(min_length=1, max_length=40)
     mission: str = Field(min_length=10, max_length=400)
+    show_video: bool = True
     stages_title: str = Field(min_length=1, max_length=60)
     stages: list[StageItem] = Field(default_factory=list, max_length=12)
     cta_title: str = Field(min_length=1, max_length=60)

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { HomeSettings } from "@/lib/site-content";
 import EditorShell from "./EditorShell";
-import { FaqListField, JourneyCardsField, TagsField, TextArea, TextField, ToggleField } from "./fields";
+import { FaqListField, FileField, ImageField, JourneyCardsField, TagsField, TextArea, TextField, ToggleField } from "./fields";
 import { useSectionEditor } from "./useSectionEditor";
 
 const STATS: [keyof HomeSettings, string][] = [
@@ -42,6 +42,9 @@ export default function HomeEditor() {
       <Group title="Intro video">
         <TextField label="Video section title" value={d.video_title} max={70} error={e.video_title} help="Leave empty to hide the video section." onChange={(v) => set("video_title", v)} />
         <TextField label="Video caption" value={d.video_caption} max={60} error={e.video_caption} onChange={(v) => set("video_caption", v)} />
+        <FileField label="Video file" kind="video" accept=".mp4,.webm,video/mp4,video/webm" noun="video" value={d.video_url} error={e.video_url} help="MP4 or WebM, up to 100 MB. For longer videos use a YouTube link below." attachedHelp="A video is attached. It plays when visitors press Play intro." emptyHelp="No video file. The storyboard plays unless a YouTube link is set." onChange={(v) => set("video_url", v)} />
+        <TextField label="Or a YouTube link" value={d.video_youtube} max={300} error={e.video_youtube} help="An unlisted YouTube video works well. Used only when no video file is attached." onChange={(v) => set("video_youtube", v)} />
+        <ImageField label="Cover image (optional)" kind="image" value={d.video_poster_url} error={e.video_poster_url} help="Shown on the card instead of the storyboard tiles. 16:7 works best." onChange={(v) => set("video_poster_url", v)} />
       </Group>
       <Group title="Live numbers">
         <TextField label="Section title" value={d.stats_title} max={60} error={e.stats_title} onChange={(v) => set("stats_title", v)} />

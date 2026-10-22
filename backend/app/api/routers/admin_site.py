@@ -72,7 +72,8 @@ async def upload_asset(
     db: Session = Depends(get_db),
     admin: User = Depends(get_current_active_admin),
 ):
-    data = await file.read()
+    # Read at most one byte over the limit so an oversize file is rejected without buffering all of it.
+    data = await file.read(site_asset_service.max_upload_bytes(kind) + 1)
     return site_asset_service.save_asset(
         db, filename=file.filename or "", data=data, kind=kind, alt_text=alt_text, admin=admin
     )

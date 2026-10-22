@@ -251,3 +251,24 @@ def test_state_docs_releases_defaults_and_validation(admin_client):
     bad = {**sec["releases"], "entries": [{**sec["releases"]["entries"][0], "status": "Maybe"}]}
     res = admin_client.put("/api/v1/admin/site/sections/releases", json={"value": bad})
     assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "entries.0.status"
+
+
+def test_video_upload_and_youtube_validation(admin_client):
+    mp4 = b"\x00\x00\x00\x18ftypmp42" + b"\x00" * 64
+    webm = b"\x1a\x45\xdf\xa3" + b"\x00" * 64
+    ok = admin_client.post("/api/v1/admin/site/assets", data={"kind": "video"}, files={"file": ("intro.mp4", mp4, "video/mp4")})
+    assert ok.status_code == 201 and ok.json()["content_type"] == "video/mp4"
+    ok = admin_client.post("/api/v1/admin/site/assets", data={"kind": "video"}, files={"file": ("intro.webm", webm, "video/webm")})
+    assert ok.status_code == 201
+    bad = admin_client.post("/api/v1/admin/site/assets", data={"kind": "video"}, files={"file": ("intro.mp4", b"not a video at all", "video/mp4")})
+    assert bad.status_code == 400
+    bad = admin_client.post("/api/v1/admin/site/assets", data={"kind": "video"}, files={"file": ("intro.avi", mp4, "video/x-msvideo")})
+    assert bad.status_code == 400
+
+    home = admin_client.get("/api/v1/site/content").json()["sections"]["home"]
+    res = admin_client.put("/api/v1/admin/site/sections/home", json={"value": {**home, "video_youtube": "https://evil.example.com/watch?v=x"}})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "video_youtube"
+    res = admin_client.put("/api/v1/admin/site/sections/home", json={"value": {**home, "video_youtube": "https://youtu.be/dQw4w9WgXcQ"}})
+    assert res.status_code == 200
+    about = admin_client.get("/api/v1/site/content").json()["sections"]["about"]
+    assert about["show_video"] is True

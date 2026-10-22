@@ -40,7 +40,7 @@ NAVIGATION_DEFAULT = {
     "about_links": [
         {"label": "How it works", "description": "The stages from video to notes", "href": "/about", "icon": "account_tree", "enabled": True},
         {"label": "Team", "description": "The writers and supervisor behind BaroPlatform", "href": "/about#team", "icon": "groups", "enabled": True},
-        {"label": "Intro video", "description": "Watch one lecture become a study pack", "href": "/#intro-video", "icon": "play_circle", "enabled": True},
+        {"label": "Intro video", "description": "Watch one lecture become a study pack", "href": "/?play=intro", "icon": "play_circle", "enabled": True},
     ],
     "resources_links": [
         {"label": "Documentation", "description": "How to use every feature", "href": "/resources/docs", "icon": "menu_book", "enabled": True},
@@ -70,6 +70,10 @@ HOME_DEFAULT = {
     "hero_points": ["YouTube links or uploads", "Notes written in Somali", "Quiz and lecture chat included"],
     "video_title": "See one lecture become a study pack",
     "video_caption": "Intro video · storyboard preview",
+    # Set in the admin: an uploaded MP4/WebM, or a YouTube link. Empty shows the storyboard.
+    "video_url": "",
+    "video_poster_url": "",
+    "video_youtube": "",
     "stats_title": "The work happening behind the scenes",
     "stats_intro": "These numbers come from the platform itself and update every time this page loads.",
     "stat_lectures": True,
@@ -123,6 +127,7 @@ ABOUT_DEFAULT = {
     "intro": "BaroPlatform was built at Hormuud University to help Somali-speaking students learn from recorded lectures. This is exactly what happens between pressing Submit and opening your notes.",
     "mission_title": "Why we built it",
     "mission": "Most university lectures available online are in English, and long recordings are hard to revise from. Students spend hours pausing, translating and rewriting. BaroPlatform automates that work so the time goes into learning.",
+    "show_video": True,
     "stages_title": "The pipeline, stage by stage",
     "stages": [
         {"name": "Submit", "code": "validating_input", "title": "Bring any lecture", "text": "Paste a public YouTube link or upload an audio or video file. The platform checks the link or file before anything else runs.", "tech": ["YouTube links", "Audio and video uploads"], "image_url": None},

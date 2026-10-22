@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Link from "next/link";
 import { FaGithub, FaLinkedinIn } from "react-icons/fa6";
 import MaterialIcon from "@/components/site/MaterialIcon";
 import { resolveAssetUrl, type TeamMember } from "@/lib/site-content";
 import { getSiteContent } from "@/lib/site-content.server";
+import IntroVideo from "../_home/IntroVideo";
 import StageMedia from "./StageMedia";
 import "../home.css";
 import "./about.css";
@@ -74,6 +76,26 @@ export default async function AboutPage() {
           <p>{a.mission}</p>
         </div>
       </section>
+
+      {a.show_video && sections.home.video_title && (
+        <section className="home-section-tight about-video">
+          <div className="home-wrap">
+            <div className="home-section-head">
+              <span className="home-eyebrow">See it in action</span>
+              <h2>{sections.home.video_title}</h2>
+            </div>
+            <Suspense>
+              <IntroVideo
+                title={sections.home.video_title}
+                caption={sections.home.video_caption}
+                src={sections.home.video_url}
+                poster={sections.home.video_poster_url}
+                youtube={sections.home.video_youtube}
+              />
+            </Suspense>
+          </div>
+        </section>
+      )}
 
       {a.stages.length > 0 && (
         <div className="home-wrap">

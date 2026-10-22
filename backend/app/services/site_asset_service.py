@@ -17,10 +17,11 @@ KINDS = {
     "image": {"ext": {"png", "jpg", "jpeg", "webp"}, "max": 5 * 1024 * 1024},
     "icon": {"ext": {"ico", "png"}, "max": 1 * 1024 * 1024},
     "document": {"ext": {"pdf"}, "max": 25 * 1024 * 1024},
+    "video": {"ext": {"mp4", "webm"}, "max": 100 * 1024 * 1024},
 }
 CONTENT_TYPES = {
     "png": "image/png", "jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp",
-    "ico": "image/x-icon", "pdf": "application/pdf",
+    "ico": "image/x-icon", "pdf": "application/pdf", "mp4": "video/mp4", "webm": "video/webm",
 }
 
 
@@ -35,7 +36,17 @@ def _matches_signature(ext: str, data: bytes) -> bool:
         return data.startswith(b"\x00\x00\x01\x00")
     if ext == "pdf":
         return data.startswith(b"%PDF-")
+    if ext == "mp4":
+        return data[4:8] == b"ftyp"
+    if ext == "webm":
+        return data.startswith(b"\x1a\x45\xdf\xa3")
     return False
+
+
+def max_upload_bytes(kind: str) -> int:
+    """Largest file accepted for a kind; the router reads one byte more to detect oversize files."""
+    spec = KINDS.get(kind)
+    return spec["max"] if spec else 0
 
 
 def save_asset(db: Session, *, filename: str, data: bytes, kind: str, alt_text: str | None, admin: User) -> SiteAsset:

@@ -2,6 +2,7 @@ import Link from "next/link";
 import MaterialIcon from "@/components/site/MaterialIcon";
 import type { PublicStats, Testimonial } from "@/lib/site-content";
 import { getApprovedTestimonials, getPublicStats, getSiteContent } from "@/lib/site-content.server";
+import { Suspense } from "react";
 import IntroVideo from "./_home/IntroVideo";
 import JourneyBand from "./_home/JourneyBand";
 import NoteCard from "./_home/NoteCard";
@@ -95,7 +96,9 @@ export default async function HomePage() {
               <span className="home-eyebrow">Intro video</span>
               <h2>{h.video_title}</h2>
             </div>
-            <IntroVideo title={h.video_title} caption={h.video_caption} />
+            <Suspense>
+              <IntroVideo title={h.video_title} caption={h.video_caption} src={h.video_url} poster={h.video_poster_url} youtube={h.video_youtube} />
+            </Suspense>
           </div>
         </section>
       )}

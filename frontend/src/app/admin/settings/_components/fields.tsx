@@ -375,7 +375,7 @@ export function MemberListField({ fieldKey, errors, value, onChange }: { fieldKe
   );
 }
 
-export function FileField({ label, help, error, value, onChange }: BaseProps & { value: string; onChange: (v: string) => void }) {
+export function FileField({ label, help, error, value, kind = "document", accept = ".pdf,application/pdf", noun = "PDF", attachedHelp, emptyHelp, onChange }: BaseProps & { value: string; kind?: "document" | "video"; accept?: string; noun?: string; attachedHelp?: string; emptyHelp?: string; onChange: (v: string) => void }) {
   const id = useId();
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -385,7 +385,7 @@ export function FileField({ label, help, error, value, onChange }: BaseProps & {
     setUploadError(null);
     const form = new FormData();
     form.append("file", file);
-    form.append("kind", "document");
+    form.append("kind", kind);
     try {
       const res = await fetch(apiUrl("/api/v1/admin/site/assets"), { method: "POST", headers: authHeaders(), body: form });
       if (!res.ok) {
@@ -404,13 +404,13 @@ export function FileField({ label, help, error, value, onChange }: BaseProps & {
     <FieldFrame id={id} label={label} help={help} error={error ?? uploadError ?? undefined}>
       <div className="sc-image-actions">
         <label className="sc-btn small">
-          {uploading ? "Uploading…" : value ? "Replace PDF" : "Upload PDF"}
-          <input id={id} type="file" hidden disabled={uploading} accept=".pdf,application/pdf" onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
+          {uploading ? "Uploading…" : value ? `Replace ${noun}` : `Upload ${noun}`}
+          <input id={id} type="file" hidden disabled={uploading} accept={accept} onChange={(e) => { const f = e.target.files?.[0]; if (f) upload(f); e.target.value = ""; }} />
         </label>
         {value && <a className="sc-btn small" href={resolveAssetUrl(value) ?? "#"} target="_blank" rel="noopener noreferrer">View current file</a>}
         {value && <button type="button" className="sc-btn small" onClick={() => onChange("")}>Remove</button>}
       </div>
-      <span className="sc-help">{value ? "A file is attached. The Download button shows on the Research page." : "No file attached. The Download button is hidden until you upload one."}</span>
+      <span className="sc-help">{value ? attachedHelp ?? "A file is attached. The Download button shows on the Research page." : emptyHelp ?? "No file attached. The Download button is hidden until you upload one."}</span>
     </FieldFrame>
   );
 }

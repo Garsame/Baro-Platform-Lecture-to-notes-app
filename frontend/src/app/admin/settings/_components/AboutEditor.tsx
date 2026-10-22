@@ -2,7 +2,7 @@
 
 import type { AboutSettings } from "@/lib/site-content";
 import EditorShell from "./EditorShell";
-import { StageListField, TextArea, TextField } from "./fields";
+import { StageListField, TextArea, TextField, ToggleField } from "./fields";
 import { useSectionEditor } from "./useSectionEditor";
 
 export default function AboutEditor() {
@@ -18,6 +18,7 @@ export default function AboutEditor() {
       <TextArea label="Intro" value={d.intro} max={300} rows={3} error={e.intro} onChange={(v) => set("intro", v)} />
       <TextField label="Mission title" value={d.mission_title} max={40} error={e.mission_title} onChange={(v) => set("mission_title", v)} />
       <TextArea label="Mission" value={d.mission} max={400} rows={4} error={e.mission} onChange={(v) => set("mission", v)} />
+      <ToggleField label="Show the intro video on this page" help="Uses the video set in the Home page section." value={d.show_video} onChange={(v) => set("show_video", v)} />
       <TextField label="Pipeline heading (for screen readers)" value={d.stages_title} max={60} error={e.stages_title} onChange={(v) => set("stages_title", v)} />
       <StageListField fieldKey="stages" errors={e} value={d.stages} onChange={(v) => set("stages", v)} />
       <TextField label="Closing banner title" value={d.cta_title} max={60} error={e.cta_title} onChange={(v) => set("cta_title", v)} />
