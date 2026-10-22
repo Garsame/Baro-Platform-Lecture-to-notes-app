@@ -559,3 +559,72 @@ export function ReleasesField({ errors, value, onChange }: { errors: Record<stri
     />
   );
 }
+
+export type FindingRow = { title: string; text: string };
+
+export function FindingsField({ errors, value, onChange }: { errors: Record<string, string>; value: FindingRow[]; onChange: (v: FindingRow[]) => void }) {
+  return (
+    <ObjectList
+      label="Findings"
+      items={value}
+      max={8}
+      onChange={onChange}
+      addLabel="Add finding"
+      newItem={{ title: "New finding", text: "" }}
+      renderItem={(f, i, up) => (
+        <>
+          <TextField label="Title" value={f.title} max={80} error={errors[`findings.${i}.title`]} onChange={(v) => up({ title: v })} />
+          <TextArea label="Text" value={f.text} max={400} rows={3} error={errors[`findings.${i}.text`]} onChange={(v) => up({ text: v })} />
+        </>
+      )}
+    />
+  );
+}
+
+export type HighlightRow = { value: string; label: string };
+
+export function HighlightsField({ errors, value, onChange }: { errors: Record<string, string>; value: HighlightRow[]; onChange: (v: HighlightRow[]) => void }) {
+  return (
+    <ObjectList
+      label="Headline results"
+      help="Up to four tiles shown next to the paper on the carousel slide."
+      items={value}
+      max={4}
+      onChange={onChange}
+      addLabel="Add result"
+      newItem={{ value: "0", label: "New result" }}
+      renderItem={(h, i, up) => (
+        <div className="sc-list-row">
+          <TextField label="Number" value={h.value} max={20} error={errors[`pub_highlights.${i}.value`]} onChange={(v) => up({ value: v })} />
+          <TextField label="Label" value={h.label} max={50} error={errors[`pub_highlights.${i}.label`]} onChange={(v) => up({ label: v })} />
+        </div>
+      )}
+    />
+  );
+}
+
+export type MilestoneRow = { date: string; title: string; text: string; highlight: boolean };
+
+export function MilestonesField({ errors, value, onChange }: { errors: Record<string, string>; value: MilestoneRow[]; onChange: (v: MilestoneRow[]) => void }) {
+  return (
+    <ObjectList
+      label="Milestones"
+      help="Shown in this order. A highlighted milestone gets the large dark card."
+      items={value}
+      max={10}
+      onChange={onChange}
+      addLabel="Add milestone"
+      newItem={{ date: "", title: "New milestone", text: "", highlight: false }}
+      renderItem={(m, i, up) => (
+        <>
+          <div className="sc-list-row">
+            <TextField label="Date" help="For example 18 Jun 2026" value={m.date} max={30} error={errors[`milestones.${i}.date`]} onChange={(v) => up({ date: v })} />
+            <TextField label="Title" value={m.title} max={60} error={errors[`milestones.${i}.title`]} onChange={(v) => up({ title: v })} />
+          </div>
+          <TextArea label="Description" value={m.text} max={180} rows={2} error={errors[`milestones.${i}.text`]} onChange={(v) => up({ text: v })} />
+          <ToggleField label="Highlight this milestone" value={m.highlight} onChange={(v) => up({ highlight: v })} />
+        </>
+      )}
+    />
+  );
+}

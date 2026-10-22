@@ -222,7 +222,7 @@ def test_contact_email_escapes_input_and_links_to_production(monkeypatch):
 
 def test_research_defaults_and_validation(admin_client):
     r = admin_client.get("/api/v1/site/content").json()["sections"]["research"]
-    assert r["participants"] == "7" and len(r["stages"]) == 6 and len(r["results"]) == 5
+    assert r["participants"] == "7" and r["questions"] == "33" and len(r["stages"]) == 6 and len(r["results"]) == 7
     bad = {**r, "results": [{"label": "Usability", "value": "6.2"}]}
     res = admin_client.put("/api/v1/admin/site/sections/research", json={"value": bad})
     assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "results.0.value"
@@ -272,3 +272,19 @@ def test_video_upload_and_youtube_validation(admin_client):
     assert res.status_code == 200
     about = admin_client.get("/api/v1/site/content").json()["sections"]["about"]
     assert about["show_video"] is True
+
+
+def test_publication_and_milestones(admin_client):
+    sec = admin_client.get("/api/v1/site/content").json()["sections"]
+    r, h = sec["research"], sec["home"]
+    assert r["pub_url"].startswith("https://www.journals.hu.edu.so/") and len(r["findings"]) == 4
+    assert h["show_publication"] is True and len(h["milestones"]) == 6 and h["milestones"][-1]["highlight"] is True
+    assert h["carousel_seconds"] == 8
+    bad = {**h, "carousel_seconds": 2}
+    res = admin_client.put("/api/v1/admin/site/sections/home", json={"value": bad})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "carousel_seconds"
+    bad = {**r, "pub_url": "javascript:alert(1)"}
+    res = admin_client.put("/api/v1/admin/site/sections/research", json={"value": bad})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "pub_url"
+    ok = {**h, "milestones": h["milestones"] + [{"date": "Dec 2026", "title": "Next step", "text": "", "highlight": False}]}
+    assert admin_client.put("/api/v1/admin/site/sections/home", json={"value": ok}).status_code == 200

@@ -3,6 +3,7 @@ import MaterialIcon from "@/components/site/MaterialIcon";
 import type { PublicStats, Testimonial } from "@/lib/site-content";
 import { getApprovedTestimonials, getPublicStats, getSiteContent } from "@/lib/site-content.server";
 import { Suspense } from "react";
+import HeroCarousel from "./_home/HeroCarousel";
 import IntroVideo from "./_home/IntroVideo";
 import JourneyBand from "./_home/JourneyBand";
 import NoteCard from "./_home/NoteCard";
@@ -58,12 +59,22 @@ function Quote({ t }: { t: Testimonial }) {
 export default async function HomePage() {
   const [content, stats, testimonials] = await Promise.all([getSiteContent(), getPublicStats(), getApprovedTestimonials()]);
   const h = content.sections.home;
+  const research = content.sections.research;
+  const showPublication = h.show_publication && !!research.pub_title && !!h.pub_headline;
+  const slideLabels = showPublication ? ["Turn lectures into Somali notes", "Published research"] : ["Turn lectures into Somali notes"];
   const tiles = stats ? statTiles(stats, h as unknown as Record<string, boolean>) : [];
 
   return (
     <div className="home-page">
       <section className="home-hero">
-        <div className="home-wrap home-hero-grid">
+        <div className="home-wrap">
+          <HeroCarousel
+            autoplay={h.carousel_autoplay}
+            seconds={h.carousel_seconds}
+            labels={slideLabels}
+            slides={[
+              (
+<div className="home-hero-grid" key="hero">
           <div>
             {h.badge_text && (
               <span className="home-badge">{h.badge_label && <b>{h.badge_label}</b>}{h.badge_text}</span>
@@ -86,6 +97,40 @@ export default async function HomePage() {
             )}
           </div>
           <TransformCard />
+        </div>
+              ),
+              ...(showPublication ? [(
+                <div className="pub-hero" key="publication">
+                  <div className="pub-hero-text">
+                    <span className="home-badge"><b>Milestone</b>{h.pub_eyebrow}</span>
+                    <h2>{h.pub_headline}</h2>
+                    <p className="home-lede">{h.pub_text}</p>
+                    <div className="home-hero-actions">
+                      <Link href="/resources/research" className="public-btn public-btn-primary">
+                        {h.pub_button_label}
+                        <MaterialIcon name="arrow_forward" size={18} />
+                      </Link>
+                      {research.pub_url && (
+                        <a href={research.pub_url} className="public-btn public-btn-ghost" target="_blank" rel="noopener noreferrer">Read the paper</a>
+                      )}
+                    </div>
+                  </div>
+                  <div className="pub-showcase">
+                    <span className="pub-showcase-flag"><MaterialIcon name="workspace_premium" size={18} filled />{research.pub_label || "Published"}</span>
+                    {h.pub_journal_line && <span className="pub-showcase-journal">{h.pub_journal_line}</span>}
+                    <strong className="pub-showcase-title">{research.pub_title}</strong>
+                    {h.pub_highlights.length > 0 && (
+                      <div className="pub-highlights">
+                        {h.pub_highlights.map((x) => (
+                          <div key={x.label}><span className="v">{x.value}</span><span className="l">{x.label}</span></div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )] : []),
+            ]}
+          />
         </div>
       </section>
 
@@ -121,6 +166,28 @@ export default async function HomePage() {
               ))}
             </div>
             <div className="stats-foot"><span className="live" />Live from the platform, updated every time this page loads.</div>
+          </div>
+        </section>
+      )}
+
+      {h.show_milestones && h.milestones.length > 0 && (
+        <section className="home-section milestones-band" id="milestones">
+          <div className="home-wrap">
+            <div className="home-section-head">
+              <span className="home-eyebrow">Milestones</span>
+              <h2>{h.milestones_title}</h2>
+              {h.milestones_intro && <p>{h.milestones_intro}</p>}
+            </div>
+            <ol className="milestones">
+              {h.milestones.map((m) => (
+                <li key={`${m.date}-${m.title}`} className={m.highlight ? "ms-item highlight" : "ms-item"}>
+                  <span className="ms-date">{m.date}</span>
+                  <b>{m.title}</b>
+                  {m.text && <span className="ms-text">{m.text}</span>}
+                  {m.highlight && <span className="home-chip brand">Milestone</span>}
+                </li>
+              ))}
+            </ol>
           </div>
         </section>
       )}

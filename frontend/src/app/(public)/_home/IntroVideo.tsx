@@ -29,15 +29,24 @@ export default function IntroVideo({ title, caption, src = "", poster = "", yout
   const [elapsed, setElapsed] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
-  const play = useCallback(() => {
+  const run = useCallback(() => {
     clearInterval(timer.current);
     const t0 = Date.now();
-    setElapsed(0);
     timer.current = setInterval(() => {
       const el = (Date.now() - t0) / 1000;
       setElapsed(Math.min(el, SCENES.length * SCENE_SECONDS));
       if (el >= SCENES.length * SCENE_SECONDS) clearInterval(timer.current);
     }, 100);
+  }, []);
+
+  const play = useCallback(() => {
+    setElapsed(0);
+    run();
+  }, [run]);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setElapsed(0);
   }, []);
 
   // The "Intro video" menu and footer links open the player with /?play=intro.
@@ -51,16 +60,16 @@ export default function IntroVideo({ title, caption, src = "", poster = "", yout
 
   useEffect(() => {
     if (!open || real) return;
-    play();
+    run();
     return () => clearInterval(timer.current);
-  }, [open, real, play]);
+  }, [open, real, run]);
 
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") close(); };
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
-  }, [open]);
+  }, [open, close]);
 
   const scene = Math.min(SCENES.length - 1, Math.floor(elapsed / SCENE_SECONDS));
 
@@ -84,12 +93,12 @@ export default function IntroVideo({ title, caption, src = "", poster = "", yout
       </button>
       <span className="sr-only">{title}</span>
       {open && (
-        <div className="video-modal" role="dialog" aria-modal="true" aria-label="Intro video" onClick={(e) => { if (e.target === e.currentTarget) setOpen(false); }}>
+        <div className="video-modal" role="dialog" aria-modal="true" aria-label="Intro video" onClick={(e) => { if (e.target === e.currentTarget) close(); }}>
           <div className="video-modal-card">
             <div className="mc-head">
               <b>{real ? title || "Intro video" : "Intro video · storyboard preview"}</b>
               {!real && <span className="home-muted">A recorded walkthrough is coming soon</span>}
-              <button type="button" className="video-close" onClick={() => setOpen(false)} aria-label="Close"><MaterialIcon name="close" size={20} /></button>
+              <button type="button" className="video-close" onClick={close} aria-label="Close"><MaterialIcon name="close" size={20} /></button>
             </div>
             {real === "file" && (
               <div className="player player-real">

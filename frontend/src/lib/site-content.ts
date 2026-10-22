@@ -52,7 +52,23 @@ export type JourneyCard = {
 
 export type FaqItem = { q: string; a: string };
 
+export type Highlight = { value: string; label: string };
+export type Milestone = { date: string; title: string; text: string; highlight: boolean };
+
 export type HomeSettings = {
+  carousel_autoplay: boolean;
+  carousel_seconds: number;
+  show_publication: boolean;
+  pub_eyebrow: string;
+  pub_headline: string;
+  pub_text: string;
+  pub_journal_line: string;
+  pub_button_label: string;
+  pub_highlights: Highlight[];
+  show_milestones: boolean;
+  milestones_title: string;
+  milestones_intro: string;
+  milestones: Milestone[];
   badge_label: string;
   badge_text: string;
   headline: string;
@@ -148,7 +164,21 @@ export type TeamMember = {
 
 export type TeamSettings = { title: string; intro: string; members: TeamMember[] };
 
+export type Finding = { title: string; text: string };
+
 export type ResearchSettings = {
+  pub_label: string;
+  pub_title: string;
+  pub_journal: string;
+  pub_authors: string;
+  pub_details: string;
+  pub_url: string;
+  pub_pdf_url: string;
+  pub_cite: string;
+  findings_title: string;
+  findings: Finding[];
+  limitations: string;
+  future_work: string;
   title: string;
   subtitle: string;
   authors: string;
@@ -333,6 +363,73 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         "Notes written in Somali",
         "Quiz and lecture chat included"
       ],
+      "carousel_autoplay": true,
+      "carousel_seconds": 8,
+      "show_publication": true,
+      "pub_eyebrow": "Published research",
+      "pub_headline": "Our research is published in an international journal.",
+      "pub_text": "BaroPlatform was designed and evaluated at Hormuud University, and the study is published in the International Journal of Artificial Intelligence and Digital Innovation. Students rated usability 4.57 out of 5, and every participant agreed it reduced the time needed to prepare study notes.",
+      "pub_journal_line": "International Journal of Artificial Intelligence and Digital Innovation · Vol. 1, No. 1 · 2026",
+      "pub_button_label": "Read more",
+      "pub_highlights": [
+        {
+          "value": "4.57 / 5",
+          "label": "Usability"
+        },
+        {
+          "value": "5.00 / 5",
+          "label": "Time saved, all 7 agreed"
+        },
+        {
+          "value": "4.45 / 5",
+          "label": "Educational value"
+        },
+        {
+          "value": "7",
+          "label": "Students, two universities"
+        }
+      ],
+      "show_milestones": true,
+      "milestones_title": "From idea to publication",
+      "milestones_intro": "The milestones BaroPlatform has reached so far.",
+      "milestones": [
+        {
+          "date": "20 Feb 2026",
+          "title": "Project started",
+          "text": "The BaroPlatform project began at Hormuud University.",
+          "highlight": false
+        },
+        {
+          "date": "18 Jun 2026",
+          "title": "First release",
+          "text": "The first version of the app was released.",
+          "highlight": false
+        },
+        {
+          "date": "25 Jun 2026",
+          "title": "Testing and deploying",
+          "text": "The platform was tested and deployed online.",
+          "highlight": false
+        },
+        {
+          "date": "1–2 Jul 2026",
+          "title": "Student evaluation",
+          "text": "Seven students from two universities used the platform and answered a 33-item questionnaire.",
+          "highlight": false
+        },
+        {
+          "date": "18–19 Jul 2026",
+          "title": "Presented at HUMC 2026",
+          "text": "Presented at the Hormuud University International Hybrid Multidisciplinary Conference in Mogadishu.",
+          "highlight": false
+        },
+        {
+          "date": "30 Sep 2026",
+          "title": "Published in IJAIDI",
+          "text": "The research was published in the International Journal of Artificial Intelligence and Digital Innovation.",
+          "highlight": true
+        }
+      ],
       "video_title": "See one lecture become a study pack",
       "video_caption": "Intro video · storyboard preview",
       "video_url": "",
@@ -500,10 +597,9 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
           "name": "Transcribe",
           "code": "transcribing",
           "title": "Turn speech into text",
-          "text": "Each chunk is transcribed by an AI speech model, then the pieces are joined back in order.",
+          "text": "Each chunk is transcribed by OpenAI Whisper, then the pieces are joined back in order.",
           "tech": [
-            "Google Gemini",
-            "OpenAI Whisper (fallback)"
+            "OpenAI Whisper"
           ],
           "image_url": null
         },
@@ -523,7 +619,8 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
           "title": "Write the Somali notes",
           "text": "A large language model reads the transcript and writes a summary, key points, detailed notes and key terms in Somali. Long transcripts are handled in sections so nothing is skipped.",
           "tech": [
-            "Google Gemini"
+            "Google Gemini 2.5 Flash-Lite",
+            "Gemini 2.5 Flash fallback"
           ],
           "image_url": null
         },
@@ -617,11 +714,40 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       ]
     },
     "research": {
+      "pub_label": "Peer-reviewed journal article",
+      "pub_title": "Cross-Lingual Lecture Note Generation for a Low-Resource Language: Design and User Evaluation of BaroPlatform AI for Somali-Speaking Students",
+      "pub_journal": "International Journal of Artificial Intelligence and Digital Innovation (IJAIDI)",
+      "pub_authors": "Abdirahim Mohamud Iftin, Mohamed Abdi Mire, Faaiza Daahir Dhaqane, Hafso Hersi Omar, Yusuf Abas Mohamed",
+      "pub_details": "Hormuud University · Vol. 1, No. 1 (2026), pp. 20–34 · Published 30 September 2026 · Open access (CC BY 4.0)",
+      "pub_url": "https://www.journals.hu.edu.so/index.php/ijaidi/article/view/30",
+      "pub_pdf_url": "https://www.journals.hu.edu.so/index.php/ijaidi/article/download/30/22",
+      "pub_cite": "Iftin, A. M., Mire, M. A., Dhaqane, F. D., Omar, H. H., & Mohamed, Y. A. (2026). Cross-Lingual Lecture Note Generation for a Low-Resource Language: Design and User Evaluation of BaroPlatform AI for Somali-Speaking Students. International Journal of Artificial Intelligence and Digital Innovation, 1(1), 20–34. https://www.journals.hu.edu.so/index.php/ijaidi/article/view/30",
+      "findings_title": "What the paper found",
+      "findings": [
+        {
+          "title": "Somali notes without Somali-specific training",
+          "text": "Prompting a general-purpose multilingual model to write notes directly in Somali produced material students rated as usable (note quality 4.02 out of 5). Every lecture that reached the generation stage produced usable notes."
+        },
+        {
+          "title": "Every student said it saves time",
+          "text": "All seven participants strongly agreed that the platform reduced the time needed to prepare study notes (5.00 out of 5, no variation). All seven also said they would use it regularly if it were deployed."
+        },
+        {
+          "title": "Saving time is not the same as fitting daily study",
+          "text": "Agreement that the tool is useful for day-to-day university studies was the weakest result (3.71 out of 5, only 57% agreed). The paper treats this as the most important finding to resolve in a follow-up study."
+        },
+        {
+          "title": "A transcription finding for other builders",
+          "text": "Google Gemini was rejected for transcription because it returned RECITATION safety blocks on widely distributed educational audio, so transcription and note generation are kept as separate steps."
+        }
+      ],
+      "limitations": "Seven purposively selected participants, six from one institution, cannot represent Somali university students generally\nTime savings and value are self-reported, with no control group and no measured learning outcome\nNo automatic quality metric exists for Somali, so note quality was judged by people\n66.7% end-to-end completion is acceptable for a prototype but not for institutional deployment\nEvery judgement came from a single session, and the cost at scale is unmeasured",
+      "future_work": "A controlled study measuring knowledge recall against studying from raw video\nA structured review of the generated Somali by native-speaker raters\nRaising end-to-end reliability well above 66.7%, a media-handling problem rather than a generation problem\nTesting whether the same prompt-level approach works for other low-resource languages",
       "title": "A Unified AI Framework for Somali Lecture Transcription, Translation, and Note Generation",
       "subtitle": "Final-year Bachelor of Computer Science thesis · Hormuud University · 2025–2026",
       "authors": "Abdirahim Mohamud Iftin, Mohamed Abdi Mire, Faaiza Daahir Dhaqane, Hafso Hersi Omar",
       "supervisor": "Dr. Yusuf Abas Mohamed",
-      "abstract": "Somali-speaking university students increasingly learn from recorded lectures, most of them delivered in English, yet no tool turns those lectures into study material in Somali. This research designed, built and evaluated BaroPlatform, a web platform that accepts a YouTube link or an uploaded recording, transcribes the speech, and uses a large language model to generate structured Somali notes, quizzes and a lecture-aware chatbot, with an admin portal that monitors processing. The system was built with Next.js, FastAPI and PostgreSQL, using OpenAI Whisper for transcription and Google Gemini for note generation. An evaluation with seven Somali-speaking students rated usability at 4.57 out of 5 and time saved at 5.00 out of 5, while the naturalness of the Somali output, at 3.71, was identified as the main area to improve.",
+      "abstract": "Somali is spoken by an estimated 25 million people yet remains among the least represented languages in speech and language technology. Somali-speaking university students consequently depend on English-medium lecture material while no AI-assisted learning tool produces study material in their language. This paper presents BaroPlatform AI, an end-to-end platform that converts English lecture video into structured Somali study material, and reports its evaluation with university students. The system ingests a YouTube link or an uploaded file, extracts audio with FFmpeg, transcribes it with OpenAI Whisper (whisper-1), and prompts Google Gemini (gemini-2.5-flash-lite, with gemini-2.5-flash as fallback) to generate Somali notes, a summary, key points, quiz items and transcript-grounded chatbot responses; Azure Cognitive Services synthesises Somali speech from the notes. The backend is FastAPI with PostgreSQL; the frontend is Next.js. Gemini was empirically rejected for transcription after it returned RECITATION safety blocks on widely distributed educational audio, an engineering finding reported here in full. Seven students at two Somali universities evaluated the deployed system using a 33-item instrument (Cronbach's α = 0.816). Usability scored 4.57/5, note quality 4.02/5 and educational value 4.45/5; every participant agreed without exception that the platform reduced the time needed to prepare study notes (M = 5.00, SD = 0.00), every participant reported measurable time savings, and every participant indicated they would use the system regularly if deployed. Operational data show that while 66.7% of submitted lectures completed the full pipeline, 100% of lectures that reached the generation stage produced usable Somali notes, locating the reliability constraint in media handling rather than in cross-lingual generation. Among the note-quality items, the naturalness of the generated Somali scored below the construct mean (M = 3.86), consistent with the known limits of general-purpose multilingual models on low-resource languages. We argue that prompt-level cross-lingual generation is a viable interim strategy for languages that lack the annotated corpora required for fine-tuning.",
       "stages": [
         {
           "when": "Stage 1",
@@ -636,7 +762,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         {
           "when": "Stage 3",
           "name": "System design",
-          "text": "Designed the processing pipeline, a 12-table database, and the student and admin interfaces."
+          "text": "Designed the processing pipeline, the database, and the student and admin interfaces."
         },
         {
           "when": "Stage 4",
@@ -646,12 +772,12 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         {
           "when": "Stage 5",
           "name": "Evaluation",
-          "text": "Seven Somali-speaking students answered a 40-question questionnaire in seven sections."
+          "text": "Seven Somali-speaking students from two universities answered a 33-item questionnaire on 1 and 2 July 2026."
         },
         {
           "when": "Stage 6",
           "name": "Dissemination",
-          "text": "Presented at HUMC 2026 in Mogadishu on 18–19 July 2026."
+          "text": "Presented at HUMC 2026 in Mogadishu on 18–19 July 2026 and published in IJAIDI on 30 September 2026."
         }
       ],
       "results": [
@@ -664,20 +790,28 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
           "value": "4.57"
         },
         {
+          "label": "Educational value",
+          "value": "4.45"
+        },
+        {
           "label": "Overall rating",
           "value": "4.29"
         },
         {
           "label": "Note quality",
-          "value": "4.04"
+          "value": "4.02"
         },
         {
           "label": "Somali naturalness",
+          "value": "3.86"
+        },
+        {
+          "label": "Useful for day-to-day studies",
           "value": "3.71"
         }
       ],
       "participants": "7",
-      "questions": "40",
+      "questions": "33",
       "success_rate": "66.7%",
       "avg_time": "2m 43s",
       "paper_venue": "HUMC 2026 · Hormuud University International Hybrid Multidisciplinary Conference",

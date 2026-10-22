@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { resolveAssetUrl } from "@/lib/site-content";
 import { getSiteContent } from "@/lib/site-content.server";
+import MaterialIcon from "@/components/site/MaterialIcon";
 import ResourcesSubnav from "../ResourcesSubnav";
+import CopyCite from "./CopyCite";
 import "../../home.css";
 import "../resources.css";
 
@@ -13,6 +15,10 @@ export default async function ResearchPage() {
   const results = r.results.map((x) => ({ label: x.label, v: parseFloat(x.value) || 0 }));
   const low = results.length ? results.reduce((a, b) => (b.v < a.v ? b : a)) : null;
   const thesis = resolveAssetUrl(r.thesis_url);
+  const pubPdf = resolveAssetUrl(r.pub_pdf_url);
+  const lines = (t: string) => t.split("\n").map((x) => x.trim()).filter(Boolean);
+  const limitations = lines(r.limitations);
+  const future = lines(r.future_work);
   const kpis: [string, string][] = [
     [r.participants, "Participants"],
     [r.questions, "Questionnaire items"],
@@ -34,6 +40,21 @@ export default async function ResearchPage() {
           </div>
         </div>
 
+        {r.pub_title && (
+          <section className="pub-card" aria-label="Journal publication">
+            <span className="pub-flag"><MaterialIcon name="workspace_premium" size={18} filled />{r.pub_label || "Published"}</span>
+            <h2>{r.pub_title}</h2>
+            {r.pub_journal && <p className="pub-journal">{r.pub_journal}</p>}
+            {r.pub_authors && <p className="pub-meta">{r.pub_authors}</p>}
+            {r.pub_details && <p className="pub-meta">{r.pub_details}</p>}
+            <div className="pub-actions">
+              {r.pub_url && <a className="public-btn public-btn-primary" href={r.pub_url} target="_blank" rel="noopener noreferrer">Read the paper <MaterialIcon name="arrow_outward" size={18} /></a>}
+              {pubPdf && <a className="public-btn public-btn-ghost" href={pubPdf} target="_blank" rel="noopener noreferrer">Download PDF</a>}
+            </div>
+            {r.pub_cite && <CopyCite text={r.pub_cite} />}
+          </section>
+        )}
+
         <div className="abstract"><b>Abstract</b>{r.abstract}</div>
 
         {r.stages.length > 0 && (
@@ -51,6 +72,17 @@ export default async function ResearchPage() {
                 </li>
               ))}
             </ol>
+          </>
+        )}
+
+        {r.findings.length > 0 && (
+          <>
+            <h2>{r.findings_title || "What the paper found"}</h2>
+            <div className="findings">
+              {r.findings.map((f) => (
+                <div className="finding" key={f.title}><b>{f.title}</b><span>{f.text}</span></div>
+              ))}
+            </div>
           </>
         )}
 
@@ -77,7 +109,20 @@ export default async function ResearchPage() {
           </p>
         )}
 
-        <h2>Publication</h2>
+        {limitations.length > 0 && (
+          <>
+            <h2>Limitations</h2>
+            <ul className="plain-list">{limitations.map((x) => <li key={x}>{x}</li>)}</ul>
+          </>
+        )}
+        {future.length > 0 && (
+          <>
+            <h2>Future work</h2>
+            <ul className="plain-list">{future.map((x) => <li key={x}>{x}</li>)}</ul>
+          </>
+        )}
+
+        <h2>Other publications</h2>
         {r.paper_venue && (
           <div className="paper-card">
             <div>

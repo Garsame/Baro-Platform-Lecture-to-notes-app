@@ -2,7 +2,7 @@
 
 import type { ResearchSettings } from "@/lib/site-content";
 import EditorShell from "./EditorShell";
-import { FileField, ResearchResultsField, ResearchStagesField, TextArea, TextField } from "./fields";
+import { FileField, FindingsField, ResearchResultsField, ResearchStagesField, TextArea, TextField } from "./fields";
 import { useSectionEditor } from "./useSectionEditor";
 
 export default function ResearchEditor() {
@@ -14,11 +14,30 @@ export default function ResearchEditor() {
 
   const form = (
     <>
+      <section className="sc-group">
+        <h2>Journal publication</h2>
+        <p className="sc-help">Shown as the large published card at the top of the page. Leave the paper title empty to hide it.</p>
+        <TextField label="Small label" value={d.pub_label} max={60} error={e.pub_label} onChange={(v) => set("pub_label", v)} />
+        <TextArea label="Paper title" value={d.pub_title} max={240} rows={3} error={e.pub_title} onChange={(v) => set("pub_title", v)} />
+        <TextField label="Journal" value={d.pub_journal} max={160} error={e.pub_journal} onChange={(v) => set("pub_journal", v)} />
+        <TextField label="Authors" value={d.pub_authors} max={300} error={e.pub_authors} onChange={(v) => set("pub_authors", v)} />
+        <TextField label="Volume, pages, date, licence" value={d.pub_details} max={200} error={e.pub_details} onChange={(v) => set("pub_details", v)} />
+        <TextField label="Paper link" help="Full https:// link to the article page." value={d.pub_url} max={300} error={e.pub_url} onChange={(v) => set("pub_url", v)} />
+        <TextField label="PDF link" help="A link such as the journal's download link, or /uploads/... for a file uploaded here." value={d.pub_pdf_url} max={500} error={e.pub_pdf_url} onChange={(v) => set("pub_pdf_url", v)} />
+        <TextArea label="Citation" value={d.pub_cite} max={700} rows={4} error={e.pub_cite} help="Shown with a Copy citation button." onChange={(v) => set("pub_cite", v)} />
+      </section>
+      <section className="sc-group">
+        <h2>What the paper found, limits and next steps</h2>
+        <TextField label="Findings heading" value={d.findings_title} max={60} error={e.findings_title} onChange={(v) => set("findings_title", v)} />
+        <FindingsField errors={e} value={d.findings} onChange={(v) => set("findings", v)} />
+        <TextArea label="Limitations (one point per line)" value={d.limitations} max={1400} rows={6} error={e.limitations} onChange={(v) => set("limitations", v)} />
+        <TextArea label="Future work (one point per line)" value={d.future_work} max={1400} rows={5} error={e.future_work} onChange={(v) => set("future_work", v)} />
+      </section>
       <TextArea label="Thesis title" value={d.title} max={160} rows={2} error={e.title} onChange={(v) => set("title", v)} />
       <TextField label="Subtitle" value={d.subtitle} max={120} error={e.subtitle} onChange={(v) => set("subtitle", v)} />
       <TextField label="Authors" value={d.authors} max={200} error={e.authors} onChange={(v) => set("authors", v)} />
       <TextField label="Supervisor" value={d.supervisor} max={80} error={e.supervisor} onChange={(v) => set("supervisor", v)} />
-      <TextArea label="Abstract" value={d.abstract} max={1400} rows={8} error={e.abstract} onChange={(v) => set("abstract", v)} />
+      <TextArea label="Abstract" value={d.abstract} max={2600} rows={8} error={e.abstract} onChange={(v) => set("abstract", v)} />
       <ResearchStagesField errors={e} value={d.stages} onChange={(v) => set("stages", v)} />
       <ResearchResultsField errors={e} value={d.results} onChange={(v) => set("results", v)} />
       <TextField label="Participants" value={d.participants} max={6} error={e.participants} onChange={(v) => set("participants", v)} />
@@ -41,6 +60,7 @@ export default function ResearchEditor() {
         <span className="sc-help">Authors: {d.authors}</span>
         <span className="sc-help">Supervisor: {d.supervisor}</span>
       </div>
+      {d.pub_title && <div className="sc-home-mock"><span className="sc-help">{d.pub_label}</span><strong>{d.pub_title}</strong><span className="sc-help">{d.pub_journal}</span><span className="sc-help">{d.pub_details}</span></div>}
       <div className="sc-home-mock"><strong>Abstract</strong><span className="sc-help">{d.abstract}</span></div>
       <div className="sc-home-mock">
         <strong>Research stages</strong>

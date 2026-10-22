@@ -3,7 +3,7 @@
 import Link from "next/link";
 import type { HomeSettings } from "@/lib/site-content";
 import EditorShell from "./EditorShell";
-import { FaqListField, FileField, ImageField, JourneyCardsField, TagsField, TextArea, TextField, ToggleField } from "./fields";
+import { FaqListField, FileField, HighlightsField, ImageField, MilestonesField, JourneyCardsField, TagsField, TextArea, TextField, ToggleField } from "./fields";
 import { useSectionEditor } from "./useSectionEditor";
 
 const STATS: [keyof HomeSettings, string][] = [
@@ -38,6 +38,29 @@ export default function HomeEditor() {
         <TextField label="Primary button" value={d.primary_cta} max={24} error={e.primary_cta} onChange={(v) => set("primary_cta", v)} />
         <TextField label="Secondary button" value={d.secondary_cta} max={28} error={e.secondary_cta} onChange={(v) => set("secondary_cta", v)} />
         <TagsField label="Hero points" value={d.hero_points} max={5} error={e.hero_points} onChange={(v) => set("hero_points", v)} />
+      </Group>
+      <Group title="Hero carousel">
+        <ToggleField label="Rotate the hero slides automatically" help="The first slide is the hero above. Visitors can always use the arrows and dots." value={d.carousel_autoplay} onChange={(v) => set("carousel_autoplay", v)} />
+        <div className="sc-field">
+          <label htmlFor="carousel-seconds">Seconds per slide</label>
+          <input id="carousel-seconds" type="number" min={4} max={20} className={`sc-input ${e.carousel_seconds ? "invalid" : ""}`} value={d.carousel_seconds} onChange={(ev) => set("carousel_seconds", Number(ev.target.value))} />
+          <span className={e.carousel_seconds ? "sc-error" : "sc-help"}>{e.carousel_seconds ?? "Between 4 and 20."}</span>
+        </div>
+      </Group>
+      <Group title="Research publication slide">
+        <ToggleField label="Show the publication slide" help="The paper's title and link come from Site Content, Research and findings." value={d.show_publication} onChange={(v) => set("show_publication", v)} />
+        <TextField label="Small heading" value={d.pub_eyebrow} max={40} error={e.pub_eyebrow} onChange={(v) => set("pub_eyebrow", v)} />
+        <TextField label="Headline" value={d.pub_headline} max={90} error={e.pub_headline} onChange={(v) => set("pub_headline", v)} />
+        <TextArea label="Text" value={d.pub_text} max={420} rows={4} error={e.pub_text} onChange={(v) => set("pub_text", v)} />
+        <TextField label="Journal line" value={d.pub_journal_line} max={140} error={e.pub_journal_line} onChange={(v) => set("pub_journal_line", v)} />
+        <TextField label="Button label" help="Opens the Research and findings page." value={d.pub_button_label} max={24} error={e.pub_button_label} onChange={(v) => set("pub_button_label", v)} />
+        <HighlightsField errors={e} value={d.pub_highlights} onChange={(v) => set("pub_highlights", v)} />
+      </Group>
+      <Group title="Milestones">
+        <ToggleField label="Show the milestones band" value={d.show_milestones} onChange={(v) => set("show_milestones", v)} />
+        <TextField label="Section title" value={d.milestones_title} max={60} error={e.milestones_title} onChange={(v) => set("milestones_title", v)} />
+        <TextArea label="Intro" value={d.milestones_intro} max={200} rows={2} error={e.milestones_intro} onChange={(v) => set("milestones_intro", v)} />
+        <MilestonesField errors={e} value={d.milestones} onChange={(v) => set("milestones", v)} />
       </Group>
       <Group title="Intro video">
         <TextField label="Video section title" value={d.video_title} max={70} error={e.video_title} help="Leave empty to hide the video section." onChange={(v) => set("video_title", v)} />

@@ -151,6 +151,22 @@ def check_youtube_url(value: str) -> str:
     return value
 
 
+class Highlight(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    value: str = Field(min_length=1, max_length=20)
+    label: str = Field(min_length=1, max_length=50)
+
+
+class Milestone(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    date: str = Field(min_length=1, max_length=30)
+    title: str = Field(min_length=1, max_length=60)
+    text: str = Field(default="", max_length=180)
+    highlight: bool = False
+
+
 class HomeSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
 
@@ -162,6 +178,22 @@ class HomeSettings(BaseModel):
     primary_cta: str = Field(min_length=1, max_length=24)
     secondary_cta: str = Field(min_length=1, max_length=28)
     hero_points: list[str] = Field(default_factory=list, max_length=5)
+
+    carousel_autoplay: bool = True
+    carousel_seconds: int = Field(default=8, ge=4, le=20)
+
+    show_publication: bool = True
+    pub_eyebrow: str = Field(default="", max_length=40)
+    pub_headline: str = Field(default="", max_length=90)
+    pub_text: str = Field(default="", max_length=420)
+    pub_journal_line: str = Field(default="", max_length=140)
+    pub_button_label: str = Field(default="Read more", max_length=24)
+    pub_highlights: list[Highlight] = Field(default_factory=list, max_length=4)
+
+    show_milestones: bool = True
+    milestones_title: str = Field(default="", max_length=60)
+    milestones_intro: str = Field(default="", max_length=200)
+    milestones: list[Milestone] = Field(default_factory=list, max_length=10)
 
     video_title: str = Field(default="", max_length=70)
     video_caption: str = Field(default="", max_length=60)
@@ -362,14 +394,35 @@ class ResearchResult(BaseModel):
         return v
 
 
+class Finding(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    title: str = Field(min_length=1, max_length=80)
+    text: str = Field(min_length=1, max_length=400)
+
+
 class ResearchSettings(BaseModel):
     model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    # Peer-reviewed journal article shown at the top of the Research page.
+    pub_label: str = Field(default="", max_length=60)
+    pub_title: str = Field(default="", max_length=240)
+    pub_journal: str = Field(default="", max_length=160)
+    pub_authors: str = Field(default="", max_length=300)
+    pub_details: str = Field(default="", max_length=200)
+    pub_url: str = Field(default="", max_length=300)
+    pub_pdf_url: str = Field(default="", max_length=500)
+    pub_cite: str = Field(default="", max_length=700)
+    findings_title: str = Field(default="", max_length=60)
+    findings: list[Finding] = Field(default_factory=list, max_length=8)
+    limitations: str = Field(default="", max_length=1400)  # one point per line
+    future_work: str = Field(default="", max_length=1400)  # one point per line
 
     title: str = Field(min_length=4, max_length=160)
     subtitle: str = Field(default="", max_length=120)
     authors: str = Field(default="", max_length=200)
     supervisor: str = Field(default="", max_length=80)
-    abstract: str = Field(min_length=20, max_length=1400)
+    abstract: str = Field(min_length=20, max_length=2600)
     stages: list[ResearchStage] = Field(default_factory=list, max_length=10)
     results: list[ResearchResult] = Field(default_factory=list, max_length=10)
     participants: str = Field(default="", max_length=6)
@@ -384,6 +437,16 @@ class ResearchSettings(BaseModel):
     @field_validator("thesis_url")
     @classmethod
     def _thesis(cls, value: str) -> str:
+        return check_asset_url(value) or ""
+
+    @field_validator("pub_url")
+    @classmethod
+    def _pub_url(cls, value: str) -> str:
+        return _social(value)
+
+    @field_validator("pub_pdf_url")
+    @classmethod
+    def _pub_pdf(cls, value: str) -> str:
         return check_asset_url(value) or ""
 
 
