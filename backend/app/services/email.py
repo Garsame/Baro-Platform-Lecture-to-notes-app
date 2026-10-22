@@ -1,3 +1,4 @@
+import html
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -16,7 +17,7 @@ def send_otp_email(to_email: str, otp_code: str) -> bool:
     <html>
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #121a2d; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h2 style="color: #2a2a72; margin-bottom: 5px; font-size: 24px;">Baro Platform</h2>
+          <h2 style="color: #2a2a72; margin-bottom: 5px; font-size: 24px;">BaroPlatform</h2>
           <p style="color: #65728a; font-size: 0.95rem; margin-top: 0;">Verify Your Email Address</p>
         </div>
         <div style="background: #f1f5fb; border-radius: 16px; padding: 30px; text-align: center; border: 1px solid #e3e8f2; box-shadow: 0 4px 12px rgba(42, 42, 114, 0.03);">
@@ -27,7 +28,7 @@ def send_otp_email(to_email: str, otp_code: str) -> bool:
           <p style="font-size: 0.85rem; color: #65728a; margin-bottom: 0; line-height: 1.4;">This code will expire in 15 minutes.<br>If you did not request this verification, you can safely ignore this email.</p>
         </div>
         <div style="text-align: center; margin-top: 30px; font-size: 0.8rem; color: #65728a; border-top: 1px solid #e3e8f2; padding-top: 15px;">
-          © {current_year} Baro Platform. All rights reserved.
+          © {current_year} BaroPlatform. All rights reserved.
         </div>
       </body>
     </html>
@@ -72,15 +73,28 @@ def send_otp_email(to_email: str, otp_code: str) -> bool:
         print("="*80 + "\n")
         return False
 
-def send_contact_message_email(name: str, email: str, topic: str, message: str) -> bool:
-    subject = f"New Contact Message: {topic} (from {name})"
+def _one_line(value: str) -> str:
+    """Collapse whitespace and newlines so user text cannot inject mail headers."""
+    return " ".join(str(value).split())
+
+
+def send_contact_message_email(name: str, email: str, topic: str, message: str, recipient: Optional[str] = None) -> bool:
+    """Notify the team inbox about a new contact message.
+
+    `recipient` is the inbox set in the admin Email settings; when empty the
+    SMTP_FROM_EMAIL (or SMTP_USER) inbox from the environment is used.
+    """
+    subject = f"New Contact Message: {_one_line(topic)} (from {_one_line(name)})"
+    admin_url = f"{settings.FRONTEND_BASE_URL.rstrip('/')}/admin/messages"
+    # User input goes into HTML below, so escape it first.
+    name, email, topic, message = (html.escape(v) for v in (name, email, topic, message))
     
     current_year = datetime.utcnow().year
     body = f"""
     <html>
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #121a2d; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h2 style="color: #2a2a72; margin-bottom: 5px; font-size: 24px;">Baro Platform</h2>
+          <h2 style="color: #2a2a72; margin-bottom: 5px; font-size: 24px;">BaroPlatform</h2>
           <p style="color: #65728a; font-size: 0.95rem; margin-top: 0;">New User Contact Inquiry</p>
         </div>
         <div style="background: #ffffff; border-radius: 16px; padding: 30px; border: 1px solid #e3e8f2; box-shadow: 0 4px 12px rgba(42, 42, 114, 0.03);">
@@ -111,20 +125,21 @@ def send_contact_message_email(name: str, email: str, topic: str, message: str) 
           </div>
           
           <div style="text-align: center; margin-top: 25px;">
-            <a href="http://localhost:3000/admin/messages" style="background: #2a2a72; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 0.9rem;">View in Admin Panel</a>
+            <a href="{admin_url}" style="background: #2a2a72; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; display: inline-block; font-size: 0.9rem;">View in Admin Panel</a>
           </div>
         </div>
         <div style="text-align: center; margin-top: 30px; font-size: 0.8rem; color: #65728a; border-top: 1px solid #e3e8f2; padding-top: 15px;">
-          © {current_year} Baro Platform. All rights reserved.
+          © {current_year} BaroPlatform. All rights reserved.
         </div>
       </body>
     </html>
     """
 
-    recipients = ["hello@baroplatform.ai"]
-    configured_receiver = settings.SMTP_FROM_EMAIL or settings.SMTP_USER
-    if configured_receiver and configured_receiver not in recipients:
-        recipients.append(configured_receiver)
+    receiver = (recipient or "").strip() or settings.SMTP_FROM_EMAIL or settings.SMTP_USER
+    if not receiver:
+        logger.error("No contact recipient configured. Set one in Site Content > Email settings.")
+        return False
+    recipients = [receiver]
 
     if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
         logger.warning("SMTP credentials not configured. MOCK EMAIL SENT. recipients=%s name=%s email=%s topic=%s", recipients, name, email, topic)
@@ -173,14 +188,15 @@ def send_contact_message_email(name: str, email: str, topic: str, message: str) 
 
 
 def send_contact_reply_email(to_email: str, name: str, topic: str, original_message: str, reply_message: str) -> bool:
-    subject = f"Re: {topic} - Baro Platform Support"
+    subject = f"Re: {_one_line(topic)} - BaroPlatform Support"
+    name, topic, original_message, reply_message = (html.escape(v) for v in (name, topic, original_message, reply_message))
     
     current_year = datetime.utcnow().year
     body = f"""
     <html>
       <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #121a2d; max-width: 600px; margin: 0 auto; padding: 20px;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <h2 style="color: #2a2a72; margin-bottom: 5px; font-size: 24px;">Baro Platform</h2>
+          <h2 style="color: #2a2a72; margin-bottom: 5px; font-size: 24px;">BaroPlatform</h2>
           <p style="color: #65728a; font-size: 0.95rem; margin-top: 0;">Support & Contact Reply</p>
         </div>
         <div style="background: #ffffff; border-radius: 16px; padding: 30px; border: 1px solid #e3e8f2; box-shadow: 0 4px 12px rgba(42, 42, 114, 0.03);">
@@ -200,7 +216,7 @@ def send_contact_reply_email(to_email: str, name: str, topic: str, original_mess
           </div>
         </div>
         <div style="text-align: center; margin-top: 30px; font-size: 0.8rem; color: #65728a; border-top: 1px solid #e3e8f2; padding-top: 15px;">
-          © {current_year} Baro Platform. All rights reserved.
+          © {current_year} BaroPlatform. All rights reserved.
         </div>
       </body>
     </html>
@@ -245,3 +261,48 @@ def send_contact_reply_email(to_email: str, name: str, topic: str, original_mess
         print("="*80 + "\n")
         return False
 
+
+
+def send_contact_confirmation_email(to_email: str, name: str, topic: str, subject: str, body_template: str, reply_to: Optional[str] = None) -> bool:
+    """Standard confirmation sent to every sender; the text comes from the admin Email settings."""
+    text = body_template.replace("{name}", _one_line(name)).replace("{topic}", _one_line(topic))
+    safe_html = html.escape(text).replace("\n", "<br>")
+    body = f"""
+    <html>
+      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #121a2d; max-width: 600px; margin: 0 auto; padding: 20px;">
+        <div style="background: #ffffff; border-radius: 16px; padding: 30px; border: 1px solid #e3e8f2;">{safe_html}</div>
+      </body>
+    </html>
+    """
+
+    if not settings.SMTP_USER or not settings.SMTP_PASSWORD:
+        logger.warning("SMTP credentials not configured. MOCK CONFIRMATION SENT. to_email=%s", to_email)
+        print("\n" + "=" * 80)
+        print(f"MOCK CONFIRMATION EMAIL TO: {to_email}")
+        print(f"SUBJECT: {subject}")
+        print(text)
+        print("=" * 80 + "\n")
+        return True
+
+    try:
+        msg = MIMEMultipart("alternative")
+        msg["Subject"] = _one_line(subject)
+        msg["From"] = f"{settings.SMTP_FROM_NAME} <{settings.SMTP_FROM_EMAIL or settings.SMTP_USER}>"
+        msg["To"] = to_email
+        if reply_to:
+            msg["Reply-To"] = reply_to
+        msg.attach(MIMEText(text, "plain"))
+        msg.attach(MIMEText(body, "html"))
+
+        server_class = smtplib.SMTP_SSL if settings.SMTP_PORT == 465 else smtplib.SMTP
+        server = server_class(settings.SMTP_HOST, settings.SMTP_PORT, timeout=10)
+        if settings.SMTP_PORT != 465 and settings.SMTP_TLS:
+            server.starttls()
+        server.login(settings.SMTP_USER, settings.SMTP_PASSWORD)
+        server.sendmail(msg["From"], [to_email], msg.as_string())
+        server.quit()
+        logger.info("Contact confirmation email sent to %s", to_email)
+        return True
+    except Exception as e:
+        logger.error("Failed to send contact confirmation to %s: %s", to_email, e)
+        return False

@@ -142,6 +142,25 @@ export type TeamMember = {
 
 export type TeamSettings = { title: string; intro: string; members: TeamMember[] };
 
+export type ContactSettings = {
+  headline: string;
+  intro: string;
+  contact_name: string;
+  email: string;
+  phone: string;
+  whatsapp: string;
+  hours: string;
+  topics: string[];
+};
+
+/** Admin-only; the public API never returns this section. */
+export type EmailSettings = {
+  recipient_email: string;
+  auto_reply_enabled: boolean;
+  auto_reply_subject: string;
+  auto_reply_body: string;
+};
+
 export type SiteContent = {
   updated_at: string | null;
   sections: {
@@ -151,6 +170,7 @@ export type SiteContent = {
     home: HomeSettings;
     about: AboutSettings;
     team: TeamSettings;
+    contact: ContactSettings;
   };
 };
 
@@ -404,6 +424,22 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
           "linkedin": "",
           "github": ""
         }
+      ]
+    },
+    contact: {
+      "headline": "Talk to the BaroPlatform team",
+      "intro": "Questions about your account, a lecture that did not process, or using BaroPlatform in your classes. Send a message and we reply by email.",
+      "contact_name": "BaroPlatform Support",
+      "email": "",
+      "phone": "",
+      "whatsapp": "",
+      "hours": "",
+      "topics": [
+        "Account and sign-in",
+        "Lecture processing",
+        "Notes and quizzes",
+        "Using BaroPlatform in class",
+        "Something else"
       ]
     },
   },

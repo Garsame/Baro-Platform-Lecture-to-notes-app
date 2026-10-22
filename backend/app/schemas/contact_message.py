@@ -1,5 +1,5 @@
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from typing import Optional
 
 class ContactMessageBase(BaseModel):
@@ -8,8 +8,13 @@ class ContactMessageBase(BaseModel):
     topic: str
     message: str
 
-class ContactMessageCreate(ContactMessageBase):
-    pass
+class ContactMessageCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    name: str = Field(min_length=2, max_length=120)
+    email: EmailStr
+    topic: str = Field(min_length=2, max_length=120)
+    message: str = Field(min_length=10, max_length=2000)
 
 class ContactMessageUpdate(BaseModel):
     is_read: Optional[bool] = None

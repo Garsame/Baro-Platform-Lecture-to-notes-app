@@ -155,3 +155,66 @@ def test_about_and_team_defaults_and_validation(admin_client):
     about = {**sections["about"], "stages": [{**sections["about"]["stages"][0], "tech": ["x" * 41]}]}
     res = admin_client.put("/api/v1/admin/site/sections/about", json={"value": about})
     assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "stages.0.tech"
+
+
+def test_email_section_is_admin_only_and_validated(admin_client):
+    assert "email" not in admin_client.get("/api/v1/site/content").json()["sections"]
+    assert admin_client.get("/api/v1/site/content/email").status_code == 404
+    current = admin_client.get("/api/v1/admin/site/sections/email").json()["value"]
+    res = admin_client.put("/api/v1/admin/site/sections/email", json={"value": {**current, "recipient_email": "not-an-email"}})
+    assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "recipient_email"
+    res = admin_client.put("/api/v1/admin/site/sections/email", json={"value": {**current, "recipient_email": "team@example.com"}})
+    assert res.status_code == 200
+
+
+def test_contact_notifies_admin_inbox_and_confirms_sender(admin_client, monkeypatch):
+    from app.api.routers import contact as contact_router
+
+    current = admin_client.get("/api/v1/admin/site/sections/email").json()["value"]
+    admin_client.put("/api/v1/admin/site/sections/email", json={"value": {**current, "recipient_email": "team@example.com"}})
+    sent = {}
+    monkeypatch.setattr(contact_router, "send_contact_message_email", lambda **kw: sent.setdefault("notify", kw))
+    monkeypatch.setattr(contact_router, "send_contact_confirmation_email", lambda **kw: sent.setdefault("confirm", kw))
+    body = {"name": "Amina", "email": "amina@example.com", "topic": "Lecture processing", "message": "My lecture did not finish processing."}
+    assert admin_client.post("/api/v1/contact/", json=body).status_code == 201
+    assert sent["notify"]["recipient"] == "team@example.com"
+    assert sent["confirm"]["to_email"] == "amina@example.com"
+    assert "{name}" in sent["confirm"]["body_template"]
+    # turning the auto reply off stops the confirmation
+    sent.clear()
+    admin_client.put("/api/v1/admin/site/sections/email", json={"value": {**current, "auto_reply_enabled": False}})
+    admin_client.post("/api/v1/contact/", json=body)
+    assert "notify" in sent and "confirm" not in sent
+
+
+def test_contact_input_limits(admin_client):
+    bad = {"name": "A", "email": "a@example.com", "topic": "x", "message": "short"}
+    assert admin_client.post("/api/v1/contact/", json=bad).status_code == 422
+
+
+def test_contact_email_escapes_input_and_links_to_production(monkeypatch):
+    from app.core.config import settings
+    from app.services import email as email_service
+
+    captured = {}
+
+    class FakeSMTP:
+        def __init__(self, *a, **k): pass
+        def starttls(self): pass
+        def login(self, *a): pass
+        def sendmail(self, sender, recipients, text): captured.update(recipients=recipients, text=text)
+        def quit(self): pass
+
+    monkeypatch.setattr(email_service.smtplib, "SMTP", FakeSMTP)
+    monkeypatch.setattr(settings, "SMTP_USER", "u")
+    monkeypatch.setattr(settings, "SMTP_PASSWORD", "p")
+    ok = email_service.send_contact_message_email(
+        "<b>Eve</b>", "eve@example.com", "Hi\nBcc: x@evil.com", "<script>alert(1)</script>", recipient="team@example.com"
+    )
+    assert ok and captured["recipients"] == ["team@example.com"]
+    import email as stdlib_email
+    msg = stdlib_email.message_from_string(captured["text"])
+    assert "Bcc" not in msg and "\n" not in msg["Subject"].replace("\r\n ", " ")
+    payload = msg.get_payload()[0].get_payload(decode=True).decode()
+    assert "<script>" not in payload and "&lt;script&gt;" in payload
+    assert "localhost" not in payload and "/admin/messages" in payload

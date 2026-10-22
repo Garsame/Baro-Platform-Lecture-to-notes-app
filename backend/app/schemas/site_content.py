@@ -1,3 +1,5 @@
+import re
+
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 HEX_COLOR = r"^#[0-9a-fA-F]{6}$"
@@ -249,6 +251,57 @@ class TeamSettings(BaseModel):
     title: str = Field(min_length=1, max_length=60)
     intro: str = Field(default="", max_length=300)
     members: list[TeamMember] = Field(default_factory=list, max_length=12)
+
+
+_EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _optional_email(value: str) -> str:
+    if value == "" or _EMAIL.match(value):
+        return value
+    raise ValueError("Enter a valid email address, or leave empty to hide it")
+
+
+class ContactSettings(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    headline: str = Field(min_length=4, max_length=80)
+    intro: str = Field(min_length=10, max_length=300)
+    contact_name: str = Field(default="", max_length=60)
+    email: str = Field(default="", max_length=120)
+    phone: str = Field(default="", max_length=40)
+    whatsapp: str = Field(default="", max_length=40)
+    hours: str = Field(default="", max_length=80)
+    topics: list[str] = Field(default_factory=list, max_length=10)
+
+    @field_validator("email")
+    @classmethod
+    def _email(cls, value: str) -> str:
+        return _optional_email(value)
+
+    @field_validator("topics")
+    @classmethod
+    def _topics(cls, value: list[str]) -> list[str]:
+        cleaned = [t.strip() for t in value if t.strip()]
+        if any(len(t) > 40 for t in cleaned):
+            raise ValueError("Each topic must be 40 characters or fewer")
+        return cleaned
+
+
+class EmailSettings(BaseModel):
+    """Admin-only: never returned by the public content API."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    recipient_email: str = Field(default="", max_length=120)
+    auto_reply_enabled: bool = True
+    auto_reply_subject: str = Field(min_length=3, max_length=80)
+    auto_reply_body: str = Field(min_length=10, max_length=1200)
+
+    @field_validator("recipient_email")
+    @classmethod
+    def _recipient(cls, value: str) -> str:
+        return _optional_email(value)
 
 
 class TestimonialSubmit(BaseModel):

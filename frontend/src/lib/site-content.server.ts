@@ -18,6 +18,7 @@ export const getSiteContent = cache(async (): Promise<SiteContent> => {
         home: { ...DEFAULT_SITE_CONTENT.sections.home, ...data.sections?.home },
         about: { ...DEFAULT_SITE_CONTENT.sections.about, ...data.sections?.about },
         team: { ...DEFAULT_SITE_CONTENT.sections.team, ...data.sections?.team },
+        contact: { ...DEFAULT_SITE_CONTENT.sections.contact, ...data.sections?.contact },
       },
     };
   } catch (error) {

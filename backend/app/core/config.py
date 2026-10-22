@@ -5,7 +5,7 @@ from typing import Optional
 BACKEND_ROOT = Path(__file__).resolve().parents[2]
 
 class Settings(BaseSettings):
-    PROJECT_NAME: str = "Video Lecture to Somali Notes"
+    PROJECT_NAME: str = "BaroPlatform"
     API_V1_STR: str = "/api/v1"
     SECRET_KEY: str
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24 * 8 # 8 days
@@ -39,10 +39,11 @@ class Settings(BaseSettings):
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
     SMTP_TLS: bool = True
+    FRONTEND_BASE_URL: str = "https://baroplatform.garsame.com"  # used for links inside emails
     SMTP_USER: Optional[str] = None
     SMTP_PASSWORD: Optional[str] = None
     SMTP_FROM_EMAIL: Optional[str] = None
-    SMTP_FROM_NAME: str = "Baro Platform"
+    SMTP_FROM_NAME: str = "BaroPlatform"
 
     class Config:
         env_file = str(BACKEND_ROOT / ".env")

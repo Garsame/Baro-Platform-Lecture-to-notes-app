@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel
 
-from app.schemas.site_content import AboutSettings, BrandingSettings, HomeSettings, NavigationSettings, SeoSettings, TeamSettings
+from app.schemas.site_content import AboutSettings, BrandingSettings, ContactSettings, EmailSettings, HomeSettings, NavigationSettings, SeoSettings, TeamSettings
 
 
 @dataclass(frozen=True)
@@ -146,6 +146,26 @@ TEAM_DEFAULT = {
     ],
 }
 
+CONTACT_DEFAULT = {
+    "headline": "Talk to the BaroPlatform team",
+    "intro": "Questions about your account, a lecture that did not process, or using BaroPlatform in your classes. Send a message and we reply by email.",
+    "contact_name": "BaroPlatform Support",
+    # Empty until the admin fills them in; empty details are hidden on the page.
+    "email": "",
+    "phone": "",
+    "whatsapp": "",
+    "hours": "",
+    "topics": ["Account and sign-in", "Lecture processing", "Notes and quizzes", "Using BaroPlatform in class", "Something else"],
+}
+
+EMAIL_DEFAULT = {
+    # Empty means: use the SMTP_FROM_EMAIL (or SMTP_USER) inbox from the backend environment.
+    "recipient_email": "",
+    "auto_reply_enabled": True,
+    "auto_reply_subject": "We received your message",
+    "auto_reply_body": "Hi {name},\n\nThanks for contacting BaroPlatform. We received your message about \"{topic}\" and will reply by email as soon as we can.\n\nThe BaroPlatform team",
+}
+
 SECTIONS: dict[str, SectionSpec] = {
     "branding": SectionSpec("branding", "Branding", BrandingSettings, BRANDING_DEFAULT),
     "seo": SectionSpec("seo", "Search and sharing", SeoSettings, SEO_DEFAULT),
@@ -153,6 +173,8 @@ SECTIONS: dict[str, SectionSpec] = {
     "home": SectionSpec("home", "Home page", HomeSettings, HOME_DEFAULT),
     "about": SectionSpec("about", "About page", AboutSettings, ABOUT_DEFAULT),
     "team": SectionSpec("team", "Team", TeamSettings, TEAM_DEFAULT),
+    "contact": SectionSpec("contact", "Contact page", ContactSettings, CONTACT_DEFAULT),
+    "email": SectionSpec("email", "Email settings", EmailSettings, EMAIL_DEFAULT, public=False),
 }
 
 # Fail fast at import if a default does not satisfy its own schema.

@@ -13,11 +13,12 @@ const ACTIVE: Record<string, string> = {
   navigation: "Header dropdowns, header button, footer text and social links.",
   about: "The project story and every pipeline stage, start to finish.",
   team: "Writers and supervisor shown on the About page: photos, roles, bios, links and order.",
+  contact: "Contact page text, details and form topics.",
+  email: "Team inbox and the confirmation email sent to every sender. Not shown publicly.",
   home: "Hero, live numbers, how-it-works cards, sample notes, testimonials and FAQ.",
 };
 
 const UPCOMING = [
-  { label: "Contact page and email", phase: 5 },
   { label: "Research and findings", phase: 6 },
   { label: "State of research", phase: 7 },
   { label: "Documentation and releases", phase: 7 },
