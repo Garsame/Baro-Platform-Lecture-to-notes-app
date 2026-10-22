@@ -69,7 +69,7 @@ HOME_DEFAULT = {
     "secondary_cta": "See how it works",
     "hero_points": ["YouTube links or uploads", "Notes written in Somali", "Quiz and lecture chat included"],
     "carousel_autoplay": True,
-    "carousel_seconds": 8,
+    "carousel_seconds": 5,
     "show_publication": True,
     "pub_eyebrow": "Published research",
     "pub_headline": "Our research is published in an international journal.",

@@ -180,7 +180,7 @@ class HomeSettings(BaseModel):
     hero_points: list[str] = Field(default_factory=list, max_length=5)
 
     carousel_autoplay: bool = True
-    carousel_seconds: int = Field(default=8, ge=4, le=20)
+    carousel_seconds: int = Field(default=5, ge=3, le=20)
 
     show_publication: bool = True
     pub_eyebrow: str = Field(default="", max_length=40)

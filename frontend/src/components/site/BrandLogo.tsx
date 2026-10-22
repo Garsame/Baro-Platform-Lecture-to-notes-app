@@ -29,7 +29,7 @@ export default function BrandLogo({ height = "auto", width = "auto", variant = "
   return (
     <>
       <img src={light} alt={alt} className={`logo-light ${className ?? ""}`.trim()} style={base} onClick={onClick} />
-      <img src={dark} alt="" aria-hidden="true" className={`logo-dark ${className ?? ""}`.trim()} style={base} onClick={onClick} />
+      <img src={dark} alt={alt} className={`logo-dark ${className ?? ""}`.trim()} style={base} onClick={onClick} />
     </>
   );
 }

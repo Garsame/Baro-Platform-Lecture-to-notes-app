@@ -39,11 +39,13 @@ export default function HeroCarousel({ slides, labels, autoplay, seconds }: Prop
       role="region"
       aria-roledescription="carousel"
       aria-label="Highlights"
-      onMouseEnter={() => setPaused(true)}
-      onMouseLeave={() => setPaused(false)}
       onFocus={() => setPaused(true)}
       onBlur={() => setPaused(false)}
     >
+      <div className="hc-frame">
+      {count > 1 && (
+        <button type="button" className="hc-arrow hc-prev" onClick={() => go(index - 1)} aria-label="Previous slide"><MaterialIcon name="chevron_left" size={20} /></button>
+      )}
       <div className="hc-stage" aria-live={autoplay && !paused && !reduced ? "off" : "polite"}>
         {slides.map((slide, i) => (
           <div
@@ -61,8 +63,11 @@ export default function HeroCarousel({ slides, labels, autoplay, seconds }: Prop
         ))}
       </div>
       {count > 1 && (
+        <button type="button" className="hc-arrow hc-next" onClick={() => go(index + 1)} aria-label="Next slide"><MaterialIcon name="chevron_right" size={20} /></button>
+      )}
+      </div>
+      {count > 1 && (
         <div className="hc-controls">
-          <button type="button" className="hc-btn" onClick={() => go(index - 1)} aria-label="Previous slide"><MaterialIcon name="chevron_left" size={22} /></button>
           <div className="hc-dots" role="tablist" aria-label="Choose slide">
             {slides.map((_, i) => (
               <button key={i} type="button" role="tab" aria-selected={i === index} aria-label={labels[i] ?? `Slide ${i + 1}`} className={i === index ? "on" : ""} onClick={() => go(i)}>
@@ -70,10 +75,9 @@ export default function HeroCarousel({ slides, labels, autoplay, seconds }: Prop
               </button>
             ))}
           </div>
-          <button type="button" className="hc-btn" onClick={() => go(index + 1)} aria-label="Next slide"><MaterialIcon name="chevron_right" size={22} /></button>
           {autoplay && !reduced && (
-            <button type="button" className="hc-btn" onClick={() => setPaused((p) => !p)} aria-label={paused ? "Resume rotation" : "Pause rotation"}>
-              <MaterialIcon name={paused ? "play_arrow" : "pause"} size={20} />
+            <button type="button" className="hc-btn" onClick={() => setPaused((p) => !p)} aria-label={paused ? "Resume automatic rotation" : "Pause automatic rotation"} title={paused ? "Resume automatic rotation" : "Pause automatic rotation"}>
+              <MaterialIcon name={paused ? "play_arrow" : "pause"} size={16} />
             </button>
           )}
         </div>

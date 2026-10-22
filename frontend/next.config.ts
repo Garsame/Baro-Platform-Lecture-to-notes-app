@@ -2,6 +2,23 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   devIndicators: false,
+  poweredByHeader: false,
+  async headers() {
+    const hidden = ["/dashboard/:path*", "/admin/:path*", "/maamul-login", "/maamul-signup", "/sign-in", "/sign-up", "/google-chooser"];
+    return [
+      {
+        source: "/:path*",
+        headers: [
+          { key: "X-Content-Type-Options", value: "nosniff" },
+          { key: "X-Frame-Options", value: "SAMEORIGIN" },
+          { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
+          { key: "Strict-Transport-Security", value: "max-age=15552000; includeSubDomains" },
+        ],
+      },
+      ...hidden.map((source) => ({ source, headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }] })),
+    ];
+  },
   async redirects() {
     return [
       // Admin paths → real Somali routes

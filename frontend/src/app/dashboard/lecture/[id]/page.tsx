@@ -2717,14 +2717,13 @@ export default function LectureDetailPage({
         )}
       </div>
 
-      <div className="lecture-detail-tabs" role="tablist">
+      <nav className="lecture-detail-tabs" aria-label="Lecture sections">
         {tabs.map((tab) => (
           <button
             key={tab}
             type="button"
             onClick={() => setActiveTab(tab)}
-            role="tab"
-            aria-selected={activeTab === tab}
+            aria-current={activeTab === tab ? "true" : undefined}
             className={activeTab === tab ? "is-active" : ""}
           >
             {TAB_LABELS[tab] ?? tab}
@@ -2735,7 +2734,7 @@ export default function LectureDetailPage({
             Quiz
           </Link>
         )}
-      </div>
+      </nav>
 
       <div
         className={activeTab === "chatbot" ? undefined : "card"}

@@ -279,7 +279,7 @@ def test_publication_and_milestones(admin_client):
     r, h = sec["research"], sec["home"]
     assert r["pub_url"].startswith("https://www.journals.hu.edu.so/") and len(r["findings"]) == 4
     assert h["show_publication"] is True and len(h["milestones"]) == 6 and h["milestones"][-1]["highlight"] is True
-    assert h["carousel_seconds"] == 8
+    assert h["carousel_seconds"] == 5
     bad = {**h, "carousel_seconds": 2}
     res = admin_client.put("/api/v1/admin/site/sections/home", json={"value": bad})
     assert res.status_code == 422 and res.json()["detail"]["errors"][0]["field"] == "carousel_seconds"

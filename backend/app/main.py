@@ -23,20 +23,6 @@ app = FastAPI(
     title=settings.PROJECT_NAME, openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "https://baro-platform.elivateict.com",
-        "http://baro-platform.elivateict.com"
-    ],
-    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):300\d",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
 # Paths that are polled frequently and should only be logged on error
 QUIET_PATHS = {
     "/api/v1/lectures/",
@@ -80,6 +66,25 @@ async def log_requests(request: Request, call_next):
         logger.info("%s %s -> %s (%.1fms)", method, path, response.status_code, elapsed_ms)
 
     return response
+
+# Added last so it is the outermost layer: error responses such as 429 still carry CORS headers
+# and the browser shows the real message instead of "Failed to fetch".
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=sorted(set([
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "https://baroplatform.garsame.com",
+        "http://baroplatform.garsame.com",
+        "https://baro-platform.elivateict.com",
+        "http://baro-platform.elivateict.com",
+        *settings.extra_cors_origins(),
+    ])),
+    allow_origin_regex=r"http://(localhost|127\.0\.0\.1):300\d",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 app.include_router(auth.router, prefix=f"{settings.API_V1_STR}/auth", tags=["auth"])
 app.include_router(lectures.router, prefix=f"{settings.API_V1_STR}/lectures", tags=["lectures"])

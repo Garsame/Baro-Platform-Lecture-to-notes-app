@@ -43,8 +43,8 @@ export default function HomeEditor() {
         <ToggleField label="Rotate the hero slides automatically" help="The first slide is the hero above. Visitors can always use the arrows and dots." value={d.carousel_autoplay} onChange={(v) => set("carousel_autoplay", v)} />
         <div className="sc-field">
           <label htmlFor="carousel-seconds">Seconds per slide</label>
-          <input id="carousel-seconds" type="number" min={4} max={20} className={`sc-input ${e.carousel_seconds ? "invalid" : ""}`} value={d.carousel_seconds} onChange={(ev) => set("carousel_seconds", Number(ev.target.value))} />
-          <span className={e.carousel_seconds ? "sc-error" : "sc-help"}>{e.carousel_seconds ?? "Between 4 and 20."}</span>
+          <input id="carousel-seconds" type="number" min={3} max={20} className={`sc-input ${e.carousel_seconds ? "invalid" : ""}`} value={d.carousel_seconds} onChange={(ev) => set("carousel_seconds", Number(ev.target.value))} />
+          <span className={e.carousel_seconds ? "sc-error" : "sc-help"}>{e.carousel_seconds ?? "Between 3 and 20."}</span>
         </div>
       </Group>
       <Group title="Research publication slide">

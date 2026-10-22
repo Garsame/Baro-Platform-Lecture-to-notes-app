@@ -11,14 +11,14 @@ type Props = { signedIn: boolean; onNavigate?: () => void };
 
 function Panel({ id, tagline, overview, links, onNavigate }: { id: string; tagline: string; overview: string; links: NavLink[]; onNavigate: () => void }) {
   return (
-    <div className="nav-panel" id={id} role="menu">
+    <div className="nav-panel" id={id}>
       <div className="nav-panel-lead">
         <p>{tagline}</p>
         <Link href={overview} onClick={onNavigate}>See overview →</Link>
       </div>
       <div className="nav-panel-links">
         {links.map((l) => (
-          <Link key={`${l.href}-${l.label}`} href={l.href} role="menuitem" onClick={onNavigate}>
+          <Link key={`${l.href}-${l.label}`} href={l.href} onClick={onNavigate}>
             <MaterialIcon name={l.icon} />
             <span><strong>{l.label}</strong><span>{l.description}</span></span>
           </Link>

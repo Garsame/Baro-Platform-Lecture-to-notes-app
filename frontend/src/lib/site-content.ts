@@ -367,7 +367,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         "Quiz and lecture chat included"
       ],
       "carousel_autoplay": true,
-      "carousel_seconds": 8,
+      "carousel_seconds": 5,
       "show_publication": true,
       "pub_eyebrow": "Published research",
       "pub_headline": "Our research is published in an international journal.",

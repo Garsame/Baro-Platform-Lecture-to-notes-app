@@ -47,6 +47,11 @@ class Settings(BaseSettings):
     SMTP_FROM_EMAIL: Optional[str] = None
     SMTP_FROM_NAME: str = "BaroPlatform"
 
+    CORS_ORIGINS: str = ""  # extra allowed origins, comma separated
+
+    def extra_cors_origins(self) -> list[str]:
+        return [o.strip().rstrip("/") for o in self.CORS_ORIGINS.split(",") if o.strip()]
+
     class Config:
         env_file = str(BACKEND_ROOT / ".env")
         extra = "ignore"

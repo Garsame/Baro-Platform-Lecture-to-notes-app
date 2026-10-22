@@ -11,7 +11,7 @@
 .su-actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .su-split { justify-content: space-between; }
 .su-switch { font-size: 0.9rem; }
-.su-switch a { color: var(--accent); }
+.su-switch a { color: var(--accent); text-decoration: underline; }
 .su-ic { width: 52px; height: 52px; border-radius: 16px; background: var(--accent-soft); color: var(--accent); display: grid; place-items: center; margin-bottom: 8px; }
 .su-ic.good { background: var(--good-soft); color: var(--good); }
 .su-error { padding: 12px 14px; border-radius: 10px; background: var(--bad-soft); color: var(--bad); font-size: 0.9rem; }

@@ -452,7 +452,11 @@ export default function MyLecturesPage() {
                   </div>
                   <div
                     className="lecture-progress-track"
-                    aria-label={`Progress ${progress}%`}
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={100}
+                    aria-valuenow={Math.round(progress)}
+                    aria-label="Progress"
                   >
                     <span
                       style={{

@@ -9,15 +9,15 @@
   --line-strong: #c5cce0;
   --fg: #11152c;
   --muted: #5a6283;
-  --faint: #8890ad;
+  --faint: #5f6788;
   --brand-raw: #2a2a72;
   --accent-raw: #009ffd;
   --brand: var(--brand-raw);
-  --accent: var(--accent-raw);
+  --accent: color-mix(in oklab, var(--accent-raw) 70%, #000000); /* darkened so accent text passes 4.5:1 */
   --brand-soft: color-mix(in oklab, var(--brand-raw) 9%, var(--surface));
   --accent-soft: color-mix(in oklab, var(--accent-raw) 12%, var(--surface));
   --on-brand: #ffffff;
-  --good: #12805c;
+  --good: #0f6f4f;
   --good-soft: #e3f5ee;
   --warn: #9a5800;
   --warn-soft: #fbefdc;
@@ -46,7 +46,7 @@
   --line-strong: #353e63;
   --fg: #eef1fb;
   --muted: #a3abc8;
-  --faint: #7a83a6;
+  --faint: #8d95b5;
   --brand: color-mix(in oklab, var(--brand-raw) 40%, #ffffff);
   --accent: color-mix(in oklab, var(--accent-raw) 85%, #ffffff);
   --brand-soft: color-mix(in oklab, var(--brand-raw) 30%, var(--surface));
