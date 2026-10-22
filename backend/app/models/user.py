@@ -21,6 +21,16 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_email_verified = Column(Boolean, default=False, nullable=False)
     has_password = Column(Boolean, default=True, nullable=False)
+    university = Column(String(120), nullable=True)
+    faculty = Column(String(120), nullable=True)
+    programme = Column(String(160), nullable=True)
+    year_of_study = Column(String(40), nullable=True)
+    phone = Column(String(40), nullable=True)
+    terms_accepted_at = Column(DateTime, nullable=True)
+    pending_email = Column(String(255), nullable=True)  # new address waiting for its code
+    pending_email_code = Column(String(128), nullable=True)  # hashed; kept apart from the legacy otp_* columns
+    pending_email_expires_at = Column(DateTime, nullable=True)
+    pending_email_attempts = Column(Integer, default=0, nullable=False, server_default="0")
     otp_code = Column(String(6), nullable=True)
     otp_expires_at = Column(DateTime, nullable=True)
     otp_attempts = Column(Integer, default=0, nullable=False)

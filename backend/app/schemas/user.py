@@ -18,6 +18,12 @@ class UserUpdate(UserBase):
 
 
 class UserInDBBase(UserBase):
+    university: Optional[str] = None
+    faculty: Optional[str] = None
+    programme: Optional[str] = None
+    year_of_study: Optional[str] = None
+    phone: Optional[str] = None
+    pending_email: Optional[str] = None
     id: int
     role: str
     is_active: bool

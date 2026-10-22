@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     SMTP_HOST: str = "smtp.gmail.com"
     SMTP_PORT: int = 587
     SMTP_TLS: bool = True
+    SIGNUP_CODE_MINUTES: int = 15
+    SIGNUP_RESEND_SECONDS: int = 30
     FRONTEND_BASE_URL: str = "https://baroplatform.garsame.com"  # used for links inside emails
     SMTP_USER: Optional[str] = None
     SMTP_PASSWORD: Optional[str] = None

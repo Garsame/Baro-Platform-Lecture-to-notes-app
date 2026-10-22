@@ -221,6 +221,8 @@ export type DocsSettings = { pages: DocsPage[] };
 export type ReleaseEntry = { version: string; date: string; status: "Released" | "Planned"; title: string; notes: string };
 export type ReleasesSettings = { intro: string; entries: ReleaseEntry[] };
 
+export type SignupSettings = { universities: string[]; faculties: string[]; year_levels: string[] };
+
 export type ContactSettings = {
   headline: string;
   intro: string;
@@ -254,6 +256,7 @@ export type SiteContent = {
     state: StateSettings;
     docs: DocsSettings;
     releases: ReleasesSettings;
+    signup: SignupSettings;
   };
 };
 
@@ -964,6 +967,38 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
           "title": "First release",
           "notes": "YouTube and upload processing into Somali notes\nStudent dashboard, quizzes and admin monitoring"
         }
+      ]
+    },
+    "signup": {
+      "universities": [
+        "Hormuud University",
+        "SIMAD University",
+        "Somali National University",
+        "Mogadishu University",
+        "Benadir University",
+        "City University of Mogadishu",
+        "University of Kismayo",
+        "Other"
+      ],
+      "faculties": [
+        "Computer Science and IT",
+        "Engineering",
+        "Medicine and Health Sciences",
+        "Economics and Management",
+        "Education",
+        "Law",
+        "Social Sciences",
+        "Other"
+      ],
+      "year_levels": [
+        "Year 1",
+        "Year 2",
+        "Year 3",
+        "Year 4",
+        "Year 5",
+        "Postgraduate",
+        "Lecturer or staff",
+        "Other"
       ]
     },
     "contact": {

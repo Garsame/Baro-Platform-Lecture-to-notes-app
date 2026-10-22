@@ -519,6 +519,28 @@ class ReleasesSettings(BaseModel):
     entries: list[ReleaseEntry] = Field(default_factory=list, max_length=40)
 
 
+class SignupSettings(BaseModel):
+    """Choices offered on the sign-up and profile forms; the backend also validates against them."""
+
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+
+    universities: list[str] = Field(min_length=1, max_length=40)
+    faculties: list[str] = Field(min_length=1, max_length=30)
+    year_levels: list[str] = Field(min_length=1, max_length=12)
+
+    @field_validator("universities", "faculties", "year_levels")
+    @classmethod
+    def _choices(cls, value: list[str]) -> list[str]:
+        cleaned = [v.strip() for v in value if v.strip()]
+        if not cleaned:
+            raise ValueError("Add at least one choice")
+        if any(len(v) > 60 for v in cleaned):
+            raise ValueError("Each choice must be 60 characters or fewer")
+        if len(set(cleaned)) != len(cleaned):
+            raise ValueError("Choices must be different from each other")
+        return cleaned
+
+
 class TestimonialSubmit(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 

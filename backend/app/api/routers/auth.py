@@ -171,38 +171,10 @@ def admin_login_access_token(
         "token_type": "bearer",
     }
 
-@router.post("/signup", response_model=User)
-def create_new_user(
-    *,
-    db: Session = Depends(get_db),
-    user_in: UserCreate,
-) -> Any:
-    """Create new user."""
-    logger.info("Signup attempt for email=%s", user_in.email)
-    if len(user_in.password) < 8:
-        raise HTTPException(
-            status_code=400,
-            detail="Password must be at least 8 characters long."
-        )
-    auth_service = AuthService(db)
-    user = auth_service.get_user_by_email(email=user_in.email)
-    if user:
-        logger.warning("Signup rejected because email already exists: %s", user_in.email)
-        raise HTTPException(
-            status_code=400,
-            detail="This email is already registered.",
-        )
-    user = auth_service.create_user(user_in)
-    
-    # Write robust logging for the system and the user
-    sys_log = SystemLog(level="INFO", message=f"New user registered: {user.email}")
-    act_log = ActivityLog(action="USER_SIGNUP", user_id=user.id, details={"email": user.email})
-    db.add(sys_log)
-    db.add(act_log)
-    db.commit()
-    
-    logger.info("Signup success for user_id=%s email=%s", user.id, user.email)
-    return user
+@router.post("/signup", status_code=410)
+def create_new_user_retired() -> Any:
+    """Retired: accounts are now created by the emailed-code flow (/signup/start, /signup/verify)."""
+    raise HTTPException(status_code=410, detail="Use the new sign-up flow.")
 
 
 @router.post("/admin-signup", response_model=User)
@@ -252,58 +224,159 @@ from pydantic import BaseModel
 from typing import Optional
 from app.core.security import get_password_hash
 
-class UserUpdate(BaseModel):
-    full_name: str
-    email: str
+class ProfileUpdate(BaseModel):
+    full_name: Optional[str] = None
+    university: Optional[str] = None
+    faculty: Optional[str] = None
+    programme: Optional[str] = None
+    year: Optional[str] = None
+    phone: Optional[str] = None
+    # Email and password have their own endpoints so they can be confirmed properly.
+    email: Optional[str] = None
     password: Optional[str] = None
+
 
 @router.put("/me/profile", response_model=User)
 def update_user_profile(
     *,
     db: Session = Depends(get_db),
-    user_in: UserUpdate,
+    user_in: ProfileUpdate,
     current_user: User = Depends(get_current_user),
 ) -> Any:
-    """Update current user profile info."""
-    current_user.full_name = user_in.full_name
-    
-    email_changed = False
-    new_email = user_in.email.strip().lower()
-    if new_email != current_user.email.lower():
-        email_changed = True
-        auth_service = AuthService(db)
-        existing_user = auth_service.get_user_by_email(email=new_email)
-        if existing_user and existing_user.id != current_user.id:
-            raise HTTPException(
-                status_code=400,
-                detail="This email is already registered."
-            )
-        current_user.email = new_email
-        current_user.is_email_verified = False
-
+    """Update the personal and study details of the signed-in user."""
     if user_in.password:
-        if len(user_in.password) < 8:
-            raise HTTPException(
-                status_code=400,
-                detail="Password must be at least 8 characters long."
-            )
-        current_user.hashed_password = get_password_hash(user_in.password)
-        current_user.has_password = True
-    
-    if email_changed:
-        import secrets
-        otp_code = "".join(secrets.choice("0123456789") for _ in range(6))
-        current_user.otp_code = otp_code
-        current_user.otp_expires_at = datetime.utcnow() + timedelta(minutes=15)
-        current_user.otp_attempts = 0
-        
-        # Dispatch verification code email
-        from app.services.email import send_otp_email
-        send_otp_email(current_user.email, otp_code)
-    
+        raise HTTPException(status_code=400, detail="Change your password from the password section.")
+    if user_in.email and user_in.email.strip().lower() != current_user.email.lower():
+        raise HTTPException(status_code=400, detail="Change your email from the email section. We send a code to the new address.")
+
+    if user_in.full_name is not None:
+        if len(user_in.full_name.split()) < 2:
+            raise HTTPException(status_code=400, detail="Enter your first and last name.")
+        current_user.full_name = user_in.full_name.strip()
+    if current_user.role != RoleEnum.admin and any(v is not None for v in (user_in.university, user_in.faculty, user_in.programme, user_in.year)):
+        signup_service.check_studies(
+            db,
+            university=user_in.university if user_in.university is not None else (current_user.university or ""),
+            faculty=user_in.faculty if user_in.faculty is not None else (current_user.faculty or ""),
+            year=user_in.year if user_in.year is not None else (current_user.year_of_study or ""),
+            programme=user_in.programme if user_in.programme is not None else (current_user.programme or ""),
+            phone=user_in.phone,
+            terms=True,
+        )
+        current_user.university = user_in.university or current_user.university
+        current_user.faculty = user_in.faculty or current_user.faculty
+        current_user.year_of_study = user_in.year or current_user.year_of_study
+        current_user.programme = (user_in.programme or current_user.programme or "").strip() or None
+    if user_in.phone is not None:
+        phone = user_in.phone.strip()
+        if phone and not signup_service.PHONE_RE.match(phone):
+            raise HTTPException(status_code=400, detail="Enter a phone number like +252 61 234 5678, or leave it empty.")
+        current_user.phone = phone or None
     db.commit()
     db.refresh(current_user)
     return current_user
+
+
+class EmailChangeRequest(BaseModel):
+    new_email: str
+
+
+class CodeRequest(BaseModel):
+    code: str
+
+
+class PasswordChangeRequest(BaseModel):
+    current_password: Optional[str] = None
+    new_password: str
+
+
+@router.post("/me/email/change")
+def request_email_change(
+    body: EmailChangeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    """Send a code to the new address. The current email stays in use until the code is confirmed."""
+    new_email = body.new_email.strip().lower()
+    if not new_email or "@" not in new_email:
+        raise HTTPException(status_code=400, detail="Enter an email address like name@example.com.")
+    if new_email == current_user.email.lower():
+        raise HTTPException(status_code=400, detail="That is already your email.")
+    if AuthService(db).get_user_by_email(email=new_email):
+        raise HTTPException(status_code=400, detail="This email is already registered.")
+    if current_user.pending_email_expires_at and current_user.pending_email:
+        sent_at = current_user.pending_email_expires_at - timedelta(minutes=settings.SIGNUP_CODE_MINUTES)
+        wait = settings.SIGNUP_RESEND_SECONDS - (datetime.utcnow() - sent_at).total_seconds()
+        if wait > 0:
+            raise HTTPException(status_code=429, detail=f"Please wait {int(wait) + 1} seconds before asking for another code.")
+    code = signup_service.new_code()
+    current_user.pending_email = new_email
+    current_user.pending_email_code = signup_service.hash_code(code)
+    current_user.pending_email_expires_at = datetime.utcnow() + timedelta(minutes=settings.SIGNUP_CODE_MINUTES)
+    current_user.pending_email_attempts = 0
+    db.commit()
+    from app.services.email import send_otp_email
+    send_otp_email(new_email, code)
+    return {"status": "code_sent", "email": new_email, "resend_after": settings.SIGNUP_RESEND_SECONDS}
+
+
+@router.post("/me/email/cancel", response_model=User)
+def cancel_email_change(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)) -> Any:
+    current_user.pending_email = None
+    current_user.pending_email_code = None
+    current_user.pending_email_expires_at = None
+    current_user.pending_email_attempts = 0
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.post("/me/email/confirm", response_model=User)
+def confirm_email_change(
+    body: CodeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    if not current_user.pending_email or not current_user.pending_email_code or not current_user.pending_email_expires_at:
+        raise HTTPException(status_code=400, detail="No email change is waiting for a code.")
+    if datetime.utcnow() > current_user.pending_email_expires_at:
+        raise HTTPException(status_code=400, detail="The code has expired. Request a new one.")
+    if current_user.pending_email_attempts >= signup_service.MAX_ATTEMPTS:
+        raise HTTPException(status_code=400, detail="Too many attempts. Request a new code and try again.")
+    import hmac
+    if not hmac.compare_digest(current_user.pending_email_code, signup_service.hash_code(body.code.strip())):
+        current_user.pending_email_attempts += 1
+        db.commit()
+        left = signup_service.MAX_ATTEMPTS - current_user.pending_email_attempts
+        raise HTTPException(status_code=400, detail="Too many attempts. Request a new code and try again." if left <= 0 else f"That code is not right. Check the email and try again ({left} tries left).")
+    if AuthService(db).get_user_by_email(email=current_user.pending_email):
+        raise HTTPException(status_code=400, detail="This email is already registered.")
+    current_user.email = current_user.pending_email
+    current_user.is_email_verified = True
+    current_user.pending_email = None
+    current_user.pending_email_code = None
+    current_user.pending_email_expires_at = None
+    current_user.pending_email_attempts = 0
+    db.add(ActivityLog(action="EMAIL_VERIFIED", user_id=current_user.id, details={"email": current_user.email}))
+    db.commit()
+    db.refresh(current_user)
+    return current_user
+
+
+@router.post("/me/password")
+def change_password(
+    body: PasswordChangeRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> Any:
+    from app.core.security import verify_password
+    signup_service.check_password_rules(body.new_password)
+    if current_user.has_password and not (body.current_password and verify_password(body.current_password, current_user.hashed_password)):
+        raise HTTPException(status_code=400, detail="Your current password is not right.")
+    current_user.hashed_password = get_password_hash(body.new_password)
+    current_user.has_password = True
+    db.commit()
+    return {"status": "password_changed"}
 
 from fastapi import UploadFile, File
 import shutil
@@ -391,6 +464,42 @@ def get_user_activity(
 class GoogleLoginRequest(BaseModel):
     token: str
 
+def _resolve_google_identity(token: str) -> tuple[str, str, Optional[str]]:
+    """Return (email, name, picture) for a Google credential, or raise 400."""
+    import urllib.request
+    import json
+
+    if token.startswith("mock-google-token-"):
+        if not settings.ALLOW_MOCK_LOGIN:
+            raise HTTPException(
+                status_code=400,
+                detail="Mock Google login is disabled in this environment."
+            )
+        # Simulated Google token format: "mock-google-token-email:name"
+        token_content = token.replace("mock-google-token-", "")
+        parts = token_content.split(":")
+        email = parts[0]
+        name = parts[1] if len(parts) > 1 else email.split("@")[0]
+        logger.info("Using simulated Google login for email=%s", email)
+        return email, name, None
+
+    try:
+        url = f"https://oauth2.googleapis.com/tokeninfo?id_token={token}"
+        with urllib.request.urlopen(url) as response:
+            google_data = json.loads(response.read().decode())
+    except Exception as e:
+        logger.error("Failed to verify Google token: %s", e)
+        raise HTTPException(status_code=400, detail="Invalid Google credential token.")
+
+    if not google_data or "email" not in google_data:
+        raise HTTPException(
+            status_code=400,
+            detail="Could not retrieve email from Google credential token."
+        )
+    email = google_data["email"]
+    return email, google_data.get("name", email.split("@")[0]), google_data.get("picture", None)
+
+
 @router.post("/google-login", response_model=Token)
 def google_login(
     *,
@@ -398,47 +507,7 @@ def google_login(
     login_in: GoogleLoginRequest
 ) -> Any:
     """Login or register with Google."""
-    import urllib.request
-    import json
-    
-    google_data = None
-    google_email = ""
-    google_name = ""
-    google_picture = None
-
-    if login_in.token.startswith("mock-google-token-"):
-        if not settings.ALLOW_MOCK_LOGIN:
-            raise HTTPException(
-                status_code=400,
-                detail="Mock Google login is disabled in this environment."
-            )
-        # Simulated Google token format: "mock-google-token-email:name"
-        token_content = login_in.token.replace("mock-google-token-", "")
-        parts = token_content.split(":")
-        google_email = parts[0]
-        google_name = parts[1] if len(parts) > 1 else google_email.split("@")[0]
-        logger.info("Using simulated Google login for email=%s", google_email)
-    else:
-        try:
-            url = f"https://oauth2.googleapis.com/tokeninfo?id_token={login_in.token}"
-            with urllib.request.urlopen(url) as response:
-                google_data = json.loads(response.read().decode())
-        except Exception as e:
-            logger.error("Failed to verify Google token: %s", e)
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid Google credential token."
-            )
-
-        if not google_data or "email" not in google_data:
-            raise HTTPException(
-                status_code=400,
-                detail="Could not retrieve email from Google credential token."
-            )
-
-        google_email = google_data["email"]
-        google_name = google_data.get("name", google_email.split("@")[0])
-        google_picture = google_data.get("picture", None)
+    google_email, google_name, google_picture = _resolve_google_identity(login_in.token)
 
     logger.info("Google login verified for email=%s", google_email)
     auth_service = AuthService(db)
@@ -595,3 +664,119 @@ def verify_email(
     db.refresh(current_user)
     logger.info("Email verified for user_id=%s email=%s", current_user.id, current_user.email)
     return User.model_validate(current_user)
+
+
+# ---------------------------------------------------------------------------
+# Sign-up with an emailed code, Google sign-up, and profile changes
+# ---------------------------------------------------------------------------
+from app.schemas.user import User as UserSchema
+from app.services import signup_service
+from app.models.user import User as DBUserModel
+
+
+class SignupStartRequest(BaseModel):
+    full_name: str
+    email: str
+    password: str
+    university: str
+    faculty: str
+    programme: str
+    year: str
+    phone: Optional[str] = None
+    terms: bool = False
+
+
+class EmailOnly(BaseModel):
+    email: str
+
+
+class SignupVerifyRequest(BaseModel):
+    email: str
+    code: str
+
+
+class GoogleSignupRequest(BaseModel):
+    token: str
+    university: str
+    faculty: str
+    programme: str
+    year: str
+    phone: Optional[str] = None
+    terms: bool = False
+
+
+class GoogleToken(BaseModel):
+    token: str
+
+
+def _token_for(user: DBUserModel) -> dict:
+    expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    return {"access_token": create_access_token(user.id, expires_delta=expires), "token_type": "bearer"}
+
+
+@router.post("/signup/start")
+def signup_start(body: SignupStartRequest, db: Session = Depends(get_db)) -> Any:
+    """Step 3 of sign-up: check the details and email a 6-digit code. No account exists yet."""
+    return signup_service.start_signup(
+        db, full_name=body.full_name, email=body.email, password=body.password, university=body.university,
+        faculty=body.faculty, programme=body.programme, year=body.year, phone=body.phone, terms=body.terms,
+    )
+
+
+@router.post("/signup/resend")
+def signup_resend(body: EmailOnly, db: Session = Depends(get_db)) -> Any:
+    return signup_service.resend_code(db, body.email)
+
+
+@router.post("/signup/verify")
+def signup_verify(body: SignupVerifyRequest, db: Session = Depends(get_db)) -> Any:
+    """Confirm the code: the account is created already verified, and the person is signed in."""
+    user = signup_service.verify_signup(db, body.email, body.code)
+    return {**_token_for(user), "user": UserSchema.model_validate(user)}
+
+
+@router.post("/google/verify")
+def google_verify(body: GoogleToken, db: Session = Depends(get_db)) -> Any:
+    """Check a Google credential and say whether that email already has an account."""
+    email, name, picture = _resolve_google_identity(body.token)
+    exists = AuthService(db).get_user_by_email(email=email) is not None
+    return {"email": email, "name": name, "picture": picture, "registered": exists}
+
+
+@router.post("/google-signup")
+def google_signup(body: GoogleSignupRequest, db: Session = Depends(get_db)) -> Any:
+    """Google sign-up: studies are collected first; Google emails are already verified, so no code is sent."""
+    email, name, picture = _resolve_google_identity(body.token)
+    auth_service = AuthService(db)
+    user = auth_service.get_user_by_email(email=email)
+    if user is None:
+        signup_service.check_studies(
+            db, university=body.university, faculty=body.faculty, year=body.year,
+            programme=body.programme, phone=body.phone, terms=body.terms,
+        )
+        import secrets
+        user = DBUserModel(
+            email=email,
+            hashed_password=get_password_hash(secrets.token_urlsafe(32)),
+            full_name=name,
+            profile_picture_url=picture,
+            role=RoleEnum.user,
+            is_active=True,
+            is_email_verified=True,
+            has_password=False,
+            university=body.university,
+            faculty=body.faculty,
+            programme=body.programme.strip(),
+            year_of_study=body.year,
+            phone=(body.phone or "").strip() or None,
+            terms_accepted_at=datetime.utcnow(),
+        )
+        db.add(user)
+        db.add(SystemLog(level="INFO", message=f"New Google user registered: {email}"))
+        db.commit()
+        db.refresh(user)
+        db.add(ActivityLog(action="USER_SIGNUP", user_id=user.id, details={"email": email, "method": "google"}))
+        db.commit()
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="Inactive user")
+    return {**_token_for(user), "user": UserSchema.model_validate(user)}

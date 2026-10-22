@@ -13,6 +13,12 @@ export interface AuthenticatedUser {
   profile_picture_url?: string | null;
   is_email_verified?: boolean;
   has_password?: boolean;
+  university?: string | null;
+  faculty?: string | null;
+  programme?: string | null;
+  year_of_study?: string | null;
+  phone?: string | null;
+  pending_email?: string | null;
 }
 
 export class ApiError extends Error {

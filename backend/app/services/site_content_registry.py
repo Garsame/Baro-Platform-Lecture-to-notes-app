@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from pydantic import BaseModel
 
-from app.schemas.site_content import AboutSettings, BrandingSettings, ContactSettings, DocsSettings, EmailSettings, ReleasesSettings, ResearchSettings, StateSettings, HomeSettings, NavigationSettings, SeoSettings, TeamSettings
+from app.schemas.site_content import AboutSettings, BrandingSettings, ContactSettings, DocsSettings, SignupSettings, EmailSettings, ReleasesSettings, ResearchSettings, StateSettings, HomeSettings, NavigationSettings, SeoSettings, TeamSettings
 
 
 @dataclass(frozen=True)
@@ -289,6 +289,12 @@ RELEASES_DEFAULT = {
     ],
 }
 
+SIGNUP_DEFAULT = {
+    "universities": ["Hormuud University", "SIMAD University", "Somali National University", "Mogadishu University", "Benadir University", "City University of Mogadishu", "University of Kismayo", "Other"],
+    "faculties": ["Computer Science and IT", "Engineering", "Medicine and Health Sciences", "Economics and Management", "Education", "Law", "Social Sciences", "Other"],
+    "year_levels": ["Year 1", "Year 2", "Year 3", "Year 4", "Year 5", "Postgraduate", "Lecturer or staff", "Other"],
+}
+
 SECTIONS: dict[str, SectionSpec] = {
     "branding": SectionSpec("branding", "Branding", BrandingSettings, BRANDING_DEFAULT),
     "seo": SectionSpec("seo", "Search and sharing", SeoSettings, SEO_DEFAULT),
@@ -300,6 +306,7 @@ SECTIONS: dict[str, SectionSpec] = {
     "state": SectionSpec("state", "State of research", StateSettings, STATE_DEFAULT),
     "docs": SectionSpec("docs", "Documentation", DocsSettings, DOCS_DEFAULT),
     "releases": SectionSpec("releases", "Releases", ReleasesSettings, RELEASES_DEFAULT),
+    "signup": SectionSpec("signup", "Sign-up choices", SignupSettings, SIGNUP_DEFAULT),
     "contact": SectionSpec("contact", "Contact page", ContactSettings, CONTACT_DEFAULT),
     "email": SectionSpec("email", "Email settings", EmailSettings, EMAIL_DEFAULT, public=False),
 }

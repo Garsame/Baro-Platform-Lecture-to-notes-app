@@ -23,6 +23,7 @@ export const getSiteContent = cache(async (): Promise<SiteContent> => {
         state: { ...DEFAULT_SITE_CONTENT.sections.state, ...data.sections?.state },
         docs: { ...DEFAULT_SITE_CONTENT.sections.docs, ...data.sections?.docs },
         releases: { ...DEFAULT_SITE_CONTENT.sections.releases, ...data.sections?.releases },
+        signup: { ...DEFAULT_SITE_CONTENT.sections.signup, ...data.sections?.signup },
       },
     };
   } catch (error) {
