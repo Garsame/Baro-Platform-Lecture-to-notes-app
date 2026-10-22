@@ -17,6 +17,7 @@ const ACTIVE: Record<string, string> = {
   docs: "Help pages for students, grouped in the sidebar.",
   releases: "Version history shown on the Releases page.",
   research: "Abstract, research stages, evaluation results, paper and thesis file.",
+  signup: "University, faculty and year choices on the sign-up form and Profile page.",
   contact: "Contact page text, details and form topics.",
   email: "Team inbox and the confirmation email sent to every sender. Not shown publicly.",
   home: "Hero, live numbers, how-it-works cards, sample notes, testimonials and FAQ.",
