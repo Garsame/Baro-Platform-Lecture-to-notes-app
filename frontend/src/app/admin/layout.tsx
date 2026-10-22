@@ -11,7 +11,8 @@ import {
 } from "@/lib/api";
 import { clearSession, getSessionToken } from "@/lib/session";
 import { useTheme } from "@/hooks/useTheme";
-import { MdDashboard, MdPeople, MdOutlineOndemandVideo, MdSettings, MdLogout, MdNotifications, MdLightMode, MdDarkMode, MdKeyboardArrowDown, MdEmail, MdMenu } from 'react-icons/md';
+import BrandLogo from '@/components/site/BrandLogo';
+import { MdWeb, MdDashboard, MdPeople, MdOutlineOndemandVideo, MdSettings, MdLogout, MdNotifications, MdLightMode, MdDarkMode, MdKeyboardArrowDown, MdEmail, MdMenu } from 'react-icons/md';
 import { FaCheckCircle, FaRocket, FaExclamationTriangle, FaTools } from 'react-icons/fa';
 
 interface SystemNotification {
@@ -175,7 +176,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     const loadingText = theme === "dark" ? "#a9b4c8" : "#65728a";
     return (
       <div style={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', backgroundColor: loadingBg }}>
-        <img src={theme === "dark" ? "/barobadi-logo-dark.png" : "/barobadi-logo.png"} alt="BaroBadi Logo" style={{ width: "180px", height: "auto", objectFit: "contain", animation: "admin-loading-pulse 2s infinite ease-in-out" }} />
+        <BrandLogo variant={theme === "dark" ? "dark" : "light"} width="180px" style={{ animation: "admin-loading-pulse 2s infinite ease-in-out" }} />
         <style>{`
           @keyframes admin-loading-pulse {
             0%, 100% { opacity: 0.6; transform: scale(0.98); }
@@ -1198,7 +1199,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <aside className={`admin-sidebar ${isSidebarOpen ? "is-open" : ""}`}>
           
           <div className="admin-brand-panel">
-            <img src={theme === "dark" ? "/barobadi-logo-dark.png" : "/barobadi-logo.png"} alt="BaroBadi Admin Logo" style={{ width: '150px', height: 'auto', objectFit: 'contain', cursor: 'pointer' }} onClick={() => router.push('/admin/dashboard')} />
+            <BrandLogo variant={theme === "dark" ? "dark" : "light"} width="150px" style={{ cursor: "pointer" }} onClick={() => router.push("/admin/dashboard")} />
           </div>
 
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', flex: 1 }}>
@@ -1213,6 +1214,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Link>
             <Link href="/admin/messages" className={`admin-nav-link ${pathname === '/admin/messages' ? 'active' : ''}`}>
               <MdEmail size={20} /> User Messages
+            </Link>
+            <Link href="/admin/settings" className={`admin-nav-link ${pathname.startsWith('/admin/settings') ? 'active' : ''}`}>
+              <MdWeb size={20} /> Site Content
             </Link>
             <Link href="/admin/logs" className={`admin-nav-link ${pathname === '/admin/logs' ? 'active' : ''}`}>
               <FaTools size={20} /> System Logs

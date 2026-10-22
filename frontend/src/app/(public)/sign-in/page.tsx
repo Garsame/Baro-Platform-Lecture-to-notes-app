@@ -272,7 +272,7 @@ export default function SignInPage() {
         <div className="form-card auth-card" style={{ width: "100%", maxWidth: "480px", border: "1px solid var(--public-border)", padding: "40px", borderRadius: "var(--public-radius)", background: "var(--public-surface)", boxShadow: "var(--public-shadow)" }}>
           <div className="form-heading">
             <h2 style={{ fontFamily: "var(--public-font-title)", fontWeight: 500 }}>Sign in</h2>
-            <p>Use your account details to enter Baro Platform.</p>
+            <p>Use your account details to enter BaroPlatform.</p>
           </div>
 
           {success && (
@@ -361,7 +361,7 @@ export default function SignInPage() {
           </form>
 
           <p className="auth-switch" style={{ marginTop: "24px" }}>
-            New to Baro Platform? <Link href="/sign-up" style={{ color: "var(--public-primary)", fontWeight: 500 }}>Create an account</Link>
+            New to BaroPlatform? <Link href="/sign-up" style={{ color: "var(--public-primary)", fontWeight: 500 }}>Create an account</Link>
           </p>
         </div>
       </div>

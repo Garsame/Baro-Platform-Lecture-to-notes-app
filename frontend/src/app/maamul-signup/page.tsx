@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from "react";
 import { useTheme } from "@/hooks/useTheme";
 import Link from "next/link";
+import BrandLogo from "@/components/site/BrandLogo";
 import { useRouter } from "next/navigation";
 import {
   MdDarkMode,
@@ -102,7 +103,7 @@ export default function AdminSignUpPage() {
 
       <section className="admin-auth-card">
         <div className="admin-auth-brand" style={{ display: 'flex', justifyContent: 'center', marginBottom: '2rem' }}>
-          <img src={theme === "dark" ? "/barobadi-logo-dark.png" : "/barobadi-logo.png"} alt="Baro Platform Logo" style={{ width: '160px', height: 'auto', objectFit: 'contain' }} />
+          <BrandLogo variant={theme === "dark" ? "dark" : "light"} width="160px" />
         </div>
 
         <div className="admin-auth-heading">

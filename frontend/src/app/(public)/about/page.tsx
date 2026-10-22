@@ -74,10 +74,10 @@ export default function AboutPage() {
       <section className="public-section page-hero reveal-up">
         <div className="public-container about-hero-container">
           <div className="section-heading center">
-            <span className="section-eyebrow">About Baro Platform</span>
+            <span className="section-eyebrow">About BaroPlatform</span>
             <h1 style={{ maxWidth: "780px" }}>Designed for students who study from lectures.</h1>
             <p style={{ maxWidth: "600px", marginInline: "auto" }}>
-              Baro Platform turns long lecture media into Somali study material that
+              BaroPlatform turns long lecture media into Somali study material that
               can be searched, reviewed, questioned, and reused.
             </p>
             <div className="section-actions" style={{ justifyContent: "center" }}>
@@ -165,7 +165,7 @@ export default function AboutPage() {
             <span className="section-eyebrow">Inside the platform</span>
             <h2>More than a transcript generator.</h2>
             <p>
-              Baro Platform is a complete study workspace designed to automate the heavy lifting of lecture revision, letting you focus on actual learning.
+              BaroPlatform is a complete study workspace designed to automate the heavy lifting of lecture revision, letting you focus on actual learning.
             </p>
             <div className="features-hero-card">
               <h3>Somali-First Learning</h3>

@@ -269,7 +269,7 @@ export default function NewLecturePage() {
           </span>
           <h2>Lecture processing flow</h2>
           <p>
-            Baro Platform validates the source, prepares the media, creates transcript text,
+            BaroPlatform validates the source, prepares the media, creates transcript text,
             and generates Somali study notes for your dashboard.
           </p>
           <div className="new-lecture-guide-list">

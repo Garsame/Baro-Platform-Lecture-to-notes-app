@@ -2,6 +2,8 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import BrandLogo from "@/components/site/BrandLogo";
+import { useBranding } from "@/components/site/SiteContentProvider";
 import { usePathname } from "next/navigation";
 import {
   MdAdd,
@@ -62,7 +64,7 @@ function resolveProfileImageUrl(profilePictureUrl?: string | null): string | nul
   return apiUrl(profilePictureUrl);
 }
 
-function getNotificationView(notification: ActivityNotification) {
+function getNotificationView(notification: ActivityNotification, siteName: string) {
   let Icon = MdCheckCircle;
   let tone = "success";
   let title = notification.action.replace(/_/g, " ");
@@ -73,7 +75,7 @@ function getNotificationView(notification: ActivityNotification) {
     description = `Session started for ${notification.details?.email || "your account"}.`;
   } else if (notification.action === "USER_SIGNUP") {
     title = "Account created";
-    description = "Your Baro Platform learning workspace is ready.";
+    description = `Your ${siteName} workspace is ready.`;
   } else if (notification.action === "LECTURE_SUBMITTED") {
     Icon = MdRocketLaunch;
     tone = "info";
@@ -96,6 +98,7 @@ function getNotificationView(notification: ActivityNotification) {
 }
 
 export default function UserLayout({ children }: { children: React.ReactNode }) {
+  const { site_name: siteName } = useBranding();
   const pathname = usePathname();
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -268,7 +271,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
     return (
       <div className="inapp-dashboard-loading">
         <div className="inapp-loading-card" style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
-          <img src={theme === "dark" ? "/barobadi-logo-dark.png" : "/barobadi-logo.png"} alt="Baro Platform Logo" style={{ width: "150px", height: "auto", objectFit: "contain", animation: "user-loading-pulse 2s infinite ease-in-out" }} />
+          <BrandLogo variant={theme === "dark" ? "dark" : "light"} width="150px" style={{ animation: "user-loading-pulse 2s infinite ease-in-out" }} />
           <style>{`
             @keyframes user-loading-pulse {
               0%, 100% { opacity: 0.6; transform: scale(0.98); }
@@ -276,7 +279,7 @@ export default function UserLayout({ children }: { children: React.ReactNode }) 
             }
           `}</style>
           <strong>Loading dashboard</strong>
-          <small>Preparing your Baro Platform workspace.</small>
+          <small>Preparing your {siteName} workspace.</small>
         </div>
       </div>
     );

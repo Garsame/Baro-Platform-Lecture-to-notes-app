@@ -65,7 +65,7 @@ export default function SignUpPage() {
         <div className="form-card auth-card" style={{ width: "100%", maxWidth: "480px", border: "1px solid var(--public-border)", padding: "40px", borderRadius: "var(--public-radius)", background: "var(--public-surface)", boxShadow: "var(--public-shadow)" }}>
           <div className="form-heading">
             <h2 style={{ fontFamily: "var(--public-font-title)", fontWeight: 500 }}>Create account</h2>
-            <p>Enter your details to open a Baro Platform workspace.</p>
+            <p>Enter your details to open a BaroPlatform workspace.</p>
           </div>
 
           {success && (

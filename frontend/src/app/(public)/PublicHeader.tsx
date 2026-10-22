@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { 
@@ -20,6 +19,8 @@ import {
 import ThemeToggle from "@/components/ThemeToggle";
 import { getSessionToken, clearSession } from "@/lib/session";
 import { fetchCurrentUser, apiUrl, authHeaders, type AuthenticatedUser } from "@/lib/api";
+import BrandLogo from "@/components/site/BrandLogo";
+import { useBranding } from "@/components/site/SiteContentProvider";
 import OtpVerificationModal from "@/components/OtpVerificationModal";
 
 function resolveProfileImageUrl(profilePictureUrl?: string | null): string | null {
@@ -28,7 +29,7 @@ function resolveProfileImageUrl(profilePictureUrl?: string | null): string | nul
   return apiUrl(profilePictureUrl);
 }
 
-function getNotificationView(notification: any) {
+function getNotificationView(notification: any, siteName: string) {
   let Icon = MdCheckCircle;
   let tone = "success";
   let title = notification.action.replace(/_/g, " ");
@@ -39,7 +40,7 @@ function getNotificationView(notification: any) {
     description = `Session started for ${notification.details?.email || "your account"}.`;
   } else if (notification.action === "USER_SIGNUP") {
     title = "Account created";
-    description = "Your BaroBadi learning workspace is ready.";
+    description = `Your ${siteName} workspace is ready.`;
   } else if (notification.action === "LECTURE_SUBMITTED") {
     Icon = MdRocketLaunch;
     tone = "info";
@@ -69,6 +70,7 @@ function getNotificationView(notification: any) {
 }
 
 export default function PublicHeader() {
+  const { site_name: siteName } = useBranding();
   const pathname = usePathname();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
@@ -441,24 +443,7 @@ export default function PublicHeader() {
         }`}
       >
         <Link href={user ? "/dashboard" : "/"} className="logo" onClick={closeMenu}>
-          <Image
-            src="/barobadi-logo.png"
-            alt="Baro Platform Logo"
-            width={180}
-            height={56}
-            className="logo-light"
-            priority
-            style={{ width: "auto", height: "auto" }}
-          />
-          <Image
-            src="/barobadi-logo-dark.png"
-            alt="Baro Platform Logo"
-            width={180}
-            height={56}
-            className="logo-dark"
-            priority
-            style={{ width: "auto", height: "auto" }}
-          />
+          <BrandLogo />
         </Link>
 
         <div className="mobile-header-tools">
@@ -488,7 +473,7 @@ export default function PublicHeader() {
                   ) : (
                     <div style={{ display: "flex", flexDirection: "column", maxHeight: "280px", overflowY: "auto" }}>
                       {notifications.map((notification) => {
-                        const item = getNotificationView(notification);
+                        const item = getNotificationView(notification, siteName);
                         const Icon = item.Icon;
                         const isVerifyNotif = notification.action === "EMAIL_VERIFICATION_REQUIRED";
 
@@ -607,7 +592,7 @@ export default function PublicHeader() {
                         ) : (
                           <div style={{ display: "flex", flexDirection: "column", maxHeight: "280px", overflowY: "auto" }}>
                             {notifications.map((notification) => {
-                              const item = getNotificationView(notification);
+                              const item = getNotificationView(notification, siteName);
                               const Icon = item.Icon;
                               const isVerifyNotif = notification.action === "EMAIL_VERIFICATION_REQUIRED";
 

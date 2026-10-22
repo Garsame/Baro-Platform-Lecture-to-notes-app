@@ -20,7 +20,7 @@ import "./landing.css";
 
 const stats = [
   { value: "4", label: "Study outputs" },
-  { value: "99.2%", label: "Accuracy" },
+  { value: "2", label: "Ways to add a lecture" },
   { value: "Somali", label: "First design" },
 ];
 
@@ -76,23 +76,19 @@ const workflow = [
 const faqs = [
   {
     question: "How accurate is the Somali speech transcription?",
-    answer: "Our specialized speech-to-text models are trained specifically on Somali dialects and educational terminology, delivering high accuracy for local academic lectures and presentations.",
+    answer: "BaroPlatform uses general-purpose AI speech and language models to transcribe lectures and write Somali notes. Accuracy depends on audio quality and how clearly the lecturer speaks; clear recordings give the best results.",
   },
   {
     question: "Can I paste YouTube links directly?",
-    answer: "Yes! Simply paste any public YouTube lecture link, and Baro Platform will automatically fetch, extract the audio, transcribe the speech, and write your study notes.",
+    answer: "Yes! Simply paste any public YouTube lecture link, and BaroPlatform will automatically fetch, extract the audio, transcribe the speech, and write your study notes.",
   },
   {
     question: "How does the AI interactive chat work?",
     answer: "Once a lecture is transcribed, you can click 'Chat' to ask follow-up questions. The AI references the exact transcript details, acting as a virtual tutor that is fully aware of the lesson content.",
   },
   {
-    question: "Is there a limit on file upload size?",
-    answer: "Free plan accounts support up to 50MB files. Pro plan users can upload media files up to 500MB, accommodating long university classes and extensive review series.",
-  },
-  {
     question: "Can I download my notes and quizzes?",
-    answer: "Absolutely. You can export any generated notes, transcripts, or review sheets as PDFs, making it easy to print or revise offline during study sessions.",
+    answer: "Yes. Generated notes can be downloaded as a PDF for printing or offline revision.",
   },
 ];
 
@@ -119,7 +115,7 @@ export default function LandingPage() {
               Turn long lectures into organized Somali study material.
             </h1>
             <p className="hero-description">
-              Baro Platform converts recorded lessons into searchable transcripts, summaries,
+              BaroPlatform converts recorded lessons into searchable transcripts, summaries,
               structured study notes, quizzes, and chat support so you can revise with ease.
             </p>
             <div className="hero-actions">
@@ -182,7 +178,7 @@ export default function LandingPage() {
               </p>
               <div className="split-action-link">
                 <Link href="/sign-up" className="public-btn public-btn-primary">
-                  Create Free Account
+                  Create Account
                   <MdArrowForward />
                 </Link>
               </div>
@@ -214,7 +210,7 @@ export default function LandingPage() {
             <span className="section-eyebrow">Workflow</span>
             <h2 className="section-title">From recording to revision in four simple steps</h2>
             <p className="section-subtitle">
-              Baro Platform automates the heavy processing, saving you hours of manual note-taking and revision prep.
+              BaroPlatform automates the heavy processing, saving you hours of manual note-taking and revision prep.
             </p>
           </div>
 
@@ -239,7 +235,7 @@ export default function LandingPage() {
             <span className="section-eyebrow">FAQ</span>
             <h2 className="section-title">Everything you need to know</h2>
             <p className="section-subtitle">
-              Quick answers to common questions about our transcription, AI study packs, and platform pricing.
+              Quick answers to common questions about our transcription, AI study packs, and how the platform works.
             </p>
           </div>
 
@@ -275,7 +271,7 @@ export default function LandingPage() {
             </div>
             <div className="cta-banner-actions">
               <Link href="/sign-up" className="public-btn public-btn-primary">
-                Get Started Free
+                Get Started
               </Link>
               <Link href="/sign-in" className="public-btn public-btn-ghost">
                 Sign In

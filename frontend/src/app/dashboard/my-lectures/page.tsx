@@ -395,7 +395,7 @@ export default function MyLecturesPage() {
           <div className="lectures-empty-card">
             <h2>No lectures yet</h2>
             <p>
-              Start with a YouTube link or an audio file and Baro Platform will
+              Start with a YouTube link or an audio file and BaroPlatform will
               build notes, transcripts, and quizzes for you.
             </p>
             <Link href="/dashboard/new-lecture" className="lectures-primary-action">

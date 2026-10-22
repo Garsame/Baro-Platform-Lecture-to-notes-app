@@ -1,9 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
 import PublicHeader from "./PublicHeader";
+import BrandLogo from "@/components/site/BrandLogo";
+import { useBranding } from "@/components/site/SiteContentProvider";
 import "./public.css";
 
 export default function PublicLayout({
@@ -11,6 +12,7 @@ export default function PublicLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const branding = useBranding();
   const [isPageLoading, setIsPageLoading] = useState(true);
 
   useEffect(() => {
@@ -70,22 +72,7 @@ export default function PublicLayout({
       {isPageLoading && (
         <div className="page-preloader" role="status" aria-busy="true">
           <div className="preloader-logo">
-            <Image
-              src="/barobadi-logo.png"
-              alt="Baro Platform Logo"
-              width={120}
-              height={38}
-              className="logo-light"
-              priority
-            />
-            <Image
-              src="/barobadi-logo-dark.png"
-              alt="Baro Platform Logo"
-              width={120}
-              height={38}
-              className="logo-dark"
-              priority
-            />
+            <BrandLogo height={38} />
             <div className="preloader-bar-container">
               <div className="preloader-bar"></div>
             </div>
@@ -99,25 +86,9 @@ export default function PublicLayout({
         <div className="public-container footer-shell">
           <div className="footer-brand">
             <Link href="/" className="brand-lockup footer-logo">
-              <Image
-                src="/barobadi-logo.png"
-                alt="Baro Platform"
-                width={120}
-                height={38}
-                className="logo-light"
-              />
-              <Image
-                src="/barobadi-logo-dark.png"
-                alt="Baro Platform"
-                width={120}
-                height={38}
-                className="logo-dark"
-              />
+              <BrandLogo height={38} />
             </Link>
-            <p>
-              Somali-first AI study tools for turning recorded lectures into
-              searchable notes, summaries, quizzes, and review material.
-            </p>
+            <p>{branding.tagline}</p>
           </div>
 
           <div className="footer-column">
@@ -143,8 +114,8 @@ export default function PublicLayout({
         </div>
 
         <div className="public-container footer-bottom">
-          <p>Copyright 2026 Baro Platform. All rights reserved.</p>
-          <p>Built for focused lecture revision.</p>
+          <p>© {new Date().getFullYear()} {branding.site_name}. All rights reserved.</p>
+          <p>{branding.footer_note}</p>
         </div>
       </footer>
     </div>

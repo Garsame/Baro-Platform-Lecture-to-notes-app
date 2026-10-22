@@ -139,7 +139,7 @@ export default function UserDashboard() {
   );
 
   let peakTimeStr = "Not enough data";
-  let peakTimeMsg = "Take a few quizzes so Baro Platform can detect your strongest study time.";
+  let peakTimeMsg = "Take a few quizzes so BaroPlatform can detect your strongest study time.";
 
   if (totalQuizzesTaken > 0) {
     const timeGroups = { morning: 0, afternoon: 0, evening: 0, night: 0 };

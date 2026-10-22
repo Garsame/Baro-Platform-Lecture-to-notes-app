@@ -22,7 +22,7 @@ const contactReasons = [
     icon: MdGroups,
     title: "Educator interest",
     description:
-      "Using Baro Platform with recorded classes, course material, or revision support.",
+      "Using BaroPlatform with recorded classes, course material, or revision support.",
   },
   {
     icon: MdAdminPanelSettings,
@@ -31,6 +31,9 @@ const contactReasons = [
       "Deployment, administration, monitoring, and operational support questions.",
   },
 ];
+
+// Real team inbox; set in the environment. Phase 5 moves this into the admin Site Content hub.
+const CONTACT_EMAIL = process.env.NEXT_PUBLIC_CONTACT_EMAIL ?? "";
 
 export default function ContactPage() {
   const [name, setName] = useState("");
@@ -83,7 +86,7 @@ export default function ContactPage() {
         <div className="public-container">
           <div className="section-heading center">
             <span className="section-eyebrow">Contact</span>
-            <h1>Talk to the Baro Platform team.</h1>
+            <h1>Talk to the BaroPlatform team.</h1>
             <p>
               Send a message about support, classroom use, deployment, or ideas
               that can make lecture revision better for Somali learners.
@@ -117,13 +120,15 @@ export default function ContactPage() {
               })}
             </div>
 
-            <div className="contact-email-card" style={{ borderRadius: "var(--public-radius-sm)", background: "var(--public-soft)", border: "1px solid var(--public-border)", display: "flex", gap: "16px", padding: "20px" }}>
-              <MdEmail aria-hidden="true" style={{ fontSize: "1.5rem", color: "var(--public-primary)", marginTop: "2px" }} />
-              <div>
-                <strong style={{ display: "block", color: "var(--public-text)", fontFamily: "var(--public-font-title)" }}>Email Address</strong>
-                <a href="mailto:hello@baroplatform.ai" style={{ color: "var(--public-primary)", fontWeight: 500 }}>hello@baroplatform.ai</a>
+            {CONTACT_EMAIL && (
+              <div className="contact-email-card" style={{ borderRadius: "var(--public-radius-sm)", background: "var(--public-soft)", border: "1px solid var(--public-border)", display: "flex", gap: "16px", padding: "20px" }}>
+                <MdEmail aria-hidden="true" style={{ fontSize: "1.5rem", color: "var(--public-primary)", marginTop: "2px" }} />
+                <div>
+                  <strong style={{ display: "block", color: "var(--public-text)", fontFamily: "var(--public-font-title)" }}>Email Address</strong>
+                  <a href={`mailto:${CONTACT_EMAIL}`} style={{ color: "var(--public-primary)", fontWeight: 500 }}>{CONTACT_EMAIL}</a>
+                </div>
               </div>
-            </div>
+            )}
           </aside>
 
           <section className="form-card contact-form-card" aria-label="Contact form" style={{ border: "1px solid var(--public-border)", padding: "40px", borderRadius: "var(--public-radius)", background: "var(--public-surface)", boxShadow: "var(--public-soft-shadow)" }}>
