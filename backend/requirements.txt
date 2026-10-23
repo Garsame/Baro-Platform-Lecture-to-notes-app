@@ -12,7 +12,7 @@ bcrypt==3.2.2
 ffmpeg-python
 psycopg2-binary
 pytest
-yt-dlp
+yt-dlp[default]
 google-genai
 azure-cognitiveservices-speech
 openai

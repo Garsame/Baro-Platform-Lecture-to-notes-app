@@ -112,6 +112,10 @@ class YouTubeService:
             "socket_timeout": 30,
             "proxy": (self.settings.YOUTUBE_PROXY or "").strip(),
             "noplaylist": True,
+            # Current YouTube needs a JavaScript runtime to unlock the media formats.
+            # Node is already installed on most servers, so allow it next to the default (deno).
+            "js_runtimes": {"deno": {}, "node": {}},
+            "remote_components": ["ejs:github"],
         }
 
         cookie_file = (self.settings.YOUTUBE_COOKIE_FILE or "").strip()
